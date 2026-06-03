@@ -1,1 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Night Shift Survival</title>
 
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0f0f1a;
+  color: white;
+}
+
+header {
+  padding: 20px;
+  text-align: center;
+  background: #1a1a2e;
+}
+
+#gameGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 15px;
+  padding: 20px;
+}
+
+.game-card {
+  background: #1f1f3a;
+  padding: 15px;
+  border-radius: 12px;
+  text-align: center;
+  transition: 0.2s;
+}
+
+.game-card:hover {
+  transform: scale(1.05);
+  background: #2a2a50;
+}
+
+button {
+  padding: 8px 12px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 8px;
+  background: #ff2e63;
+  color: white;
+  cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>🌙 Night Shift Survival</h1>
+  <p id="status">Survive until 6 AM</p>
+</header>
+
+<div id="gameGrid">
+
+  <div class="game-card">
+    <h3>Time</h3>
+    <p id="time">12 AM</p>
+  </div>
+
+  <div class="game-card">
+    <h3>Power</h3>
+    <p id="power">100%</p>
+  </div>
+
+  <div class="game-card">
+    <h3>Animatronic</h3>
+    <p id="ai">0 / 5</p>
+  </div>
+
+  <div class="game-card">
+    <h3>Controls</h3>
+    <button onclick="checkCamera()">📷 Camera</button>
+    <button onclick="toggleDoor()">🚪 Door</button>
+    <button onclick="wait()">⏳ Wait</button>
+  </div>
+
+</div>
+
+<script>
+let power = 100;
+let hour = 12;
+let ai = 0;
+let doorClosed = false;
+let gameOver = false;
+
+function updateUI() {
+  document.getElementById("power").innerText = power + "%";
+  document.getElementById("ai").innerText = ai + " / 5";
+  document.getElementById("time").innerText = hour + " AM";
+}
+
+function checkEnd() {
+  if (ai >= 5 && !doorClosed) {
+    document.getElementById("status").innerText = "💀 The animatronic got you!";
+    gameOver = true;
+  }
+
+  if (power <= 0) {
+    document.getElementById("status").innerText = "⚡ You ran out of power!";
+    gameOver = true;
+  }
+
+  if (hour >= 6 && !gameOver) {
+    document.getElementById("status").innerText = "🌅 You survived the night!";
+    gameOver = true;
+  }
+}
+
+function tick() {
+  if (gameOver) return;
+
+  power -= 2;
+
+  let move = Math.floor(Math.random() * 3);
+  if (move === 0) ai++;
+  else if (move === 1) ai += 2;
+
+  if (Math.random() < 0.3) {
+    hour++;
+  }
+
+  updateUI();
+  checkEnd();
+}
+
+function checkCamera() {
+  if (gameOver) return;
+  alert("Animatronic level: " + ai + "/5");
+  power -= 1;
+  updateUI();
+}
+
+function toggleDoor() {
+  if (gameOver) return;
+  doorClosed = !doorClosed;
+  power -= doorClosed ? 5 : 2;
+  alert(doorClosed ? "Door CLOSED" : "Door OPEN");
+  updateUI();
+}
+
+function wait() {
+  if (gameOver) return;
+  alert("You wait...");
+}
+
+setInterval(tick, 2000);
+
+updateUI();
+</script>
+
+</body>
+</html>
