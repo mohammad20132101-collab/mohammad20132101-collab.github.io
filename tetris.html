@@ -1,11 +1,4 @@
 <!DOCTYPE html>
-<html>
-<head>
-  <title>Tetris Game</title>
-</head>
-<body>
-  <h1>Tetris Game</h1>
-  <p><!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -36,7 +29,7 @@ body{
 }
 
 canvas{
-    background:#0f172a;
+    background:#0b1220;
     border:3px solid #334155;
     border-radius:12px;
 }
@@ -48,21 +41,18 @@ canvas{
     width:180px;
 }
 
-.panel h2{
-    margin-bottom:10px;
-}
-
 .score{
     font-size:24px;
     margin-bottom:20px;
 }
 
 #next{
-    background:#0f172a;
+    background:#0b1220;
     border-radius:8px;
 }
 </style>
 </head>
+
 <body>
 
 <div class="wrapper">
@@ -99,28 +89,40 @@ const SIZE = 30;
 
 ctx.scale(SIZE, SIZE);
 
-let score = 0;
-
+// 🎨 COLORS (TETRIS STANDARD)
 const COLORS = [
  null,
- "#00f0f0",
- "#0000f0",
- "#f0a000",
- "#f0f000",
- "#00f000",
- "#a000f0",
- "#f00000"
+ "#00f0f0", // I
+ "#0000f0", // J
+ "#f0a000", // L
+ "#f0f000", // O
+ "#00f000", // S
+ "#a000f0", // T
+ "#f00000"  // Z
 ];
 
+// 🧱 SHAPES (FIXED CLEAN STRUCTURE)
 const SHAPES = [
  [],
  [[1,1,1,1]],
- [[2,0,0],[2,2,2]],
- [[0,0,3],[3,3,3]],
- [[4,4],[4,4]],
- [[0,5,5],[5,5,0]],
- [[0,6,0],[6,6,6]],
- [[7,7,0],[0,7,7]]
+
+ [[2,0,0],
+  [2,2,2]],
+
+ [[0,0,3],
+  [3,3,3]],
+
+ [[4,4],
+  [4,4]],
+
+ [[0,5,5],
+  [5,5,0]],
+
+ [[0,6,0],
+  [6,6,6]],
+
+ [[7,7,0],
+  [0,7,7]]
 ];
 
 function createBoard(){
@@ -128,23 +130,43 @@ function createBoard(){
 }
 
 let board = createBoard();
+let score = 0;
 
 function drawCell(x,y,color){
-    ctx.fillStyle=color;
+    ctx.fillStyle = color;
     ctx.fillRect(x,y,1,1);
 
-    ctx.strokeStyle="#111";
+    ctx.strokeStyle = "#0b0f1a";
+    ctx.lineWidth = 0.05;
     ctx.strokeRect(x,y,1,1);
 }
 
 function drawBoard(){
-    ctx.fillStyle="#0f172a";
+    ctx.fillStyle="#0b1220";
     ctx.fillRect(0,0,COLS,ROWS);
 
+    // grid
+    ctx.strokeStyle="#111827";
+    ctx.lineWidth=0.05;
+
+    for(let x=0;x<=COLS;x++){
+        ctx.beginPath();
+        ctx.moveTo(x,0);
+        ctx.lineTo(x,ROWS);
+        ctx.stroke();
+    }
+
+    for(let y=0;y<=ROWS;y++){
+        ctx.beginPath();
+        ctx.moveTo(0,y);
+        ctx.lineTo(COLS,y);
+        ctx.stroke();
+    }
+
     board.forEach((row,y)=>{
-        row.forEach((value,x)=>{
-            if(value){
-                drawCell(x,y,COLORS[value]);
+        row.forEach((val,x)=>{
+            if(val){
+                drawCell(x,y,COLORS[val]);
             }
         });
     });
@@ -154,12 +176,12 @@ function drawBoard(){
 
 function drawPiece(piece){
     piece.matrix.forEach((row,y)=>{
-        row.forEach((value,x)=>{
-            if(value){
+        row.forEach((val,x)=>{
+            if(val){
                 drawCell(
                     x + piece.pos.x,
                     y + piece.pos.y,
-                    COLORS[value]
+                    COLORS[val]
                 );
             }
         });
@@ -174,10 +196,7 @@ function collide(board,piece){
         for(let x=0;x<m[y].length;x++){
             if(
                 m[y][x] &&
-                (
-                    board[y+o.y] &&
-                    board[y+o.y][x+o.x]
-                ) !== 0
+                (!board[y+o.y] || board[y+o.y][x+o.x]) !== 0
             ){
                 return true;
             }
@@ -188,9 +207,9 @@ function collide(board,piece){
 
 function merge(board,piece){
     piece.matrix.forEach((row,y)=>{
-        row.forEach((value,x)=>{
-            if(value){
-                board[y+piece.pos.y][x+piece.pos.x]=value;
+        row.forEach((val,x)=>{
+            if(val){
+                board[y+piece.pos.y][x+piece.pos.x]=val;
             }
         });
     });
@@ -205,7 +224,6 @@ function rotate(matrix){
 function playerRotate(){
     const old = player.matrix;
     player.matrix = rotate(player.matrix);
-
     if(collide(board,player)){
         player.matrix = old;
     }
@@ -213,7 +231,6 @@ function playerRotate(){
 
 function playerMove(dir){
     player.pos.x += dir;
-
     if(collide(board,player)){
         player.pos.x -= dir;
     }
@@ -221,15 +238,12 @@ function playerMove(dir){
 
 function playerDrop(){
     player.pos.y++;
-
     if(collide(board,player)){
         player.pos.y--;
-
         merge(board,player);
         clearLines();
         spawnPiece();
     }
-
     dropCounter = 0;
 }
 
@@ -237,7 +251,6 @@ function hardDrop(){
     while(!collide(board,player)){
         player.pos.y++;
     }
-
     player.pos.y--;
     merge(board,player);
     clearLines();
@@ -250,11 +263,8 @@ function clearLines(){
     outer:
     for(let y=board.length-1;y>=0;y--){
         for(let x=0;x<COLS;x++){
-            if(board[y][x]===0){
-                continue outer;
-            }
+            if(board[y][x]===0) continue outer;
         }
-
         board.splice(y,1);
         board.unshift(Array(COLS).fill(0));
         y++;
@@ -268,8 +278,7 @@ function clearLines(){
 }
 
 function randomPiece(){
-    const id = Math.floor(Math.random()*7)+1;
-    return SHAPES[id];
+    return SHAPES[Math.floor(Math.random()*7)+1];
 }
 
 let nextPiece = randomPiece();
@@ -284,9 +293,7 @@ function spawnPiece(){
     nextPiece = randomPiece();
 
     player.pos.y = 0;
-    player.pos.x =
-        Math.floor(COLS/2) -
-        Math.floor(player.matrix[0].length/2);
+    player.pos.x = Math.floor(COLS/2) - Math.floor(player.matrix[0].length/2);
 
     if(collide(board,player)){
         board = createBoard();
@@ -298,64 +305,33 @@ function spawnPiece(){
 }
 
 function drawNext(){
-    nextCtx.clearRect(
-        0,0,
-        nextCanvas.width,
-        nextCanvas.height
-    );
+    nextCtx.clearRect(0,0,nextCanvas.width,nextCanvas.height);
 
-    const block = 25;
+    const block = 20;
 
     nextPiece.forEach((row,y)=>{
-        row.forEach((value,x)=>{
-            if(value){
-                nextCtx.fillStyle =
-                    COLORS[value];
-
-                nextCtx.fillRect(
-                    x*block+20,
-                    y*block+20,
-                    block,
-                    block
-                );
-
+        row.forEach((val,x)=>{
+            if(val){
+                nextCtx.fillStyle = COLORS[val];
+                nextCtx.fillRect(x*block+20,y*block+20,block,block);
                 nextCtx.strokeStyle="#111";
-                nextCtx.strokeRect(
-                    x*block+20,
-                    y*block+20,
-                    block,
-                    block
-                );
+                nextCtx.strokeRect(x*block+20,y*block+20,block,block);
             }
         });
     });
 }
 
 document.addEventListener("keydown",e=>{
-    if(e.key==="ArrowLeft"){
-        playerMove(-1);
-    }
-
-    if(e.key==="ArrowRight"){
-        playerMove(1);
-    }
-
-    if(e.key==="ArrowDown"){
-        playerDrop();
-    }
-
-    if(e.key==="ArrowUp"){
-        playerRotate();
-    }
-
-    if(e.code==="Space"){
-        hardDrop();
-    }
+    if(e.key==="ArrowLeft") playerMove(-1);
+    if(e.key==="ArrowRight") playerMove(1);
+    if(e.key==="ArrowDown") playerDrop();
+    if(e.key==="ArrowUp") playerRotate();
+    if(e.code==="Space") hardDrop();
 });
 
-let dropCounter = 0;
-let dropInterval = 700;
-let lastTime = 0;
+let dropCounter=0;
+let dropInterval=700;
+let lastTime=0;
 
 function update(time=0){
     const delta = time-lastTime;
@@ -368,7 +344,6 @@ function update(time=0){
     }
 
     drawBoard();
-
     requestAnimationFrame(update);
 }
 
@@ -376,9 +351,5 @@ spawnPiece();
 update();
 </script>
 
-</body>
-</html></p>
-
-  <a href="index.html">← Back</a>
 </body>
 </html>
