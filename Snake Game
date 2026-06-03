@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Snake Game</title>
+</head>
+<body style="background:#000;color:white;text-align:center;">
+  <h1>Snake Game Placeholder</h1>
+  <p>Put your game code or embed here</p>
+
+  <a href="index.html">⬅ Back</a>
+</body>
+</html>
