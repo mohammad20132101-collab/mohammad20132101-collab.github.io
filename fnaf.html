@@ -2,65 +2,92 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>FNAF Style Night Shift</title>
+<title>FNAF 1 Clone</title>
 
 <style>
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
+  font-family: Arial;
   background: #0f0f1a;
   color: white;
 }
 
-/* HEADER */
 header {
-  padding: 15px;
-  text-align: center;
   background: #1a1a2e;
+  padding: 12px;
+  text-align: center;
 }
 
-/* MAIN LAYOUT */
-#gameGrid {
+/* MAIN */
+#game {
   display: grid;
   grid-template-columns: 2fr 1fr;
-  gap: 15px;
-  padding: 20px;
+  gap: 12px;
+  padding: 15px;
 }
 
-/* PANELS */
 .panel {
   background: #1f1f3a;
-  padding: 15px;
   border-radius: 12px;
+  padding: 12px;
 }
 
-/* CAMERA SCREEN */
-#cameraView {
+/* OFFICE VIEW */
+#office {
+  height: 260px;
+  background: #000;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+/* DOORS */
+.doors {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 20px;
+}
+
+.door {
+  width: 80px;
+  height: 120px;
+  background: #333;
+  border-radius: 6px;
+}
+
+.door.closed {
+  background: #ff2e63;
+}
+
+/* LIGHTS */
+.light {
+  font-size: 12px;
+  margin-top: 5px;
+  color: yellow;
+}
+
+/* CAMERA */
+#camScreen {
   height: 260px;
   background: black;
   border-radius: 10px;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 18px;
-  transition: 0.2s;
+  font-size: 16px;
 }
 
-/* GLITCH EFFECT */
-.glitch {
-  animation: flicker 0.15s infinite;
+.camGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
 }
 
-@keyframes flicker {
-  0% { opacity: 1; }
-  50% { opacity: 0.6; }
-  100% { opacity: 1; }
-}
-
-/* BUTTONS */
 button {
-  padding: 10px;
-  margin: 5px;
+  padding: 8px;
   border: none;
   border-radius: 8px;
   background: #ff2e63;
@@ -68,31 +95,39 @@ button {
   cursor: pointer;
 }
 
-button:hover {
-  background: #ff4b7a;
+/* MAP */
+.map {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin-top: 8px;
 }
 
-/* CAMERA GRID */
-.cam-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+.node {
+  background: #2a2a50;
+  padding: 4px;
+  font-size: 10px;
+  text-align: center;
+  border-radius: 4px;
+}
+
+.node.active {
+  background: yellow;
+  color: black;
 }
 
 /* JUMPSCARE */
 #jumpscare {
   position: fixed;
-  top: 0;
-  left: 0;
+  top: 0; left: 0;
   width: 100%;
   height: 100%;
   background: red;
-  color: white;
   display: none;
   justify-content: center;
   align-items: center;
   font-size: 40px;
   font-weight: bold;
-  z-index: 999;
 }
 </style>
 </head>
@@ -100,43 +135,64 @@ button:hover {
 <body>
 
 <header>
-  <h1>🌙 NIGHT SHIFT OFFICE</h1>
-  <p id="status">Survive until 6 AM</p>
+  <h2>🌙 FNAF 1 CLONE (HTML)</h2>
+  <p id="status">12 AM - Survive the night</p>
 </header>
 
-<div id="gameGrid">
+<div id="game">
 
-  <!-- CAMERA PANEL -->
+  <!-- OFFICE -->
   <div class="panel">
-    <h2>📷 Camera System</h2>
+    <h3>🏢 Office</h3>
 
-    <div id="cameraView">OFFICE</div>
+    <div id="office">
+      <div>OFFICE VIEW</div>
 
-    <div class="cam-grid">
-      <button onclick="switchCam('office')">Office</button>
-      <button onclick="switchCam('cam1')">Cam 1</button>
-      <button onclick="switchCam('cam2')">Cam 2</button>
-      <button onclick="switchCam('cam3')">Cam 3</button>
+      <div class="doors">
+        <div>
+          <div id="leftDoor" class="door"></div>
+          <button onclick="toggleDoor('left')">Left Door</button>
+          <div class="light" id="leftLight">OFF</div>
+        </div>
+
+        <div>
+          <div id="rightDoor" class="door"></div>
+          <button onclick="toggleDoor('right')">Right Door</button>
+          <div class="light" id="rightLight">OFF</div>
+        </div>
+      </div>
     </div>
 
-    <p id="camInfo">Click a camera</p>
+    <p>Power: <span id="power">100</span>%</p>
+    <p>Time: <span id="time">12 AM</span></p>
   </div>
 
-  <!-- OFFICE PANEL -->
+  <!-- CAMERAS -->
   <div class="panel">
-    <h2>🏢 Office</h2>
+    <h3>📷 Cameras</h3>
 
-    <p>Time: <span id="time">12 AM</span></p>
-    <p>Power: <span id="power">100%</span></p>
-    <p>Door: <span id="door">OPEN</span></p>
-    <p>Animatronic: <span id="ai">Cam 1</span></p>
+    <div id="camScreen">CAM SYSTEM OFF</div>
 
-    <button onclick="toggleDoor()">🚪 Toggle Door</button>
+    <div class="camGrid">
+      <button onclick="cam('cam1')">Cam 1</button>
+      <button onclick="cam('cam2')">Cam 2</button>
+      <button onclick="cam('cam3')">Cam 3</button>
+      <button onclick="cam('cam4')">Cam 4</button>
+    </div>
+
+    <h4>Map</h4>
+    <div class="map" id="map">
+      <div class="node" id="cam1">Cam1</div>
+      <div class="node" id="cam2">Cam2</div>
+      <div class="node" id="cam3">Cam3</div>
+      <div class="node" id="cam4">Cam4</div>
+      <div class="node" id="left">Left Door</div>
+      <div class="node" id="right">Right Door</div>
+    </div>
   </div>
 
 </div>
 
-<!-- JUMPSCARE SCREEN -->
 <div id="jumpscare">💀 YOU DIED</div>
 
 <script>
@@ -144,83 +200,100 @@ let power = 100;
 let hour = 12;
 let gameOver = false;
 
-let doorClosed = false;
+let currentCam = "cam1";
 
-// animatronic path system (REAL FNAF STYLE)
-const path = ["cam1", "cam2", "cam3", "office"];
-let aiIndex = 0;
+// ANIMATRONICS POSITIONS
+let bonnie = "cam1";
+let chica = "cam4";
+let freddy = "cam2";
 
-let currentCam = "office";
+// DOORS
+let leftDoor = false;
+let rightDoor = false;
 
-const camNames = {
-  office: "OFFICE VIEW",
-  cam1: "CAM 1 - Entrance",
-  cam2: "CAM 2 - Hallway",
-  cam3: "CAM 3 - Back Room"
-};
+// AI PATHS (FNAF STYLE)
+const path = ["cam1", "cam2", "cam3", "left", "right"];
 
 function updateUI() {
-  document.getElementById("power").innerText = power + "%";
+  document.getElementById("power").innerText = power;
   document.getElementById("time").innerText = hour + " AM";
-  document.getElementById("door").innerText = doorClosed ? "CLOSED" : "OPEN";
-  document.getElementById("ai").innerText = path[aiIndex];
 }
 
-function switchCam(cam) {
+function cam(c) {
   if (gameOver) return;
 
-  currentCam = cam;
+  currentCam = c;
   power -= 1;
 
-  let view = document.getElementById("cameraView");
-  let info = document.getElementById("camInfo");
+  let screen = document.getElementById("camScreen");
 
-  view.classList.remove("glitch");
+  let threat =
+    (bonnie === c || chica === c || freddy === c);
 
-  if (cam === path[aiIndex] && cam !== "office") {
-    view.innerText = "⚠ MOVEMENT DETECTED ⚠";
-    view.classList.add("glitch");
-    info.innerText = "Something is here...";
-  } 
-  else if (cam === "office") {
-    view.innerText = "OFFICE";
-    info.innerText = "You are here.";
-  }
-  else {
-    view.innerText = camNames[cam];
-    info.innerText = "Empty...";
+  if (threat) {
+    screen.innerText = "⚠ MOVEMENT DETECTED ⚠";
+  } else {
+    screen.innerText = c.toUpperCase();
   }
 
+  updateMap();
   updateUI();
 }
 
-function toggleDoor() {
+function toggleDoor(side) {
   if (gameOver) return;
 
-  doorClosed = !doorClosed;
-  power -= doorClosed ? 5 : 2;
+  if (side === "left") {
+    leftDoor = !leftDoor;
+    document.getElementById("leftDoor").classList.toggle("closed");
+    document.getElementById("leftLight").innerText = leftDoor ? "ON" : "OFF";
+    power -= leftDoor ? 5 : 2;
+  }
+
+  if (side === "right") {
+    rightDoor = !rightDoor;
+    document.getElementById("rightDoor").classList.toggle("closed");
+    document.getElementById("rightLight").innerText = rightDoor ? "ON" : "OFF";
+    power -= rightDoor ? 5 : 2;
+  }
 
   updateUI();
 }
 
 function moveAI() {
-  // smarter movement (not random spam)
-  if (Math.random() < 0.6) {
-    if (aiIndex < path.length - 1) {
-      aiIndex++;
+  function move(anim, setAnim) {
+    let i = path.indexOf(anim);
+    if (Math.random() < 0.6 && i < path.length - 1) {
+      return path[i + 1];
     }
-  } else {
-    if (aiIndex > 0 && Math.random() < 0.3) {
-      aiIndex--;
-    }
+    return anim;
   }
+
+  bonnie = move(bonnie);
+  chica = move(chica);
+  freddy = move(freddy);
 }
 
-function jumpscare() {
-  gameOver = true;
+function checkDeath() {
+  if (bonnie === "left" && !leftDoor) die("Bonnie");
+  if (chica === "right" && !rightDoor) die("Chica");
+  if (freddy === "left" && !leftDoor && Math.random() < 0.3) die("Freddy");
 
+  if (power <= 0) die("Power Out");
+}
+
+function die(who) {
+  gameOver = true;
   document.getElementById("jumpscare").style.display = "flex";
-  document.getElementById("status").innerText = "💀 You were caught!";
+  document.getElementById("jumpscare").innerText = "💀 " + who + " GOT YOU";
+}
+
+function updateMap() {
+  document.querySelectorAll(".node").forEach(n => n.classList.remove("active"));
+
+  document.getElementById(bonnie).classList.add("active");
+  document.getElementById(chica).classList.add("active");
+  document.getElementById(freddy).classList.add("active");
 }
 
 function tick() {
@@ -229,34 +302,21 @@ function tick() {
   power -= 2;
 
   moveAI();
+  checkDeath();
 
-  // AI reaches office
-  if (path[aiIndex] === "office") {
-    if (!doorClosed) {
-      jumpscare();
-      return;
-    }
-  }
-
-  // time progression
-  if (Math.random() < 0.35) hour++;
+  if (Math.random() < 0.3) hour++;
 
   if (hour >= 6) {
     gameOver = true;
-    document.getElementById("status").innerText = "🌅 You survived the night!";
-  }
-
-  if (power <= 0) {
-    jumpscare();
-    return;
+    document.getElementById("status").innerText = "🌅 YOU SURVIVED";
   }
 
   updateUI();
 }
 
 setInterval(tick, 2000);
-
 updateUI();
+updateMap();
 </script>
 
 </body>
