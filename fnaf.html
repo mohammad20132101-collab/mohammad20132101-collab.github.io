@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Night Shift Survival</title>
+<title>FNAF Camera System</title>
 
 <style>
 body {
@@ -20,32 +20,51 @@ header {
 
 #gameGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: 2fr 1fr;
   gap: 15px;
   padding: 20px;
 }
 
-.game-card {
+.panel {
   background: #1f1f3a;
   padding: 15px;
   border-radius: 12px;
-  text-align: center;
-  transition: 0.2s;
-}
-
-.game-card:hover {
-  transform: scale(1.05);
-  background: #2a2a50;
 }
 
 button {
   padding: 8px 12px;
-  margin-top: 10px;
+  margin: 5px;
   border: none;
   border-radius: 8px;
   background: #ff2e63;
   color: white;
   cursor: pointer;
+}
+
+.camera-btns {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+#cameraView {
+  height: 250px;
+  background: black;
+  border-radius: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 18px;
+}
+
+.glitch {
+  animation: flicker 0.3s infinite;
+}
+
+@keyframes flicker {
+  0% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
 }
 </style>
 </head>
@@ -53,32 +72,33 @@ button {
 <body>
 
 <header>
-  <h1>🌙 Night Shift Survival</h1>
+  <h1>📷 FNAF Camera System</h1>
   <p id="status">Survive until 6 AM</p>
 </header>
 
 <div id="gameGrid">
 
-  <div class="game-card">
-    <h3>Time</h3>
-    <p id="time">12 AM</p>
+  <!-- CAMERA VIEW -->
+  <div class="panel">
+    <h2>Camera Feed</h2>
+    <div id="cameraView">OFFICE</div>
+
+    <div class="camera-btns">
+      <button onclick="switchCam('office')">Office</button>
+      <button onclick="switchCam('cam1')">Cam 1</button>
+      <button onclick="switchCam('cam2')">Cam 2</button>
+      <button onclick="switchCam('cam3')">Cam 3</button>
+    </div>
   </div>
 
-  <div class="game-card">
-    <h3>Power</h3>
-    <p id="power">100%</p>
-  </div>
+  <!-- INFO PANEL -->
+  <div class="panel">
+    <h3>Stats</h3>
+    <p>Time: <span id="time">12 AM</span></p>
+    <p>Power: <span id="power">100%</span></p>
+    <p>Animatronic: <span id="ai">Office</span></p>
 
-  <div class="game-card">
-    <h3>Animatronic</h3>
-    <p id="ai">0 / 5</p>
-  </div>
-
-  <div class="game-card">
-    <h3>Controls</h3>
-    <button onclick="checkCamera()">📷 Camera</button>
     <button onclick="toggleDoor()">🚪 Door</button>
-    <button onclick="wait()">⏳ Wait</button>
   </div>
 
 </div>
@@ -86,30 +106,49 @@ button {
 <script>
 let power = 100;
 let hour = 12;
-let ai = 0;
 let doorClosed = false;
 let gameOver = false;
 
-function updateUI() {
-  document.getElementById("power").innerText = power + "%";
-  document.getElementById("ai").innerText = ai + " / 5";
-  document.getElementById("time").innerText = hour + " AM";
+let animatronicRoom = "cam1";
+let currentCam = "office";
+
+const rooms = {
+  office: "OFFICE",
+  cam1: "CAM 1 - Entrance",
+  cam2: "CAM 2 - Hallway",
+  cam3: "CAM 3 - Storage"
+};
+
+function switchCam(cam) {
+  if (gameOver) return;
+
+  currentCam = cam;
+  document.getElementById("cameraView").innerText = rooms[cam];
+
+  power -= 1;
+
+  // camera glitch when animatronic is near
+  if (cam === animatronicRoom) {
+    document.getElementById("cameraView").classList.add("glitch");
+    document.getElementById("cameraView").innerText = "⚠ MOVEMENT DETECTED ⚠";
+  } else {
+    document.getElementById("cameraView").classList.remove("glitch");
+  }
 }
 
-function checkEnd() {
-  if (ai >= 5 && !doorClosed) {
-    document.getElementById("status").innerText = "💀 The animatronic got you!";
-    gameOver = true;
-  }
+function toggleDoor() {
+  doorClosed = !doorClosed;
+  power -= doorClosed ? 5 : 2;
+}
 
-  if (power <= 0) {
-    document.getElementById("status").innerText = "⚡ You ran out of power!";
-    gameOver = true;
-  }
+function updateAI() {
+  const path = ["cam1", "cam2", "cam3", "office"];
 
-  if (hour >= 6 && !gameOver) {
-    document.getElementById("status").innerText = "🌅 You survived the night!";
-    gameOver = true;
+  let index = path.indexOf(animatronicRoom);
+  if (index < path.length - 1) {
+    if (Math.random() < 0.5) {
+      animatronicRoom = path[index + 1];
+    }
   }
 }
 
@@ -118,41 +157,33 @@ function tick() {
 
   power -= 2;
 
-  let move = Math.floor(Math.random() * 3);
-  if (move === 0) ai++;
-  else if (move === 1) ai += 2;
-
-  if (Math.random() < 0.3) {
-    hour++;
+  if (Math.random() < 0.4) {
+    updateAI();
   }
 
-  updateUI();
-  checkEnd();
-}
+  if (animatronicRoom === "office" && !doorClosed) {
+    document.getElementById("status").innerText = "💀 JUMPSCARE! YOU DIED";
+    gameOver = true;
+  }
 
-function checkCamera() {
-  if (gameOver) return;
-  alert("Animatronic level: " + ai + "/5");
-  power -= 1;
-  updateUI();
-}
+  if (power <= 0) {
+    document.getElementById("status").innerText = "⚡ Power Out!";
+    gameOver = true;
+  }
 
-function toggleDoor() {
-  if (gameOver) return;
-  doorClosed = !doorClosed;
-  power -= doorClosed ? 5 : 2;
-  alert(doorClosed ? "Door CLOSED" : "Door OPEN");
-  updateUI();
-}
+  if (Math.random() < 0.25) hour++;
 
-function wait() {
-  if (gameOver) return;
-  alert("You wait...");
+  if (hour >= 6) {
+    document.getElementById("status").innerText = "🌅 You survived!";
+    gameOver = true;
+  }
+
+  document.getElementById("time").innerText = hour + " AM";
+  document.getElementById("power").innerText = power + "%";
+  document.getElementById("ai").innerText = animatronicRoom;
 }
 
 setInterval(tick, 2000);
-
-updateUI();
 </script>
 
 </body>
