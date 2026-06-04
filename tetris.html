@@ -284,6 +284,14 @@ function update(time=0){
 
 reset();
 update();
+
+document.addEventListener("keydown", function(e) {
+  if (
+    ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(e.key)
+  ) {
+    e.preventDefault();
+  }
+});
 </script>
 
 </body>
