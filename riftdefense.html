@@ -1,1 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rift Defence</title>
 
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0f0f1a;
+  color: white;
+  text-align: center;
+}
+
+header {
+  background: #1a1a2e;
+  padding: 10px;
+}
+
+canvas {
+  background: #111122;
+  display: block;
+  margin: 10px auto;
+  border: 2px solid #6C5CE7;
+}
+
+#ui {
+  padding: 10px;
+}
+
+button {
+  background: #6C5CE7;
+  border: none;
+  padding: 8px 12px;
+  color: white;
+  margin: 5px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #00D2FF;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>🌀 Rift Defence</h1>
+<p>Endless Waves • Build • Upgrade • Survive</p>
+</header>
+
+<div id="ui">
+  <button onclick="startGame()">Start</button>
+  <button onclick="resetGame()">Reset</button>
+  <p>💰 Coins: <span id="coins">100</span> |
+     🌊 Wave: <span id="wave">1</span> |
+     ❤️ Core: <span id="health">100</span></p>
+</div>
+
+<canvas id="game" width="800" height="400"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let coins = 100;
+let wave = 1;
+let coreHealth = 100;
+let running = false;
+
+let enemies = [];
+let towers = [];
+
+function spawnEnemy() {
+  const speed = 0.5 + wave * 0.15;
+
+  enemies.push({
+    x: 0,
+    y: Math.random() * 350 + 25,
+    hp: 10 + wave * 2,
+    speed: speed
+  });
+}
+
+function spawnWave() {
+  for (let i = 0; i < wave + 2; i++) {
+    setTimeout(spawnEnemy, i * 400);
+  }
+}
+
+function drawEnemies() {
+  ctx.fillStyle = "#FF2E88";
+
+  enemies.forEach((e, i) => {
+    e.x += e.speed;
+
+    ctx.beginPath();
+    ctx.arc(e.x, e.y, 10, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (e.x > 750) {
+      coreHealth -= 5;
+      enemies.splice(i, 1);
+      updateUI();
+    }
+  });
+}
+
+function drawTowers() {
+  towers.forEach(t => {
+    ctx.fillStyle = "#6C5CE7";
+    ctx.fillRect(t.x - 10, t.y - 10, 20, 20);
+
+    // shoot
+    enemies.forEach((e, i) => {
+      let dx = e.x - t.x;
+      let dy = e.y - t.y;
+      let dist = Math.sqrt(dx*dx + dy*dy);
+
+      if (dist < 120) {
+        e.hp -= 0.5 + t.level * 0.3;
+
+        ctx.strokeStyle = "#00D2FF";
+        ctx.beginPath();
+        ctx.moveTo(t.x, t.y);
+        ctx.lineTo(e.x, e.y);
+        ctx.stroke();
+
+        if (e.hp <= 0) {
+          enemies.splice(i, 1);
+          coins += 5;
+        }
+      }
+    });
+  });
+}
+
+function drawCore() {
+  ctx.fillStyle = "#00D2FF";
+  ctx.fillRect(760, 170, 20, 60);
+}
+
+function placeTower(x, y) {
+  if (coins >= 20) {
+    coins -= 20;
+
+    towers.push({
+      x,
+      y,
+      level: 1
+    });
+
+    updateUI();
+  }
+}
+
+canvas.addEventListener("click", (e) => {
+  const rect = canvas.getBoundingClientRect();
+  placeTower(e.clientX - rect.left, e.clientY - rect.top);
+});
+
+function upgradeTowers() {
+  towers.forEach(t => t.level++);
+  coins -= towers.length * 10;
+  updateUI();
+}
+
+function nextWave() {
+  wave++;
+  spawnWave();
+  updateUI();
+}
+
+function loop() {
+  if (!running) return;
+
+  ctx.clearRect(0, 0, 800, 400);
+
+  drawCore();
+  drawEnemies();
+  drawTowers();
+
+  requestAnimationFrame(loop);
+}
+
+function startGame() {
+  if (!running) {
+    running = true;
+    spawnWave();
+    loop();
+  }
+}
+
+function resetGame() {
+  enemies = [];
+  towers = [];
+  coins = 100;
+  wave = 1;
+  coreHealth = 100;
+  running = false;
+  updateUI();
+  ctx.clearRect(0, 0, 800, 400);
+}
+
+function updateUI() {
+  document.getElementById("coins").textContent = coins;
+  document.getElementById("wave").textContent = wave;
+  document.getElementById("health").textContent = coreHealth;
+
+  if (coreHealth <= 0) {
+    alert("💥 Rift Destroyed!");
+    resetGame();
+  }
+}
+
+// endless waves
+setInterval(() => {
+  if (running) nextWave();
+}, 8000);
+
+</script>
+
+</body>
+</html>
