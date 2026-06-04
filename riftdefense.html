@@ -1,1 +1,362 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rift Defence</title>
 
+<style>
+body{
+margin:0;
+font-family:Arial,sans-serif;
+background:#0f0f1a;
+color:white;
+text-align:center;
+}
+
+header{
+background:#1a1a2e;
+padding:10px;
+border-bottom:2px solid #6C5CE7;
+}
+
+#topBar{
+display:flex;
+justify-content:center;
+gap:10px;
+flex-wrap:wrap;
+padding:10px;
+}
+
+button{
+background:#6C5CE7;
+border:none;
+padding:10px 14px;
+border-radius:8px;
+cursor:pointer;
+color:white;
+font-weight:bold;
+}
+
+button:hover{ background:#00D2FF; }
+
+canvas{
+background:#111122;
+display:block;
+margin:auto;
+border:2px solid #6C5CE7;
+}
+
+#shop{
+display:none;
+position:absolute;
+top:120px;
+left:50%;
+transform:translateX(-50%);
+background:#1a1a2e;
+padding:20px;
+border-radius:12px;
+border:2px solid #6C5CE7;
+width:300px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>🌀 Rift Defence</h1>
+</header>
+
+<div id="topBar">
+<button onclick="startGame()">▶ Start</button>
+<button onclick="restartGame()">🔄 Restart</button>
+<button onclick="toggleShop()">🛒 Upgrades</button>
+</div>
+
+<div>
+💰 <span id="coins">0</span> |
+🌊 <span id="wave">1</span> |
+🔥 <span id="damage">1</span> |
+📏 <span id="range">5</span> |
+❤️ <span id="base">0</span>/100
+</div>
+
+<canvas id="game" width="900" height="500"></canvas>
+
+<div id="shop">
+<h3>Upgrades</h3>
+<button onclick="upgradeDamage()">+ Damage (10)</button>
+<button onclick="upgradeFire()">+ Fire Rate (15)</button>
+<button onclick="upgradeRamp()">+ Beam (25)</button>
+<button onclick="upgradeRange()">+ Range (20)</button>
+<button onclick="toggleShop()">Close</button>
+</div>
+
+<script>
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let running=false;
+let lastTime=0;
+
+let coins=0;
+let wave=1;
+let base=0;
+
+let damage=1;
+let fireRate=700;
+let ramp=1;
+let range=5;
+
+let turretRow=10;
+
+let enemies=[];
+let particles=[];
+
+let beamTimer=0;
+let spawnTimer=0;
+let waveTimer=0;
+
+let currentTarget=null;
+let beamCharge=1;
+
+const GRID=20;
+
+// ================= UI =================
+function updateUI(){
+document.getElementById("coins").textContent=coins;
+document.getElementById("wave").textContent=wave;
+document.getElementById("damage").textContent=damage;
+document.getElementById("range").textContent=range;
+document.getElementById("base").textContent=base;
+}
+
+// ================= CONTROLS =================
+document.addEventListener("keydown",(e)=>{
+if(e.key==="ArrowUp") turretRow--;
+if(e.key==="ArrowDown") turretRow++;
+
+turretRow=Math.max(0,Math.min(24,turretRow));
+});
+
+// ================= GAME CONTROL =================
+function startGame(){
+if(running) return;
+running=true;
+lastTime=performance.now();
+requestAnimationFrame(loop);
+}
+
+function restartGame(){
+coins=0;
+wave=1;
+base=0;
+damage=1;
+fireRate=700;
+ramp=1;
+range=5;
+turretRow=10;
+enemies=[];
+particles=[];
+beamTimer=0;
+spawnTimer=0;
+waveTimer=0;
+beamCharge=1;
+currentTarget=null;
+updateUI();
+}
+
+function toggleShop(){
+let s=document.getElementById("shop");
+s.style.display=s.style.display==="block"?"none":"block";
+}
+
+// ================= UPGRADES =================
+function upgradeDamage(){ if(coins>=10){coins-=10;damage++;updateUI();}}
+function upgradeFire(){ if(coins>=15&&fireRate>150){coins-=15;fireRate-=60;updateUI();}}
+function upgradeRamp(){ if(coins>=25){coins-=25;ramp+=0.5;updateUI();}}
+function upgradeRange(){ if(coins>=20){coins-=20;range++;updateUI();}}
+
+// ================= ENEMIES =================
+function spawnEnemy(){
+enemies.push({
+x:900,
+row:Math.floor(Math.random()*25),
+hp:5
+});
+}
+
+// ================= DRAW =================
+function drawGrid(){
+ctx.strokeStyle="#1f1f3a";
+for(let x=0;x<900;x+=GRID){
+ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,500);ctx.stroke();
+}
+for(let y=0;y<500;y+=GRID){
+ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(900,y);ctx.stroke();
+}
+}
+
+function drawTurret(){
+ctx.fillStyle="#6C5CE7";
+ctx.fillRect(30,turretRow*GRID,30,20);
+}
+
+// ================= TARGET =================
+function getTarget(){
+let best=null;
+
+for(let e of enemies){
+if(e.row===turretRow){
+
+if(e.x<=60+range*40){
+
+if(!best||e.x<best.x){
+best=e;
+}
+}
+
+}
+}
+
+return best;
+}
+
+// ================= BEAM =================
+function fireBeam(delta){
+
+beamTimer+=delta;
+
+if(beamTimer<fireRate) return;
+
+beamTimer=0;
+
+let target=getTarget();
+
+if(!target){
+currentTarget=null;
+beamCharge=1;
+return;
+}
+
+if(currentTarget===target){
+beamCharge+=0.3*ramp;
+}else{
+beamCharge=1;
+currentTarget=target;
+}
+
+let dmg=damage*beamCharge;
+target.hp-=dmg;
+
+// beam
+ctx.strokeStyle=`rgba(0,210,255,${Math.min(beamCharge/6,1)})`;
+ctx.lineWidth=Math.min(2+beamCharge,10);
+
+ctx.beginPath();
+ctx.moveTo(60,turretRow*GRID+10);
+ctx.lineTo(target.x+10,target.y+10);
+ctx.stroke();
+
+// kill
+if(target.hp<=0){
+coins+=2;
+let i=enemies.indexOf(target);
+if(i>-1) enemies.splice(i,1);
+beamCharge=1;
+currentTarget=null;
+updateUI();
+}
+}
+
+// ================= ENEMIES =================
+function drawEnemies(delta){
+
+for(let i=enemies.length-1;i>=0;i--){
+let e=enemies[i];
+
+e.x-=1+wave*0.08;
+e.y=e.row*GRID;
+
+// cube
+ctx.fillStyle="#FF2E88";
+ctx.fillRect(e.x,e.y,20,20);
+
+// HP bar
+ctx.fillStyle="#333";
+ctx.fillRect(e.x,e.y-6,20,4);
+ctx.fillStyle="#00FF88";
+ctx.fillRect(e.x,e.y-6,20*(e.hp/5),4);
+
+// base hit
+if(e.x<=0){
+base+=2;
+enemies.splice(i,1);
+
+if(base>=100){
+alert("💀 GAME OVER");
+restartGame();
+running=false;
+return;
+}
+}
+}
+}
+
+// ================= PARTICLES =================
+function drawParticles(){
+for(let i=particles.length-1;i>=0;i--){
+let p=particles[i];
+p.x+=p.vx;
+p.y+=p.vy;
+p.life--;
+
+ctx.fillStyle="#00D2FF";
+ctx.fillRect(p.x,p.y,2,2);
+
+if(p.life<=0) particles.splice(i,1);
+}
+}
+
+// ================= LOOP =================
+function loop(t){
+if(!running) return;
+
+let delta=t-lastTime;
+lastTime=t;
+
+ctx.clearRect(0,0,900,500);
+
+drawGrid();
+drawTurret();
+
+spawnTimer+=delta;
+if(spawnTimer>900){
+spawnEnemy();
+spawnTimer=0;
+}
+
+waveTimer+=delta;
+if(waveTimer>10000){
+wave++;
+coins+=10;
+waveTimer=0;
+updateUI();
+}
+
+drawEnemies(delta);
+fireBeam(delta);
+drawParticles();
+updateUI();
+
+requestAnimationFrame(loop);
+}
+
+updateUI();
+
+</script>
+
+</body>
+</html>
