@@ -1,1 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rift Hub</title>
+<link rel="stylesheet" href="style.css">
+</head>
 
+<body>
+
+<!-- Login Screen -->
+<div id="loginScreen">
+  <h2>Login to Rift Hub</h2>
+  <input type="text" id="usernameInput" placeholder="Enter username">
+  <button onclick="login()">Login</button>
+</div>
+
+<!-- Main Site -->
+<div id="site" style="display:none;">
+
+<header>
+  <h1>🎮 Rift Hub 🎮</h1>
+  <p>Welcome, <span id="username"></span>!</p>
+  <input type="text" id="search" placeholder="Search games...">
+</header>
+
+<main id="gameGrid">
+
+<h2>Games</h2>
+
+<div class="game-card" data-name="snake">
+  <h3>Snake</h3>
+  <button onclick="openGame('snake.html')">Play</button>
+</div>
+
+<div class="game-card" data-name="tetris">
+  <h3>Tetris</h3>
+  <button onclick="openGame('tetris.html')">Play</button>
+</div>
+
+<div class="game-card" data-name="pong">
+  <h3>Pong</h3>
+  <button onclick="openGame('pong.html')">Play</button>
+</div>
+
+</main>
+
+<!-- Exclusives Section -->
+<section id="exclusives">
+  <h2>🔥 Rift Hub Exclusives 🔥</h2>
+
+  <div class="game-card" data-name="rift-runner">
+    <h3>Rift Runner</h3>
+    <button onclick="openGame('riftrunner.html')">Play</button>
+  </div>
+
+  <div class="game-card" data-name="rift-defense">
+    <h3>Rift Defense</h3>
+    <button onclick="openGame('riftdefense.html')">Play</button>
+  </div>
+
+</section>
+
+</div>
+
+<script>
+
+function openGame(page) {
+  window.location.href = page;
+}
+
+function login() {
+  const username = document.getElementById("usernameInput").value;
+
+  if(username.trim() === "") {
+    alert("Enter a username");
+    return;
+  }
+
+  localStorage.setItem("riftUsername", username);
+  loadUser();
+}
+
+function loadUser() {
+  const username = localStorage.getItem("riftUsername");
+
+  if(username) {
+    document.getElementById("loginScreen").style.display = "none";
+    document.getElementById("site").style.display = "block";
+    document.getElementById("username").textContent = username;
+  }
+}
+
+loadUser();
+
+</script>
+
+</body>
+</html>
