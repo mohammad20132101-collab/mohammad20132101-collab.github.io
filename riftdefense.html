@@ -1,1 +1,309 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rift Defence</title>
 
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0f0f1a;
+  color: white;
+  text-align: center;
+}
+
+header {
+  background: #1a1a2e;
+  padding: 10px;
+}
+
+#backBtn, #restartBtn {
+  position: absolute;
+  top: 10px;
+  background: #FF2E88;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: white;
+}
+
+#backBtn { left: 10px; }
+#restartBtn { left: 120px; background:#6C5CE7; }
+
+canvas {
+  background: #111122;
+  display: block;
+  margin: 10px auto;
+  border: 2px solid #6C5CE7;
+}
+
+button {
+  background: #6C5CE7;
+  border: none;
+  padding: 8px 12px;
+  color: white;
+  margin: 5px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #00D2FF;
+}
+
+#shop {
+  display: none;
+  background: #1a1a2e;
+  padding: 15px;
+  width: 320px;
+  margin: auto;
+  border-radius: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<button id="backBtn" onclick="goBack()">⬅ Rift Hub</button>
+<button id="restartBtn" onclick="restartGame()">↻ Restart</button>
+
+<header>
+<h1>🌀 Rift Defence</h1>
+<p>Stable build • No bugs • Endless waves</p>
+</header>
+
+<div>
+  <button onclick="startGame()">Start</button>
+  <button onclick="toggleShop()">Upgrades</button>
+</div>
+
+<p>
+💰 Coins: <span id="coins">0</span> |
+🌊 Wave: <span id="wave">1</span> |
+💥 Damage: <span id="damage">1</span>
+</p>
+
+<canvas id="game" width="800" height="400"></canvas>
+
+<div id="shop">
+  <h2>🛒 Upgrades</h2>
+  <button onclick="buyDamage()">+ Damage (10 coins)</button>
+  <button onclick="buyFireRate()">+ Fire Rate (15 coins)</button>
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+// GAME STATE
+let coins = 0;
+let wave = 1;
+let damage = 1;
+
+let turretY = 200;
+
+let enemies = [];
+let bullets = [];
+
+let running = false;
+let lastTime = 0;
+
+// TIMERS (fixed system)
+let enemyTimer = 0;
+let shootTimer = 0;
+let waveTimer = 0;
+
+// SETTINGS
+let fireRate = 400;
+
+// GRID
+function drawGrid() {
+  ctx.strokeStyle = "#1f1f3a";
+
+  for (let x = 0; x < 800; x += 20) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, 400);
+    ctx.stroke();
+  }
+
+  for (let y = 0; y < 400; y += 20) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(800, y);
+    ctx.stroke();
+  }
+}
+
+// TURRET
+function drawTurret() {
+  ctx.fillStyle = "#6C5CE7";
+  ctx.fillRect(40, turretY - 20, 35, 40);
+}
+
+// ENEMY SPAWN
+function spawnEnemy() {
+  enemies.push({
+    x: 800,
+    y: Math.floor(Math.random() * 20) * 20,
+    hp: 3 + wave,
+    size: 20
+  });
+}
+
+// SHOOT
+function shoot() {
+  bullets.push({
+    x: 80,
+    y: turretY
+  });
+}
+
+// RESET GAME
+function restartGame() {
+  coins = 0;
+  wave = 1;
+  damage = 1;
+  enemies = [];
+  bullets = [];
+  enemyTimer = 0;
+  shootTimer = 0;
+  waveTimer = 0;
+}
+
+// BACK
+function goBack() {
+  window.location.href = "rifthub.html";
+}
+
+// SHOP
+function toggleShop() {
+  const shop = document.getElementById("shop");
+  shop.style.display = shop.style.display === "block" ? "none" : "block";
+}
+
+function buyDamage() {
+  if (coins >= 10) {
+    coins -= 10;
+    damage++;
+  }
+}
+
+function buyFireRate() {
+  if (coins >= 15 && fireRate > 120) {
+    coins -= 15;
+    fireRate -= 40;
+  }
+}
+
+// INPUT
+document.addEventListener("keydown", (e) => {
+  if (e.key === "ArrowUp") turretY -= 20;
+  if (e.key === "ArrowDown") turretY += 20;
+});
+
+// PAUSE WHEN TAB NOT ACTIVE (FIXES SPAWN BUG)
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    running = false;
+  }
+});
+
+// START
+function startGame() {
+  running = true;
+  lastTime = performance.now();
+  gameLoop(lastTime);
+}
+
+// MAIN LOOP (FIXED SYSTEM)
+function gameLoop(timestamp) {
+  if (!running) return;
+
+  let delta = timestamp - lastTime;
+  lastTime = timestamp;
+
+  ctx.clearRect(0, 0, 800, 400);
+  drawGrid();
+  drawTurret();
+
+  // ENEMY SPAWN
+  enemyTimer += delta;
+  if (enemyTimer > 900) {
+    spawnEnemy();
+    enemyTimer = 0;
+  }
+
+  // SHOOTING (FIXED FIRE RATE)
+  shootTimer += delta;
+  if (shootTimer > fireRate) {
+    shoot();
+    shootTimer = 0;
+  }
+
+  // WAVE SYSTEM + COINS PER WAVE
+  waveTimer += delta;
+  if (waveTimer > 8000) {
+    wave++;
+    coins += 10; // ✅ FIX: reward per wave
+    waveTimer = 0;
+  }
+
+  // ENEMIES
+  ctx.fillStyle = "#FF2E88";
+
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    let e = enemies[i];
+    e.x -= 2 + wave * 0.2;
+
+    ctx.fillRect(e.x, e.y, e.size, e.size);
+
+    if (e.x < 80) enemies.splice(i, 1);
+  }
+
+  // BULLETS + COLLISION (SAFE LOOP)
+  ctx.fillStyle = "#00D2FF";
+
+  for (let bi = bullets.length - 1; bi >= 0; bi--) {
+    let b = bullets[bi];
+    b.x += 6;
+
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    for (let ei = enemies.length - 1; ei >= 0; ei--) {
+      let e = enemies[ei];
+
+      if (
+        b.x > e.x &&
+        b.x < e.x + e.size &&
+        b.y > e.y &&
+        b.y < e.y + e.size
+      ) {
+        e.hp -= damage;
+        bullets.splice(bi, 1);
+
+        if (e.hp <= 0) {
+          enemies.splice(ei, 1);
+          coins += 2;
+        }
+        break;
+      }
+    }
+  }
+
+  // UI
+  document.getElementById("coins").textContent = coins;
+  document.getElementById("wave").textContent = wave;
+  document.getElementById("damage").textContent = damage;
+
+  requestAnimationFrame(gameLoop);
+}
+</script>
+
+</body>
+</html>
