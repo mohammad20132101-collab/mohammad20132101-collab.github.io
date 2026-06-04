@@ -298,6 +298,26 @@ document.addEventListener("keydown", function(e) {
     e.preventDefault();
   }
 });
+
+function restartGame() {
+
+  // reset board
+  board = Array.from({length:ROWS},()=>Array(COLS).fill(0));
+
+  // reset score
+  score = 0;
+  document.getElementById("score").innerText = score;
+
+  // reset player
+  player.x = 3;
+  player.y = 0;
+  player.shape = randomPiece();
+
+  // reset drop timing
+  dropCounter = 0;
+  lastTime = 0;
+
+}
 </script>
 
 </body>
