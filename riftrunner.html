@@ -1,1 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rift Runner</title>
 
+<style>
+body{
+  margin:0;
+  font-family:Arial;
+  background:#0f0f1a;
+  color:white;
+}
+
+header{
+  background:#1a1a2e;
+  padding:15px;
+  text-align:center;
+  border-bottom:2px solid #4c6fff;
+}
+
+.wrapper{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:20px;
+}
+
+.panel{
+  display:flex;
+  gap:15px;
+  align-items:center;
+  margin:10px;
+  flex-wrap:wrap;
+  justify-content:center;
+}
+
+canvas{
+  background:#050814;
+  border:3px solid #4c6fff;
+  border-radius:12px;
+}
+
+button{
+  background:#4c6fff;
+  border:none;
+  color:white;
+  padding:10px 15px;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+button:hover{
+  opacity:0.85;
+}
+
+.score{
+  background:#1a1a2e;
+  padding:8px 12px;
+  border-radius:8px;
+  border:1px solid #4c6fff;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>🏃 Rift Runner</h1>
+  <p>Dodge obstacles • Survive • Get score</p>
+</header>
+
+<div class="wrapper">
+
+  <div class="panel">
+    <div class="score">Score: <span id="score">0</span></div>
+
+    <button onclick="startGame()">Restart</button>
+    <button onclick="window.location.href='index.html'">Back to Hub</button>
+
+    <label style="margin-left:10px;">
+      Cube Color:
+      <input type="color" id="colorPicker" value="#4c6fff">
+    </label>
+  </div>
+
+  <canvas id="game" width="500" height="300"></canvas>
+
+</div>
+
+<script>
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const groundY = 240; // FIXED ground (no floating)
+
+let player, obstacles, score, speed, frame, loop;
+
+function startGame(){
+
+  player = {
+    x: 60,
+    y: groundY,
+    w: 30,
+    h: 30,
+    vy: 0,
+    jumping:false
+  };
+
+  obstacles = [];
+  score = 0;
+  speed = 4;
+  frame = 0;
+
+  document.getElementById("score").innerText = score;
+
+  clearInterval(loop);
+  loop = setInterval(update, 20);
+}
+
+document.addEventListener("keydown", e=>{
+  if(e.code === "Space"){
+    if(!player.jumping){
+      player.vy = -12;
+      player.jumping = true;
+    }
+  }
+});
+
+function spawn(){
+  obstacles.push({
+    x: 500,
+    y: groundY + 10,
+    w: 20,
+    h: 50
+  });
+}
+
+function update(){
+
+  frame++;
+
+  // background
+  ctx.fillStyle="#050814";
+  ctx.fillRect(0,0,500,300);
+
+  // grid (same style as hub)
+  ctx.strokeStyle="rgba(255,255,255,0.05)";
+  for(let x=0;x<=20;x++){
+    ctx.beginPath();
+    ctx.moveTo(x*25,0);
+    ctx.lineTo(x*25,300);
+    ctx.stroke();
+  }
+
+  for(let y=0;y<=12;y++){
+    ctx.beginPath();
+    ctx.moveTo(0,y*25);
+    ctx.lineTo(500,y*25);
+    ctx.stroke();
+  }
+
+  // ground
+  ctx.fillStyle="#1a1a2e";
+  ctx.fillRect(0,270,500,30);
+
+  // physics
+  player.vy += 0.6;
+  player.y += player.vy;
+
+  if(player.y >= groundY){
+    player.y = groundY;
+    player.vy = 0;
+    player.jumping = false;
+  }
+
+  // player color
+  let color = document.getElementById("colorPicker").value;
+
+  // player
+  ctx.fillStyle = color;
+  ctx.fillRect(player.x,player.y,player.w,player.h);
+
+  // spawn obstacles
+  if(frame % 80 === 0){
+    spawn();
+  }
+
+  // obstacles
+  for(let i=0;i<obstacles.length;i++){
+    let o = obstacles[i];
+    o.x -= speed;
+
+    ctx.fillStyle="#ff2e63";
+    ctx.fillRect(o.x,o.y,o.w,o.h);
+
+    // collision
+    if(
+      player.x < o.x + o.w &&
+      player.x + player.w > o.x &&
+      player.y < o.y + o.h &&
+      player.y + player.h > o.y
+    ){
+      clearInterval(loop);
+      alert("Game Over! Score: " + score);
+    }
+  }
+
+  obstacles = obstacles.filter(o => o.x > -50);
+
+  // score
+  score++;
+  document.getElementById("score").innerText = score;
+
+  // difficulty scaling
+  if(score % 200 === 0){
+    speed += 0.5;
+  }
+}
+
+startGame();
+
+</script>
+
+</body>
+</html>
