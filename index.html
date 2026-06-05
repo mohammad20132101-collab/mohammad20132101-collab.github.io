@@ -21,11 +21,17 @@ body {
 #loginScreen input {
   padding: 10px;
   width: 200px;
+  margin: 5px;
 }
 
-#loginScreen button {
-  padding: 10px 20px;
-  margin-top: 10px;
+button {
+  padding: 8px 15px;
+  border: none;
+  background: #4c6fff;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 5px;
 }
 
 header {
@@ -61,8 +67,8 @@ header {
 .game-card {
   background: #1a1a2e;
   border-radius: 12px;
-  overflow: hidden;
   text-align: center;
+  overflow: hidden;
 }
 
 .game-card img {
@@ -73,16 +79,6 @@ header {
 
 .game-info {
   padding: 10px;
-}
-
-button {
-  margin-top: 10px;
-  padding: 8px 15px;
-  border: none;
-  background: #4c6fff;
-  color: white;
-  border-radius: 6px;
-  cursor: pointer;
 }
 
 footer {
@@ -104,13 +100,11 @@ a {
 
 <!-- LOGIN -->
 <div id="loginScreen">
-  <input id="email" placeholder="Email">
-<br>
-<input id="password" type="password" placeholder="Password">
-<br>
+  <input id="email" placeholder="Email"><br>
+  <input id="password" type="password" placeholder="Password"><br>
 
-<button onclick="login()">Login</button>
-<button onclick="signup()">Sign Up</button>
+  <button onclick="login()">Login</button>
+  <button onclick="signup()">Sign Up</button>
 </div>
 
 <!-- SITE -->
@@ -118,85 +112,83 @@ a {
 
 <header>
   <h1>🎮 Rift Hub 🎮</h1>
-  <p>Welcome, <span id="username"></span>!</p>
+  <p>Welcome, <span id="username"></span></p>
   <input type="text" id="search" placeholder="Search games...">
 </header>
 
 <section>
-  <h2 align="center">Games</h2>
+<h2 align="center">Games</h2>
 
-  <div class="game-grid">
+<div class="game-grid">
 
-    <div class="game-card" data-name="snake">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/Nokia_6110_Snake_game.png">
-      <div class="game-info">
-        <h3>Snake</h3>
-        <button onclick="openGame('snake.html','Snake','https://upload.wikimedia.org/wikipedia/commons/6/6b/Nokia_6110_Snake_game.png')">Play</button>
-      </div>
+  <div class="game-card" data-name="snake">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/Nokia_6110_Snake_game.png">
+    <div class="game-info">
+      <h3>Snake</h3>
+      <button onclick="openGame('snake.html','Snake','https://upload.wikimedia.org/wikipedia/commons/6/6b/Nokia_6110_Snake_game.png')">Play</button>
     </div>
-
-    <div class="game-card" data-name="tetris">
-      <img src="https://upload.wikimedia.org/wikipedia/en/0/0a/Tetris_Game_Boy.jpg">
-      <div class="game-info">
-        <h3>Tetris</h3>
-        <button onclick="openGame('tetris.html','Tetris','https://upload.wikimedia.org/wikipedia/en/0/0a/Tetris_Game_Boy.jpg')">Play</button>
-      </div>
-    </div>
-
-    <div class="game-card" data-name="pong">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/6/6a/Pong_Game_Test2.gif">
-      <div class="game-info">
-        <h3>Pong</h3>
-        <button onclick="openGame('pong.html','Pong','https://upload.wikimedia.org/wikipedia/commons/6/6a/Pong_Game_Test2.gif')">Play</button>
-      </div>
-    </div>
-
   </div>
+
+  <div class="game-card" data-name="tetris">
+    <img src="https://upload.wikimedia.org/wikipedia/en/0/0a/Tetris_Game_Boy.jpg">
+    <div class="game-info">
+      <h3>Tetris</h3>
+      <button onclick="openGame('tetris.html','Tetris','https://upload.wikimedia.org/wikipedia/en/0/0a/Tetris_Game_Boy.jpg')">Play</button>
+    </div>
+  </div>
+
+  <div class="game-card" data-name="pong">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6a/Pong_Game_Test2.gif">
+    <div class="game-info">
+      <h3>Pong</h3>
+      <button onclick="openGame('pong.html','Pong','https://upload.wikimedia.org/wikipedia/commons/6/6a/Pong_Game_Test2.gif')">Play</button>
+    </div>
+  </div>
+
+</div>
 </section>
 
 <section>
-  <h2 align="center">🔥 Exclusives 🔥</h2>
+<h2 align="center">🔥 Exclusives 🔥</h2>
 
-  <div class="exclusives-list">
+<div class="exclusives-list">
 
-    <div class="game-card">
-      <div class="game-info">
-        <h3>Rift Runner</h3>
-        <button onclick="openGame('riftrunner.html','Rift Runner','https://via.placeholder.com/400x200/ff4c4c')">Play</button>
-      </div>
+  <div class="game-card">
+    <div class="game-info">
+      <h3>Rift Runner</h3>
+      <button onclick="openGame('riftrunner.html','Rift Runner','https://via.placeholder.com/400x200/ff4c4c')">Play</button>
     </div>
-
-    <div class="game-card">
-      <div class="game-info">
-        <h3>Rift Defense</h3>
-        <button onclick="openGame('riftdefense.html','Rift Defense','https://via.placeholder.com/400x200/00ff99')">Play</button>
-      </div>
-    </div>
-
   </div>
+
+  <div class="game-card">
+    <div class="game-info">
+      <h3>Rift Defense</h3>
+      <button onclick="openGame('riftdefense.html','Rift Defense','https://via.placeholder.com/400x200/00ff99')">Play</button>
+    </div>
+  </div>
+
+</div>
 </section>
 
 <section>
-  <h2 align="center">🕘 Recently Played</h2>
-  <div class="game-grid" id="historyGrid"></div>
+<h2 align="center">🕘 Recently Played</h2>
+<div class="game-grid" id="historyGrid"></div>
 </section>
 
 </div>
 
 <footer>
-  <h3>Rift Hub</h3>
+<h3>Rift Hub</h3>
+<p>Free browser game platform.</p>
 
-  <p style="max-width:600px; margin:auto;">
-    Free browser game platform.
-  </p>
-
-  <div>
-    <a onclick="alert('We are a small game, made for students, by students. Our website features the latest games, such as Snake, Pong and Tetris.')">About</a>
-    <a onclick="alert('Contact: officialrifthub@gmail.com')">Contact</a>
-    <a onclick="alert('We are proud to say that with us, your privacy is 100% protected, with Google levels of encryption and data management. ')">Privacy</a>
-  </div>
+<div>
+  <a onclick="alert('About: student-made game hub')">About</a>
+  <a onclick="alert('Contact: officialrifthub@gmail.com')">Contact</a>
+  <a onclick="alert('Privacy: we only store local data')">Privacy</a>
+</div>
 </footer>
 
+<!-- FIREBASE (ONLY ONE CLEAN VERSION) -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
 import {
@@ -207,7 +199,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyD2XQWUKM4SQO8azXkm2XWUKM4SQO8azXkm2XWUKM4SQO",
+  apiKey: "AIzaSyD2XQWUKM...",
   authDomain: "rifthub-4275a.firebaseapp.com",
   projectId: "rifthub-4275a",
   storageBucket: "rifthub-4275a.firebasestorage.app",
@@ -248,7 +240,7 @@ onAuthStateChanged(auth, (user) => {
   if (user) loadUser(user.email);
 });
 
-/* GAME SYSTEM */
+/* GAME + HISTORY */
 window.openGame = function (page, name, img) {
   let history = JSON.parse(localStorage.getItem("riftHistory")) || [];
 
@@ -279,11 +271,11 @@ function renderHistory() {
 
 renderHistory();
 
-/* SEARCH */
+/* SEARCH (FIXED) */
 document.getElementById("search").addEventListener("input", function () {
   const val = this.value.toLowerCase();
 
-  document.querySelectorAll(".game-card").forEach(card => {
+  document.querySelectorAll(".game-grid .game-card").forEach(card => {
     const name = card.getAttribute("data-name");
     if (!name) return;
 
@@ -291,72 +283,6 @@ document.getElementById("search").addEventListener("input", function () {
   });
 });
 </script>
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-import { 
-  getAuth,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyD2XQWUKM4SQO8azXkm2XwG_e9ZQWpYJi0",
-  authDomain: "rifthub-4275a.firebaseapp.com",
-  projectId: "rifthub-4275a",
-  storageBucket: "rifthub-4275a.firebasestorage.app",
-  messagingSenderId: "56609352786",
-  appId: "1:56609352786:web:55dc5d3b32412bf1e3838b"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-
-//
-// 🔐 SIGN UP
-//
-window.signup = function () {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-
-  createUserWithEmailAndPassword(auth, email, password)
-    .then(user => {
-      loadUser(user.user.email);
-    })
-    .catch(err => alert(err.message));
-};
-
-//
-// 🔐 LOGIN
-//
-window.login = function () {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-
-  signInWithEmailAndPassword(auth, email, password)
-    .then(user => {
-      loadUser(user.user.email);
-    })
-    .catch(err => alert("Login failed: " + err.message));
-};
-
-//
-// 👤 SHOW USER
-//
-function loadUser(email) {
-  document.getElementById("loginScreen").style.display = "none";
-  document.getElementById("site").style.display = "block";
-  document.getElementById("username").textContent = email;
-}
-
-//
-// 🔁 AUTO LOGIN
-//
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    loadUser(user.email);
-  }
-});
-</script>
 </body>
 </html>
