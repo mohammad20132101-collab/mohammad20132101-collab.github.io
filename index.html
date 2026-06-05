@@ -44,13 +44,22 @@ header {
   border: none;
 }
 
-/* GRID */
+/* ===== GAMES GRID (3 PER ROW) ===== */
 .game-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 15px;
-  margin-top: 10px;
   padding: 10px;
+}
+
+/* ===== EXCLUSIVES VERTICAL ===== */
+.exclusives-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 10px;
+  max-height: 500px;
+  overflow-y: auto;
 }
 
 /* CARD */
@@ -59,21 +68,14 @@ header {
   border-radius: 12px;
   overflow: hidden;
   text-align: center;
-  transition: transform 0.2s;
 }
 
-.game-card:hover {
-  transform: scale(1.03);
-}
-
-/* THUMBNAIL */
 .game-card img {
   width: 100%;
   height: 140px;
   object-fit: cover;
 }
 
-/* TEXT AREA */
 .game-info {
   padding: 10px;
 }
@@ -102,7 +104,7 @@ a {
   cursor: pointer;
 }
 
-/* MOBILE (still 3 columns but tighter) */
+/* MOBILE */
 @media (max-width: 700px) {
   .game-grid {
     grid-template-columns: repeat(3, 1fr);
@@ -141,26 +143,26 @@ a {
   <div class="game-grid">
 
     <div class="game-card" data-name="snake">
-      <img src="https://via.placeholder.com/400x200/1a1a2e/4c6fff?text=Snake" alt="Snake">
+      <img src="https://via.placeholder.com/400x200?text=Snake">
       <div class="game-info">
         <h3>Snake</h3>
-        <button onclick="openGame('snake.html')">Play</button>
+        <button onclick="openGame('snake.html','Snake','https://via.placeholder.com/400x200?text=Snake')">Play</button>
       </div>
     </div>
 
     <div class="game-card" data-name="tetris">
-      <img src="https://via.placeholder.com/400x200/1a1a2e/4c6fff?text=Tetris" alt="Tetris">
+      <img src="https://via.placeholder.com/400x200?text=Tetris">
       <div class="game-info">
         <h3>Tetris</h3>
-        <button onclick="openGame('tetris.html')">Play</button>
+        <button onclick="openGame('tetris.html','Tetris','https://via.placeholder.com/400x200?text=Tetris')">Play</button>
       </div>
     </div>
 
     <div class="game-card" data-name="pong">
-      <img src="https://via.placeholder.com/400x200/1a1a2e/4c6fff?text=Pong" alt="Pong">
+      <img src="https://via.placeholder.com/400x200?text=Pong">
       <div class="game-info">
         <h3>Pong</h3>
-        <button onclick="openGame('pong.html')">Play</button>
+        <button onclick="openGame('pong.html','Pong','https://via.placeholder.com/400x200?text=Pong')">Play</button>
       </div>
     </div>
 
@@ -171,40 +173,61 @@ a {
 <section>
   <h2 align="center">🔥 Rift Hub Exclusives 🔥</h2>
 
-  <div class="game-grid">
+  <div class="exclusives-list">
 
     <div class="game-card" data-name="rift-runner">
-      <img src="https://via.placeholder.com/400x200/0f0f1a/ff4c4c?text=Rift+Runner" alt="Rift Runner">
+      <img src="https://via.placeholder.com/400x200/ff4c4c?text=Rift+Runner">
       <div class="game-info">
         <h3>Rift Runner</h3>
-        <button onclick="openGame('riftrunner.html')">Play</button>
+        <button onclick="openGame('riftrunner.html','Rift Runner','https://via.placeholder.com/400x200/ff4c4c?text=Rift+Runner')">Play</button>
       </div>
     </div>
 
     <div class="game-card" data-name="rift-defense">
-      <img src="https://via.placeholder.com/400x200/0f0f1a/00ff99?text=Rift+Defense" alt="Rift Defense">
+      <img src="https://via.placeholder.com/400x200/00ff99?text=Rift+Defense">
       <div class="game-info">
         <h3>Rift Defense</h3>
-        <button onclick="openGame('riftdefense.html')">Play</button>
+        <button onclick="openGame('riftdefense.html','Rift Defense','https://via.placeholder.com/400x200/00ff99?text=Rift+Defense')">Play</button>
       </div>
     </div>
-
-    <div class="game-card" style="opacity:0; pointer-events:none;"></div>
 
   </div>
 </section>
 
+<!-- RECENTLY PLAYED -->
+<section>
+  <h2 align="center">🕘 Recently Played</h2>
+  <div class="game-grid" id="historyGrid"></div>
+</section>
+
 </div>
 
-<script>
-function openGame(page) {
-  window.location.href = page;
-}
+<!-- FOOTER -->
+<footer>
+  <h3>Rift Hub</h3>
 
+  <p style="max-width:600px; margin:auto; font-size:14px;">
+    Rift Hub is a free browser game platform with fun mini-games and exclusives.
+  </p>
+
+  <div style="margin-top:15px;">
+    <a onclick="alert('About Rift Hub:\nStudent-made game hub with browser games and exclusives.')">About</a>
+
+    <a onclick="alert('Contact:\nofficialrifthub@gmail.com')">Contact</a>
+
+    <a onclick="alert('Privacy Policy:\n\n- We store only username locally\n- No tracking\n- No cookies')">Privacy</a>
+  </div>
+
+  <small>© 2026 Rift Hub</small>
+</footer>
+
+<script>
+
+/* LOGIN */
 function login() {
   const username = document.getElementById("usernameInput").value;
 
-  if (username.trim() === "") {
+  if (!username.trim()) {
     alert("Enter a username");
     return;
   }
@@ -225,11 +248,44 @@ function loadUser() {
 
 loadUser();
 
-/* SEARCH */
-const searchInput = document.getElementById("search");
+/* OPEN GAME + SAVE HISTORY */
+function openGame(page, name, img) {
+  saveHistory(name, page, img);
+  window.location.href = page;
+}
 
-searchInput.addEventListener("input", function () {
-  const value = searchInput.value.toLowerCase();
+/* HISTORY SYSTEM */
+function saveHistory(name, page, img) {
+  let history = JSON.parse(localStorage.getItem("riftHistory")) || [];
+
+  history = history.filter(g => g.name !== name);
+  history.unshift({ name, page, img });
+  history = history.slice(0, 6);
+
+  localStorage.setItem("riftHistory", JSON.stringify(history));
+  renderHistory();
+}
+
+function renderHistory() {
+  const grid = document.getElementById("historyGrid");
+  let history = JSON.parse(localStorage.getItem("riftHistory")) || [];
+
+  grid.innerHTML = history.map(g => `
+    <div class="game-card">
+      <img src="${g.img}">
+      <div class="game-info">
+        <h3>${g.name}</h3>
+        <button onclick="openGame('${g.page}','${g.name}','${g.img}')">Play</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+renderHistory();
+
+/* SEARCH */
+document.getElementById("search").addEventListener("input", function () {
+  const value = this.value.toLowerCase();
   const cards = document.querySelectorAll(".game-card");
 
   cards.forEach(card => {
@@ -239,6 +295,7 @@ searchInput.addEventListener("input", function () {
     card.style.display = name.toLowerCase().includes(value) ? "block" : "none";
   });
 });
+
 </script>
 
 </body>
