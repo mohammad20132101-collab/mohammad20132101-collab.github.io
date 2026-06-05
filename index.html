@@ -4,19 +4,128 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rift Hub</title>
-<link rel="stylesheet" href="style.css">
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0f0f1a;
+  color: white;
+}
+
+/* LOGIN */
+#loginScreen {
+  text-align: center;
+  padding: 100px 20px;
+}
+
+#loginScreen input {
+  padding: 10px;
+  width: 200px;
+}
+
+#loginScreen button {
+  padding: 10px 20px;
+  margin-top: 10px;
+}
+
+/* HEADER */
+header {
+  padding: 20px;
+  text-align: center;
+  background: #1a1a2e;
+}
+
+#search {
+  margin-top: 10px;
+  padding: 10px;
+  width: 60%;
+  border-radius: 8px;
+  border: none;
+}
+
+/* GRID */
+.game-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  margin-top: 10px;
+  padding: 10px;
+}
+
+/* CARD */
+.game-card {
+  background: #1a1a2e;
+  border-radius: 12px;
+  overflow: hidden;
+  text-align: center;
+  transition: transform 0.2s;
+}
+
+.game-card:hover {
+  transform: scale(1.03);
+}
+
+/* THUMBNAIL */
+.game-card img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+}
+
+/* TEXT AREA */
+.game-info {
+  padding: 10px;
+}
+
+.game-card button {
+  margin-top: 10px;
+  padding: 8px 15px;
+  border: none;
+  background: #4c6fff;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* FOOTER */
+footer {
+  margin-top: 40px;
+  padding: 20px;
+  background: #1a1a2e;
+  text-align: center;
+}
+
+a {
+  color: #4c6fff;
+  margin: 0 10px;
+  cursor: pointer;
+}
+
+/* MOBILE (still 3 columns but tighter) */
+@media (max-width: 700px) {
+  .game-grid {
+    grid-template-columns: repeat(3, 1fr);
+    font-size: 12px;
+  }
+  .game-card img {
+    height: 90px;
+  }
+}
+</style>
 </head>
 
 <body>
 
-<!-- Login Screen -->
+<!-- LOGIN -->
 <div id="loginScreen">
   <h2>Login to Rift Hub</h2>
   <input type="text" id="usernameInput" placeholder="Enter username">
+  <br>
   <button onclick="login()">Login</button>
 </div>
 
-<!-- Main Site -->
+<!-- SITE -->
 <div id="site" style="display:none;">
 
 <header>
@@ -25,48 +134,69 @@
   <input type="text" id="search" placeholder="Search games...">
 </header>
 
-<main id="gameGrid">
+<!-- GAMES -->
+<section>
+  <h2 align="center">Games</h2>
 
-<h2 align=center>Games</h2>
+  <div class="game-grid">
 
-<div class="game-card" data-name="snake">
-  <h3>Snake</h3>
-  <button onclick="openGame('snake.html')">Play</button>
+    <div class="game-card" data-name="snake">
+      <img src="https://via.placeholder.com/400x200/1a1a2e/4c6fff?text=Snake" alt="Snake">
+      <div class="game-info">
+        <h3>Snake</h3>
+        <button onclick="openGame('snake.html')">Play</button>
+      </div>
+    </div>
 
-</div>
+    <div class="game-card" data-name="tetris">
+      <img src="https://via.placeholder.com/400x200/1a1a2e/4c6fff?text=Tetris" alt="Tetris">
+      <div class="game-info">
+        <h3>Tetris</h3>
+        <button onclick="openGame('tetris.html')">Play</button>
+      </div>
+    </div>
 
-<div class="game-card" data-name="tetris">
-  <h3>Tetris</h3>
-  <button onclick="openGame('tetris.html')">Play</button>
-</div>
+    <div class="game-card" data-name="pong">
+      <img src="https://via.placeholder.com/400x200/1a1a2e/4c6fff?text=Pong" alt="Pong">
+      <div class="game-info">
+        <h3>Pong</h3>
+        <button onclick="openGame('pong.html')">Play</button>
+      </div>
+    </div>
 
-<div class="game-card" data-name="pong">
-  <h3>Pong</h3>
-  <button onclick="openGame('pong.html')">Play</button>
-</div>
-
-</main>
-
-<!-- Exclusives Section -->
-<section id="exclusives">
-  <h2 align=center>🔥 Rift Hub Exclusives 🔥</h2>
-
-  <div class="game-card" data-name="rift-runner">
-    <h3>Rift Runner</h3>
-    <button onclick="openGame('riftrunner.html')">Play</button>
   </div>
+</section>
 
-  <div class="game-card" data-name="rift-defense">
-    <h3>Rift Defense</h3>
-    <button onclick="openGame('riftdefense.html')">Play</button>
+<!-- EXCLUSIVES -->
+<section>
+  <h2 align="center">🔥 Rift Hub Exclusives 🔥</h2>
+
+  <div class="game-grid">
+
+    <div class="game-card" data-name="rift-runner">
+      <img src="https://via.placeholder.com/400x200/0f0f1a/ff4c4c?text=Rift+Runner" alt="Rift Runner">
+      <div class="game-info">
+        <h3>Rift Runner</h3>
+        <button onclick="openGame('riftrunner.html')">Play</button>
+      </div>
+    </div>
+
+    <div class="game-card" data-name="rift-defense">
+      <img src="https://via.placeholder.com/400x200/0f0f1a/00ff99?text=Rift+Defense" alt="Rift Defense">
+      <div class="game-info">
+        <h3>Rift Defense</h3>
+        <button onclick="openGame('riftdefense.html')">Play</button>
+      </div>
+    </div>
+
+    <div class="game-card" style="opacity:0; pointer-events:none;"></div>
+
   </div>
-
 </section>
 
 </div>
 
 <script>
-
 function openGame(page) {
   window.location.href = page;
 }
@@ -74,7 +204,7 @@ function openGame(page) {
 function login() {
   const username = document.getElementById("usernameInput").value;
 
-  if(username.trim() === "") {
+  if (username.trim() === "") {
     alert("Enter a username");
     return;
   }
@@ -86,7 +216,7 @@ function login() {
 function loadUser() {
   const username = localStorage.getItem("riftUsername");
 
-  if(username) {
+  if (username) {
     document.getElementById("loginScreen").style.display = "none";
     document.getElementById("site").style.display = "block";
     document.getElementById("username").textContent = username;
@@ -95,55 +225,21 @@ function loadUser() {
 
 loadUser();
 
+/* SEARCH */
 const searchInput = document.getElementById("search");
 
 searchInput.addEventListener("input", function () {
   const value = searchInput.value.toLowerCase();
-
   const cards = document.querySelectorAll(".game-card");
 
   cards.forEach(card => {
-    const name = card.getAttribute("data-name").toLowerCase();
+    const name = card.getAttribute("data-name");
+    if (!name) return;
 
-    if (name.includes(value)) {
-      card.style.display = "block";
-    } else {
-      card.style.display = "none";
-    }
+    card.style.display = name.toLowerCase().includes(value) ? "block" : "none";
   });
 });
-function showPrivacy() {
-  alert(
-`Privacy Policy - Rift Hub
-
-- We only store your username locally in your browser (localStorage)
-- We do NOT sell or share personal data
-- No cookies are used for tracking
-- Games are for entertainment purposes only
-
-Contact:officialrifthub@gmail.com`
-  );
-}
 </script>
-<footer style="margin-top:40px; padding:20px; background:#1a1a2e; color:white; text-align:center;">
 
-  <h3>Rift Hub</h3>
-
-  <p style="max-width:600px; margin:10px auto; font-size:14px; opacity:0.9;">
-    Rift Hub is a free online game platform featuring browser-based games like Snake, Tetris, and Pong.
-    Built for fun, learning, and entertainment.
-  </p>
-
-  <div style="margin:15px 0;">
-    <a href="#" onclick="alert('About Rift Hub:\n\nRift Hub is a student-made game hub with browser games and exclusives.')" style="color:#4c6fff; margin:0 10px;">About</a>
-
-    <a href="#" onclick="alert('Contact:\n\nEmail: officialrifthub@gmail.com\n')" style="color:#4c6fff; margin:0 10px;">Contact</a>
-
-    <a href="#" onclick="showPrivacy()" style="color:#4c6fff; margin:0 10px;">Privacy Policy</a>
-  </div>
-
-  <small>© 2026 Rift Hub. All rights reserved.</small>
-
-</footer>
 </body>
 </html>
