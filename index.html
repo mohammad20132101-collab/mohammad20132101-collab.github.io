@@ -298,6 +298,16 @@ document.getElementById("search").addEventListener("input", function () {
     card.style.display = name.toLowerCase().includes(value) ? "block" : "none";
   });
 });
+  <audio id="bgMusic" loop>
+    <source src="music.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+document.addEventListener("click", function startMusic() {
+    document.getElementById("bgMusic").play();
+    document.removeEventListener("click", startMusic);
+});
+</script>
 
 </script>
 
