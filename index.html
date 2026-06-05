@@ -104,10 +104,13 @@ a {
 
 <!-- LOGIN -->
 <div id="loginScreen">
-  <h2>Login to Rift Hub</h2>
-  <input type="text" id="usernameInput" placeholder="Enter email">
-  <br>
-  <button onclick="login()">Login</button>
+  <input id="email" placeholder="Email">
+<br>
+<input id="password" type="password" placeholder="Password">
+<br>
+
+<button onclick="login()">Login</button>
+<button onclick="signup()">Sign Up</button>
 </div>
 
 <!-- SITE -->
@@ -278,6 +281,72 @@ document.getElementById("search").addEventListener("input", function () {
 });
 
 </script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+import { 
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "rifthub-4275a.firebaseapp.com",
+  projectId: "rifthub-4275a",
+  storageBucket: "rifthub-4275a.firebasestorage.app",
+  messagingSenderId: "56609352786",
+  appId: "YOUR_APP_ID"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+//
+// 🔐 SIGN UP
+//
+window.signup = function () {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  createUserWithEmailAndPassword(auth, email, password)
+    .then(user => {
+      loadUser(user.user.email);
+    })
+    .catch(err => alert(err.message));
+};
+
+//
+// 🔐 LOGIN
+//
+window.login = function () {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  signInWithEmailAndPassword(auth, email, password)
+    .then(user => {
+      loadUser(user.user.email);
+    })
+    .catch(err => alert("Login failed: " + err.message));
+};
+
+//
+// 👤 SHOW USER
+//
+function loadUser(email) {
+  document.getElementById("loginScreen").style.display = "none";
+  document.getElementById("site").style.display = "block";
+  document.getElementById("username").textContent = email;
+}
+
+//
+// 🔁 AUTO LOGIN
+//
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    loadUser(user.email);
+  }
+});
+</script>
 </body>
 </html>
