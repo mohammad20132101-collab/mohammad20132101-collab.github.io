@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rift Hub - Pong</title>
+<title>Rift Hub - Pong Overhaul</title>
 
 <style>
 body {
     margin: 0;
-    font-family: Arial, sans-serif;
+    font-family: Arial;
     background: #0f0f1a;
     color: white;
     text-align: center;
@@ -16,29 +16,7 @@ body {
 
 header {
     background: #1a1a2e;
-    padding: 20px;
-}
-
-h1 {
-    margin: 0;
-}
-
-.controls {
-    margin: 15px;
-}
-
-button {
-    background: #4c6fff;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 8px;
-    cursor: pointer;
-    margin: 5px;
-}
-
-button:hover {
-    opacity: 0.9;
+    padding: 15px;
 }
 
 canvas {
@@ -46,11 +24,24 @@ canvas {
     border: 3px solid #4c6fff;
     border-radius: 12px;
     margin-top: 10px;
+    box-shadow: 0 0 20px #4c6fff55;
 }
 
+button {
+    background: #4c6fff;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin: 5px;
+    cursor: pointer;
+}
+
+button:hover { opacity: 0.8; }
+
 #score {
-    font-size: 28px;
-    margin-top: 10px;
+    font-size: 26px;
+    margin: 10px;
 }
 </style>
 </head>
@@ -58,20 +49,13 @@ canvas {
 <body>
 
 <header>
-    <h1>🏓 Rift Hub Pong</h1>
+<h1>🏓 Rift Hub Pong OVERHAUL</h1>
 </header>
 
-<div class="controls">
-    <button onclick="setMode(1)">1 Player</button>
-    <button onclick="setMode(2)">2 Players</button>
+<div>
+<button onclick="setMode(1)">1 Player (AI)</button>
+<button onclick="setMode(2)">2 Players</button>
 </div>
-<div class="controls">
-  <button onclick="window.location.href='index.html'">Back to Hub</button>
-</div>
-
-<p id="modeText">
-1 Player: Arrow Keys | AI Opponent
-</p>
 
 <div id="score">0 : 0</div>
 
@@ -87,131 +71,124 @@ let mode = 1;
 const paddleWidth = 15;
 const paddleHeight = 100;
 
-const left = {
-    x: 20,
-    y: 200,
-    score: 0
-};
-
-const right = {
-    x: canvas.width - 35,
-    y: 200,
-    score: 0
-};
+const left = { x: 20, y: 200, score: 0, speed: 5 };
+const right = { x: canvas.width - 35, y: 200, score: 0, speed: 7 };
 
 const ball = {
     x: canvas.width / 2,
     y: canvas.height / 2,
     radius: 10,
     vx: 6,
-    vy: 4
+    vy: 4,
+    maxSpeed: 14
 };
 
 const keys = {};
 
-document.addEventListener("keydown", e => {
-    keys[e.key] = true;
-});
-
-document.addEventListener("keyup", e => {
-    keys[e.key] = false;
-});
+document.addEventListener("keydown", e => keys[e.key] = true);
+document.addEventListener("keyup", e => keys[e.key] = false);
 
 function setMode(m) {
     mode = m;
-
-    document.getElementById("modeText").textContent =
-        mode === 1
-        ? "1 Player: Arrow Keys | AI Opponent"
-        : "2 Players: W/S vs Arrow Keys";
 }
 
-function resetBall() {
-
+// reset ball
+function resetBall(dir = 1) {
     ball.x = canvas.width / 2;
     ball.y = canvas.height / 2;
-
-    ball.vx = (Math.random() > 0.5 ? 6 : -6);
+    ball.vx = 6 * dir;
     ball.vy = (Math.random() * 6 - 3);
+}
+
+// AI difficulty (simple but smart)
+function aiMove() {
+    let speed = 4;
+
+    let center = left.y + paddleHeight / 2;
+    let error = 25; // makes AI imperfect (important for feel)
+
+    if (center < ball.y - error) left.y += speed;
+    else if (center > ball.y + error) left.y -= speed;
+}
+
+// REAL bounce physics
+function bounce(paddle, isLeft) {
+    let hit = ball.y - (paddle.y + paddleHeight / 2);
+    hit = hit / (paddleHeight / 2); // normalize -1 to 1
+
+    let angle = hit * 0.75;
+
+    let dir = isLeft ? 1 : -1;
+
+    ball.vx = dir * Math.abs(ball.vx);
+    ball.vy = angle * 6;
+
+    // speed increase
+    ball.vx *= 1.05;
+    ball.vy *= 1.05;
+
+    // clamp speed
+    let speed = Math.sqrt(ball.vx**2 + ball.vy**2);
+    if (speed > ball.maxSpeed) {
+        ball.vx *= ball.maxSpeed / speed;
+        ball.vy *= ball.maxSpeed / speed;
+    }
 }
 
 function update() {
 
-    // Right Paddle (Arrow Keys)
+    // right paddle (player)
+    if (keys["ArrowUp"]) right.y -= right.speed;
+    if (keys["ArrowDown"]) right.y += right.speed;
 
-    if (keys["ArrowUp"])
-        right.y -= 7;
-
-    if (keys["ArrowDown"])
-        right.y += 7;
-
-    // Left Paddle
-
+    // left paddle
     if (mode === 2) {
-
-        if (keys["w"] || keys["W"])
-            left.y -= 7;
-
-        if (keys["s"] || keys["S"])
-            left.y += 7;
-
+        if (keys["w"] || keys["W"]) left.y -= left.speed;
+        if (keys["s"] || keys["S"]) left.y += left.speed;
     } else {
-
-        // AI
-
-        let center = left.y + paddleHeight / 2;
-
-        if (center < ball.y - 20)
-            left.y += 5;
-
-        else if (center > ball.y + 20)
-            left.y -= 5;
+        aiMove();
     }
 
-    left.y = Math.max(0,
-        Math.min(canvas.height - paddleHeight, left.y));
+    // clamp paddles
+    left.y = Math.max(0, Math.min(canvas.height - paddleHeight, left.y));
+    right.y = Math.max(0, Math.min(canvas.height - paddleHeight, right.y));
 
-    right.y = Math.max(0,
-        Math.min(canvas.height - paddleHeight, right.y));
-
+    // ball move
     ball.x += ball.vx;
     ball.y += ball.vy;
 
-    if (ball.y <= ball.radius ||
-        ball.y >= canvas.height - ball.radius) {
+    // wall bounce
+    if (ball.y <= ball.radius || ball.y >= canvas.height - ball.radius) {
         ball.vy *= -1;
     }
 
-    // Left Paddle Collision
-
+    // LEFT collision
     if (
         ball.x - ball.radius <= left.x + paddleWidth &&
         ball.y >= left.y &&
         ball.y <= left.y + paddleHeight
     ) {
-        ball.vx = Math.abs(ball.vx);
+        bounce(left, true);
     }
 
-    // Right Paddle Collision
-
+    // RIGHT collision
     if (
         ball.x + ball.radius >= right.x &&
         ball.y >= right.y &&
         ball.y <= right.y + paddleHeight
     ) {
-        ball.vx = -Math.abs(ball.vx);
+        bounce(right, false);
     }
 
-    // Scoring
-
+    // scoring
     if (ball.x < 0) {
         right.score++;
-        resetBall();
+        resetBall(1);
     }
 
     if (ball.x > canvas.width) {
         left.score++;
-        resetBall();
+        resetBall(-1);
     }
 
     document.getElementById("score").textContent =
@@ -220,72 +197,43 @@ function update() {
 
 function draw() {
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // 🔥 TRAIL EFFECT (this is the key upgrade)
+    ctx.fillStyle = "rgba(20, 20, 40, 0.25)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Center line
-
+    // center line
     ctx.setLineDash([10,10]);
-
     ctx.strokeStyle = "#4c6fff";
-
     ctx.beginPath();
     ctx.moveTo(canvas.width/2,0);
     ctx.lineTo(canvas.width/2,canvas.height);
     ctx.stroke();
-
     ctx.setLineDash([]);
 
-    // Paddles
-
+    // paddles
     ctx.fillStyle = "#4c6fff";
+    ctx.fillRect(left.x,left.y,paddleWidth,paddleHeight);
+    ctx.fillRect(right.x,right.y,paddleWidth,paddleHeight);
 
-    ctx.fillRect(
-        left.x,
-        left.y,
-        paddleWidth,
-        paddleHeight
-    );
-
-    ctx.fillRect(
-        right.x,
-        right.y,
-        paddleWidth,
-        paddleHeight
-    );
-
-    // Ball
+    // ball glow
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = "white";
 
     ctx.beginPath();
-
-    ctx.arc(
-        ball.x,
-        ball.y,
-        ball.radius,
-        0,
-        Math.PI * 2
-    );
-
+    ctx.arc(ball.x,ball.y,ball.radius,0,Math.PI*2);
     ctx.fillStyle = "white";
     ctx.fill();
+
+    ctx.shadowBlur = 0;
 }
 
-function gameLoop() {
-
+function loop() {
     update();
     draw();
-
-    requestAnimationFrame(gameLoop);
+    requestAnimationFrame(loop);
 }
 
-gameLoop();
-
-document.addEventListener("keydown", function(e) {
-  if (
-    ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(e.key)
-  ) {
-    e.preventDefault();
-  }
-});
+loop();
 
 </script>
 
