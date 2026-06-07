@@ -66,7 +66,7 @@ button {
   padding: 10px;
 }
 
-/* FOOTER RESTORED */
+/* FOOTER */
 footer {
   margin-top: 40px;
   padding: 20px;
@@ -80,7 +80,7 @@ footer a {
   cursor: pointer;
 }
 
-/* LEADERBOARD */
+/* LEADERBOARD BUTTON */
 #lbBtn {
   position: fixed;
   top: 15px;
@@ -121,21 +121,21 @@ footer a {
 
 <body>
 
-<!-- LEADERBOARD BUTTON -->
+<!-- LEADERBOARD -->
 <div id="lbBtn" onclick="toggleLB()">🏆</div>
 
-<!-- LEADERBOARD PANEL -->
 <div id="lbPanel">
   <h3>Leaderboard</h3>
-
   <div class="lb-tabs">
     <button onclick="loadLB('pong')">Pong</button>
+    <button onclick="loadLB('snake')">Snake</button>
+    <button onclick="loadLB('tetris')">Tetris</button>
     <button onclick="loadLB('2048')">2048</button>
     <button onclick="loadLB('flappy')">Flappy</button>
     <button onclick="loadLB('runner')">Runner</button>
     <button onclick="loadLB('defence')">Defence</button>
+    <button onclick="loadLB('memory')">Memory</button>
   </div>
-
   <div id="lbList">Select a game</div>
 </div>
 
@@ -165,20 +165,31 @@ footer a {
 <h2 align="center">Games</h2>
 
 <div class="game-grid">
-  <div class="game-card" data-name="pong">
-    <h3>Pong</h3>
-    <button onclick="openGame('pong.html','pong')">Play</button>
-  </div>
 
-  <div class="game-card" data-name="2048">
-    <h3>2048</h3>
-    <button onclick="openGame('2048.html','2048')">Play</button>
-  </div>
+  <div class="game-card" data-name="snake"><h3>Snake</h3><button onclick="openGame('snake.html','Snake')">Play</button></div>
 
-  <div class="game-card" data-name="memory">
-    <h3>Memory</h3>
-    <button onclick="openGame('memory.html','memory')">Play</button>
-  </div>
+  <div class="game-card" data-name="tetris"><h3>Tetris</h3><button onclick="openGame('tetris.html','Tetris')">Play</button></div>
+
+  <div class="game-card" data-name="pong"><h3>Pong</h3><button onclick="openGame('pong.html','Pong')">Play</button></div>
+
+  <div class="game-card" data-name="flappy"><h3>Flappy Block</h3><button onclick="openGame('flappy.html','Flappy')">Play</button></div>
+
+  <div class="game-card" data-name="2048"><h3>2048</h3><button onclick="openGame('2048.html','2048')">Play</button></div>
+
+  <div class="game-card" data-name="memory"><h3>Memory Match</h3><button onclick="openGame('memory.html','Memory')">Play</button></div>
+
+</div>
+</section>
+
+<section>
+<h2 align="center">🔥 Exclusives 🔥</h2>
+
+<div class="game-grid">
+
+  <div class="game-card"><h3>Rift Runner</h3><button onclick="openGame('riftrunner.html','Runner')">Play</button></div>
+
+  <div class="game-card"><h3>Rift Defence</h3><button onclick="openGame('riftdefence.html','Defence')">Play</button></div>
+
 </div>
 </section>
 
@@ -186,52 +197,43 @@ footer a {
 <h3>Rift Hub</h3>
 <p>Free browser game platform.</p>
 
-<a onclick="alert('About: Student-made game hub for fun and learning')">About</a>
+<a onclick="alert('About: Student-made game hub')">About</a>
 <a onclick="alert('Contact: officialrifthub@gmail.com')">Contact</a>
-<a onclick="alert('Privacy: Only stores email for login + local game history')">Privacy</a>
+<a onclick="alert('Privacy: Only stores email + local history')">Privacy</a>
 </footer>
 
 </div>
 
-<!-- FIREBASE -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-import {
-  getAuth,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyD2XQWUKM4SQO8azXkm2XwG_e9ZQWpYJi0",
   authDomain: "rifthub-4275a.firebaseapp.com",
   projectId: "rifthub-4275a",
   storageBucket: "rifthub-4275a.firebasestorage.app",
   messagingSenderId: "56609352786",
-  appId: "1:56609352786:web:55dc5d3b32412bf1e3838b",
-  measurementId: "G-9NDLTX6KVY"
+  appId: "1:56609352786:web:55dc5d3b32412bf1e3838b"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-/* LOGIN FIXED */
-window.login = function () {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
+window.login = () => {
+  const e = document.getElementById("email").value;
+  const p = document.getElementById("password").value;
 
-  signInWithEmailAndPassword(auth, email, password)
+  signInWithEmailAndPassword(auth, e, p)
     .then(u => loadUser(u.user.email))
     .catch(err => alert(err.message));
 };
 
-window.signup = function () {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
+window.signup = () => {
+  const e = document.getElementById("email").value;
+  const p = document.getElementById("password").value;
 
-  createUserWithEmailAndPassword(auth, email, password)
+  createUserWithEmailAndPassword(auth, e, p)
     .then(u => loadUser(u.user.email))
     .catch(err => alert(err.message));
 };
@@ -240,41 +242,30 @@ function loadUser(email){
   document.getElementById("loginScreen").style.display="none";
   document.getElementById("site").style.display="block";
   document.getElementById("username").textContent=email;
-
-  const music=document.getElementById("bgMusic");
-  music.volume=0.05;
-  music.play().catch(()=>{});
 }
 
 onAuthStateChanged(auth,(u)=>{
   if(u) loadUser(u.email);
 });
 
-/* GAME */
-window.openGame=function(page,name){
-  window.location.href=page;
+window.openGame = (p)=> window.location.href=p;
+
+window.toggleLB = () => {
+  let p = document.getElementById("lbPanel");
+  p.style.display = p.style.display === "block" ? "none" : "block";
 };
 
-/* SEARCH */
+window.loadLB = (g) => {
+  document.getElementById("lbList").innerHTML =
+    "Leaderboard for " + g + " (Firebase hookup next step)";
+};
+
 document.getElementById("search").addEventListener("input",function(){
-  const val=this.value.toLowerCase();
+  const v=this.value.toLowerCase();
   document.querySelectorAll(".game-card").forEach(c=>{
-    const n=c.dataset.name;
-    if(n) c.style.display=n.includes(val)?"block":"none";
+    c.style.display = c.innerText.toLowerCase().includes(v) ? "block":"none";
   });
 });
-
-/* LEADERBOARD UI */
-window.toggleLB=function(){
-  const p=document.getElementById("lbPanel");
-  p.style.display=p.style.display==="block"?"none":"block";
-};
-
-window.loadLB=function(game){
-  document.getElementById("lbList").innerHTML =
-    "<div class='lb-entry'>Leaderboard system ready (connect game scores via Firebase Firestore)</div>";
-};
-
 </script>
 
 </body>
