@@ -75,6 +75,7 @@ button{
 
 <button onclick="restart()">Restart</button>
 <button onclick="window.location.href='index.html'">Back</button>
+<button onclick="undo()">Undo</button>
 
 <div id="game"></div>
 
@@ -82,6 +83,7 @@ button{
 
 let board;
 let won = false;
+let history = [];
 
 // ================= INIT =================
 function init(){
@@ -259,7 +261,7 @@ function checkLose(){
 // ================= INPUT =================
 document.addEventListener("keydown",e=>{
 
-  let before = JSON.stringify(board);
+  history.push(JSON.stringify(board)); // save state before move
 
   if(e.key==="ArrowLeft") moveLeft();
   if(e.key==="ArrowRight") moveRight();
@@ -289,6 +291,13 @@ function triggerFX(){
       },200);
     }
   });
+}
+function undo(){
+
+  if(history.length === 0) return;
+
+  board = JSON.parse(history.pop());
+  draw();
 }
 
 // ================= RESTART =================
