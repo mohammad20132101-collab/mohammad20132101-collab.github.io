@@ -118,18 +118,6 @@ a {
 <header>
   <h1>🎮 Rift Hub 🎮</h1>
   <p>Welcome, <span id="username"></span></p>
-  <div style="margin:10px 0;">
-    🔊 Volume: <span id="volumeValue">30</span>
-    <br>
-    <input
-      type="range"
-      id="volumeSlider"
-      min="0"
-      max="100"
-      value="10"
-      style="width:250px;"
-    >
-  </div>
   <input type="text" id="search" placeholder="Search games...">
 </header>
 
@@ -311,27 +299,9 @@ document.getElementById("search").addEventListener("input", function () {
 /* MUSIC */
 
 const music = document.getElementById("bgMusic");
-const volumeSlider = document.getElementById("volumeSlider");
-const volumeValue = document.getElementById("volumeValue");
 
-/* Ambient volume */
-music.volume = 0.10;
-
-const savedVolume = localStorage.getItem("riftVolume");
-
-if (savedVolume) {
-  volumeSlider.value = savedVolume;
-  volumeValue.textContent = savedVolume;
-  music.volume = savedVolume / 100;
-}
-
-volumeSlider.addEventListener("input", function () {
-  music.volume = this.value / 100;
-  volumeValue.textContent =
-  this.value == 0 ? "Off" : this.value;
-
-  localStorage.setItem("riftVolume", this.value);
-});
+/* Very, very quiet */
+music.volume = 0.02;
 </script>
 
 </body>
