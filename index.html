@@ -57,6 +57,8 @@ button {
   grid-template-columns: repeat(3, 1fr);
   gap: 15px;
   padding: 10px;
+  max-width: 900px;
+  margin: 0 auto;
 }
 
 .game-card {
@@ -65,19 +67,15 @@ button {
   text-align: center;
   padding: 10px;
 }
-.exclusives-wrapper {
-  display: flex;
-  justify-content: center; /* centers the block */
-}
 
-.exclusives {
-  display: flex;
-  flex-direction: column;
+/* EXCLUSIVES */
+.exclusives-grid {
+  display: grid;
+  grid-template-columns: 1fr;
   gap: 15px;
-
-  /* THIS is the key part */
-  width: calc(100% - 20px);
-  max-width: 900px; /* matches 3-card grid width nicely */
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 10px;
 }
 
 .game-card.exclusive {
@@ -98,7 +96,7 @@ footer a {
   cursor: pointer;
 }
 
-/* LEADERBOARD BUTTON */
+/* LEADERBOARD */
 #lbBtn {
   position: fixed;
   top: 15px;
@@ -139,7 +137,7 @@ footer a {
 
 <body>
 
-<!-- LEADERBOARD -->
+<!-- LEADERBOARD BUTTON -->
 <div id="lbBtn" onclick="toggleLB()">🏆</div>
 
 <div id="lbPanel">
@@ -148,13 +146,12 @@ footer a {
     <button onclick="loadLB('Snake')">Snake</button>
     <button onclick="loadLB('Tetris')">Tetris</button>
     <button onclick="loadLB('Pong')">Pong</button>
-    <button onclick="loadLB('Flappy Block')">Flappy Block</button>
+    <button onclick="loadLB('Flappy')">Flappy</button>
     <button onclick="loadLB('2048')">2048</button>
-    <button onclick="loadLB('Memory')">Memory Match</button>
-    <button onclick="loadLB('Rift Runner')">Rift Runner</button>
-    <button onclick="loadLB('Rift Defence')">Rift Defence</button>
+    <button onclick="loadLB('Memory')">Memory</button>
+    <button onclick="loadLB('Runner')">Runner</button>
+    <button onclick="loadLB('Defence')">Defence</button>
   </div>
-  <br>
   <div id="lbList">Select a game</div>
 </div>
 
@@ -185,17 +182,12 @@ footer a {
 
 <div class="game-grid">
 
-  <div class="game-card" data-name="snake"><h3>Snake</h3><button onclick="openGame('snake.html','Snake')">Play</button></div>
-
-  <div class="game-card" data-name="tetris"><h3>Tetris</h3><button onclick="openGame('tetris.html','Tetris')">Play</button></div>
-
-  <div class="game-card" data-name="pong"><h3>Pong</h3><button onclick="openGame('pong.html','Pong')">Play</button></div>
-
-  <div class="game-card" data-name="flappy"><h3>Flappy Block</h3><button onclick="openGame('flappy.html','Flappy')">Play</button></div>
-
-  <div class="game-card" data-name="2048"><h3>2048</h3><button onclick="openGame('2048.html','2048')">Play</button></div>
-
-  <div class="game-card" data-name="memory"><h3>Memory Match</h3><button onclick="openGame('memory.html','Memory')">Play</button></div>
+  <div class="game-card" data-name="snake"><h3>Snake</h3><button onclick="openGame('snake.html')">Play</button></div>
+  <div class="game-card" data-name="tetris"><h3>Tetris</h3><button onclick="openGame('tetris.html')">Play</button></div>
+  <div class="game-card" data-name="pong"><h3>Pong</h3><button onclick="openGame('pong.html')">Play</button></div>
+  <div class="game-card" data-name="flappy"><h3>Flappy</h3><button onclick="openGame('flappy.html')">Play</button></div>
+  <div class="game-card" data-name="2048"><h3>2048</h3><button onclick="openGame('2048.html')">Play</button></div>
+  <div class="game-card" data-name="memory"><h3>Memory</h3><button onclick="openGame('memory.html')">Play</button></div>
 
 </div>
 </section>
@@ -203,30 +195,28 @@ footer a {
 <section>
 <h2 align="center">🔥 Exclusives 🔥</h2>
 
-<div class="exclusives-wrapper">
-  <div class="exclusives">
+<div class="exclusives-grid">
 
-    <div class="game-card exclusive">
-      <h3>Rift Runner</h3>
-      <button onclick="openGame('riftrunner.html','Runner')">Play</button>
-    </div>
-
-    <div class="game-card exclusive">
-      <h3>Rift Defence</h3>
-      <button onclick="openGame('riftdefence.html','Defence')">Play</button>
-    </div>
-
+  <div class="game-card exclusive">
+    <h3>Rift Runner</h3>
+    <button onclick="openGame('riftrunner.html')">Play</button>
   </div>
+
+  <div class="game-card exclusive">
+    <h3>Rift Defence</h3>
+    <button onclick="openGame('riftdefence.html')">Play</button>
+  </div>
+
 </div>
 </section>
 
 <footer>
-<h3 align=center>Rift Hub</h3>
-<p align=center>Free browser game platform.</p>
+<h3>Rift Hub</h3>
+<p>Free browser game platform.</p>
 
-<a align = center onclick="alert('About: Student-made game hub')">About</a>
-<a align = center onclick="alert('Contact: officialrifthub@gmail.com')">Contact</a>
-<a align = center onclick="alert('Privacy: Only stores email + local history')">Privacy</a>
+<a onclick="alert('About: Student-made game hub')">About</a>
+<a onclick="alert('Contact: officialrifthub@gmail.com')">Contact</a>
+<a onclick="alert('Privacy: Only email + local history')">Privacy</a>
 </footer>
 
 </div>
@@ -248,8 +238,8 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
 window.login = () => {
-  const e = document.getElementById("email").value;
-  const p = document.getElementById("password").value;
+  const e = email.value;
+  const p = password.value;
 
   signInWithEmailAndPassword(auth, e, p)
     .then(u => loadUser(u.user.email))
@@ -257,8 +247,8 @@ window.login = () => {
 };
 
 window.signup = () => {
-  const e = document.getElementById("email").value;
-  const p = document.getElementById("password").value;
+  const e = email.value;
+  const p = password.value;
 
   createUserWithEmailAndPassword(auth, e, p)
     .then(u => loadUser(u.user.email))
@@ -266,25 +256,25 @@ window.signup = () => {
 };
 
 function loadUser(email){
-  document.getElementById("loginScreen").style.display="none";
-  document.getElementById("site").style.display="block";
-  document.getElementById("username").textContent=email;
+  loginScreen.style.display="none";
+  site.style.display="block";
+  username.textContent=email;
 }
 
 onAuthStateChanged(auth,(u)=>{
   if(u) loadUser(u.email);
 });
 
-window.openGame = (p)=> window.location.href=p;
+window.openGame = (page)=> window.location.href = page;
 
 window.toggleLB = () => {
-  let p = document.getElementById("lbPanel");
+  const p = document.getElementById("lbPanel");
   p.style.display = p.style.display === "block" ? "none" : "block";
 };
 
 window.loadLB = (g) => {
   document.getElementById("lbList").innerHTML =
-    "Leaderboard for " + g + " (Firebase hookup next step)";
+    "Leaderboard for " + g;
 };
 
 document.getElementById("search").addEventListener("input",function(){
