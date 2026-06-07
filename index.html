@@ -202,12 +202,12 @@ footer a {
 
   <div class="game-card">
     <h3>Rift Runner</h3>
-    <button onclick="openGame('riftrunner.html')">Play</button>
+    <button onclick="openGame('riftrunner.html', ' Rift Runner)">Play</button>
   </div>
 
   <div class="game-card">
     <h3>Rift Defence</h3>
-    <button onclick="openGame('riftdefense.html')">Play</button>
+    <button onclick="openGame('riftdefense.html', 'Rift Defence)">Play</button>
   </div>
 
 </div>
@@ -285,8 +285,8 @@ window.openGame = (p, name) => {
   // add newest first
   history.unshift({ name, page: p });
 
-  // keep only 6 items
-  history = history.slice(0, 6);
+  // keep only 3 items
+  history = history.slice(0, 3);
 
   localStorage.setItem("riftHistory", JSON.stringify(history));
 
