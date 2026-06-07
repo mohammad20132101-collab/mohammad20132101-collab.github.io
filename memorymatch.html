@@ -159,7 +159,13 @@ function startGame(){
 
     document.getElementById("moves").textContent="Moves: 0";
 
-    let cards=[...emojis];
+    // pick 8 random emojis
+    let chosen = emojiPool
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 8);
+
+    let cards = [...chosen, ...chosen]; // make pairs
+
     shuffle(cards);
 
     cards.forEach(symbol=>{
