@@ -275,10 +275,9 @@ function renderHistory() {
 
   grid.innerHTML = history.map(g => `
     <div class="game-card">
-      <img src="${g.img}">
       <div class="game-info">
         <h3>${g.name}</h3>
-        <button onclick="openGame('${g.page}','${g.name}','${g.img}')">Play</button>
+        <button onclick="openGame('${g.page}','${g.name}',)">Play</button>
       </div>
     </div>
   `).join("");
