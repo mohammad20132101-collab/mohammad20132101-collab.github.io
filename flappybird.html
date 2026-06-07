@@ -147,13 +147,20 @@ function spawnPipe(){
 
 // ================= DRAW HELPERS =================
 function drawRect(x,y,w,h,color){
+  
+  // fill
   ctx.fillStyle = color;
   ctx.fillRect(x,y,w,h);
 
-  // 🖤 BLACK OUTLINE (requested)
+  // OUTER BLACK OUTLINE (thicker = visible)
   ctx.strokeStyle = "black";
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 3;
   ctx.strokeRect(x,y,w,h);
+
+  // INNER DARK EDGE (gives “game feel” depth)
+  ctx.strokeStyle = "rgba(0,0,0,0.4)";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x+1,y+1,w-2,h-2);
 }
 
 // ================= GAME LOOP =================
