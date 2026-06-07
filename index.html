@@ -163,11 +163,11 @@ button {
 <!-- FIREBASE -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged }
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } 
 from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 
-import { getDatabase, ref, get, set }
-from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, get, set } 
+from "https://www.gstatic.com/firebasejs/12.14.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyD2XQWUKM4SQO8azXkm2XwG_e9ZQWpYJi0",
@@ -180,7 +180,9 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
 
-/* ===== LOGIN FIXED ===== */
+console.log("Firebase loaded");
+
+// LOGIN
 window.login = () => {
   const e = document.getElementById("email").value;
   const p = document.getElementById("password").value;
@@ -190,6 +192,7 @@ window.login = () => {
     .catch(err => alert(err.message));
 };
 
+// SIGNUP
 window.signup = () => {
   const e = document.getElementById("email").value;
   const p = document.getElementById("password").value;
@@ -203,71 +206,21 @@ function loadUser(email){
   document.getElementById("loginScreen").style.display = "none";
   document.getElementById("site").style.display = "block";
   document.getElementById("username").textContent = email;
-  renderHistory();
 }
 
 onAuthStateChanged(auth, u => {
   if (u) loadUser(u.email);
 });
 
-/* ===== HISTORY ===== */
-window.openGame = (p, name) => {
-  let h = JSON.parse(localStorage.getItem("riftHistory")) || [];
-
-  h = h.filter(g => g.name !== name);
-  h.unshift({ name, page: p });
-  h = h.slice(0, 3);
-
-  localStorage.setItem("riftHistory", JSON.stringify(h));
-  renderHistory();
-  location.href = p;
-};
-
-function renderHistory() {
-  let h = JSON.parse(localStorage.getItem("riftHistory")) || [];
-
-  document.getElementById("historyGrid").innerHTML =
-    h.map(g => `
-      <div class="game-card">
-        <h3>${g.name}</h3>
-        <button onclick="openGame('${g.page}','${g.name}')">Play</button>
-      </div>
-    `).join("");
-}
-
-/* ===== LEADERBOARD ===== */
-window.toggleLB = () => {
-  const p = document.getElementById("lbPanel");
-  p.style.display = p.style.display === "block" ? "none" : "block";
-};
-
-window.saveScore = function(name, score) {
+// LEADERBOARD TEST
+window.saveScore = (name, score) => {
   set(ref(db, "scores/" + name), score);
 };
 
-window.loadLeaderboard = async function() {
+window.loadLeaderboard = async () => {
   const snap = await get(ref(db, "scores"));
-  const data = snap.val() || {};
-
-  const sorted = Object.entries(data)
-    .sort((a, b) => b[1] - a[1])
-    .map(x => `<div class="lb-entry">${x[0]}: ${x[1]}</div>`)
-    .join("");
-
-  document.getElementById("lbList").innerHTML =
-    sorted || "No scores yet";
+  console.log(snap.val());
 };
-
-window.loadLB = () => loadLeaderboard();
-
-/* ===== SEARCH ===== */
-document.getElementById("search").addEventListener("input", e => {
-  document.querySelectorAll(".game-card").forEach(c => {
-    c.style.display = c.innerText.toLowerCase().includes(e.target.value.toLowerCase())
-      ? "block"
-      : "none";
-  });
-});
 </script>
 
 </body>
