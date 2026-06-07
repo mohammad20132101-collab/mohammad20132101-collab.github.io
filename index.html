@@ -65,6 +65,19 @@ button {
   text-align: center;
   padding: 10px;
 }
+.exclusives {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 10px;
+}
+
+.game-card.exclusive {
+  width: 100%;
+  max-width: 700px;
+  margin: auto;
+  text-align: center;
+}
 
 /* FOOTER */
 footer {
@@ -184,11 +197,17 @@ footer a {
 <section>
 <h2 align="center">🔥 Exclusives 🔥</h2>
 
-<div class="game-grid">
+<div class="exclusives">
 
-  <div class="game-card"><h3>Rift Runner</h3><button onclick="openGame('riftrunner.html','Runner')">Play</button></div>
+  <div class="game-card exclusive">
+    <h3>Rift Runner</h3>
+    <button onclick="openGame('riftrunner.html','Runner')">Play</button>
+  </div>
 
-  <div class="game-card"><h3>Rift Defence</h3><button onclick="openGame('riftdefence.html','Defence')">Play</button></div>
+  <div class="game-card exclusive">
+    <h3>Rift Defence</h3>
+    <button onclick="openGame('riftdefence.html','Defence')">Play</button>
+  </div>
 
 </div>
 </section>
