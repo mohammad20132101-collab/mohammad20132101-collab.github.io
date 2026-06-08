@@ -8,9 +8,9 @@
 <style>
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
   background: #0f0f1a;
   color: white;
+  font-family: Arial, sans-serif;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -19,34 +19,29 @@ body {
 header {
   width: 100%;
   background: #1a1a2e;
-  padding: 15px;
+  padding: 12px;
   text-align: center;
 }
 
 button {
-  padding: 8px 12px;
-  margin: 5px;
-  border: none;
-  border-radius: 6px;
   background: #4c6fff;
   color: white;
+  border: none;
+  padding: 8px 12px;
+  margin: 5px;
+  border-radius: 6px;
   cursor: pointer;
 }
 
 canvas {
-  border: 3px solid #4c6fff;
+  margin-top: 15px;
+  border: 3px solid #2a3a8f; /* darker arcade blue */
   background: black;
-  margin-top: 20px;
 }
 
 #ui {
   margin-top: 10px;
   text-align: center;
-}
-
-#score {
-  font-size: 18px;
-  margin: 5px;
 }
 </style>
 </head>
@@ -56,11 +51,12 @@ canvas {
 <header>
   <h2>🎮 Rift Hub - Pac-Man</h2>
   <button onclick="goBack()">🔙 Back</button>
-  <button onclick="restartGame()">🔄 Restart</button>
+  <button onclick="restart()">🔄 Restart</button>
 </header>
 
 <div id="ui">
   <div id="score">Score: 0</div>
+  <div id="lives">Lives: 3</div>
 </div>
 
 <canvas id="game" width="600" height="600"></canvas>
@@ -69,54 +65,69 @@ canvas {
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-const tileSize = 30;
+const tile = 30;
 const rows = 20;
 const cols = 20;
 
-let score = 0;
-let gameOver = false;
+let map, pacman, ghosts, pellets;
+let score, lives;
+let tick = 0;
 
-let map, pacman, ghost, pellets;
+/* ---------------- MAP (structured maze) ---------------- */
+function generateMap() {
+  const m = Array(rows).fill().map(() => Array(cols).fill(0));
 
-function initGame() {
-  score = 0;
-  gameOver = false;
-
-  map = Array(rows).fill().map(() => Array(cols).fill(0));
-
-  for (let r = 0; r < rows; r++) {
-    map[r][0] = 1;
-    map[r][cols - 1] = 1;
-  }
-  for (let c = 0; c < cols; c++) {
-    map[0][c] = 1;
-    map[rows - 1][c] = 1;
-  }
-
-  for (let i = 0; i < 40; i++) {
-    map[Math.floor(Math.random() * rows)][Math.floor(Math.random() * cols)] = 1;
-  }
-
-  pacman = { x: 1, y: 1, dx: 1, dy: 0, mouth: 0 };
-
-  ghost = { x: cols - 2, y: rows - 2 };
-
-  pellets = [];
-  for (let y = 1; y < rows - 1; y++) {
-    for (let x = 1; x < cols - 1; x++) {
-      if (map[y][x] === 0) pellets.push({ x, y });
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      if (x === 0 || y === 0 || x === cols - 1 || y === rows - 1) {
+        m[y][x] = 1;
+      }
+      else if (x % 2 === 0 && y % 2 === 0) {
+        m[y][x] = 1;
+      }
+      else if (Math.random() < 0.08) {
+        m[y][x] = 1;
+      }
     }
   }
 
-  document.getElementById("score").innerText = "Score: 0";
+  m[1][1] = 0;
+  return m;
 }
 
+/* ---------------- INIT ---------------- */
+function init() {
+  map = generateMap();
+
+  score = 0;
+  lives = 3;
+
+  pacman = { x: 1, y: 1, dx: 1, dy: 0 };
+
+  ghosts = [
+    { x: cols-2, y: 1, dx: -1, dy: 0 },
+    { x: cols-2, y: rows-2, dx: 0, dy: -1 },
+    { x: 1, y: rows-2, dx: 1, dy: 0 },
+    { x: Math.floor(cols/2), y: Math.floor(rows/2), dx: 0, dy: 1 }
+  ];
+
+  pellets = [];
+  for (let y = 1; y < rows-1; y++) {
+    for (let x = 1; x < cols-1; x++) {
+      if (map[y][x] === 0) pellets.push({x,y});
+    }
+  }
+
+  updateUI();
+}
+
+/* ---------------- DRAW ---------------- */
 function drawMap() {
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {
       if (map[y][x] === 1) {
-        ctx.fillStyle = "#0044ff";
-        ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+        ctx.fillStyle = "#001a66"; // darker pacman blue
+        ctx.fillRect(x*tile, y*tile, tile, tile);
       }
     }
   }
@@ -126,55 +137,37 @@ function drawPellets() {
   ctx.fillStyle = "white";
   pellets.forEach(p => {
     ctx.beginPath();
-    ctx.arc(
-      p.x * tileSize + tileSize / 2,
-      p.y * tileSize + tileSize / 2,
-      4,
-      0,
-      Math.PI * 2
-    );
+    ctx.arc(p.x*tile+tile/2, p.y*tile+tile/2, 3, 0, Math.PI*2);
     ctx.fill();
   });
 }
 
 function drawPacman() {
-  const cx = pacman.x * tileSize + tileSize / 2;
-  const cy = pacman.y * tileSize + tileSize / 2;
-
-  pacman.mouth += 0.2;
-  const open = Math.abs(Math.sin(pacman.mouth)) * 0.4;
-
-  let angle = 0;
-  if (pacman.dx === 1) angle = 0;
-  if (pacman.dx === -1) angle = Math.PI;
-  if (pacman.dy === 1) angle = Math.PI / 2;
-  if (pacman.dy === -1) angle = -Math.PI / 2;
+  const cx = pacman.x*tile + tile/2;
+  const cy = pacman.y*tile + tile/2;
 
   ctx.fillStyle = "yellow";
   ctx.beginPath();
-  ctx.moveTo(cx, cy);
-  ctx.arc(cx, cy, tileSize / 2 - 2, angle + open, angle + Math.PI * 2 - open);
+  ctx.arc(cx, cy, tile/2-2, 0.2, Math.PI*1.8);
+  ctx.lineTo(cx, cy);
   ctx.fill();
 }
 
-function drawGhost() {
-  ctx.fillStyle = "red";
-  ctx.beginPath();
-  ctx.arc(
-    ghost.x * tileSize + tileSize / 2,
-    ghost.y * tileSize + tileSize / 2,
-    tileSize / 2 - 2,
-    0,
-    Math.PI * 2
-  );
-  ctx.fill();
+function drawGhosts() {
+  ghosts.forEach((g,i) => {
+    const colors = ["red","pink","cyan","orange"];
+    ctx.fillStyle = colors[i];
+
+    ctx.beginPath();
+    ctx.arc(g.x*tile+tile/2, g.y*tile+tile/2, tile/2-3, 0, Math.PI*2);
+    ctx.fill();
+  });
 }
 
+/* ---------------- MOVEMENT ---------------- */
 function movePacman() {
-  if (gameOver) return;
-
-  let nx = pacman.x + pacman.dx;
-  let ny = pacman.y + pacman.dy;
+  const nx = pacman.x + pacman.dx;
+  const ny = pacman.y + pacman.dy;
 
   if (map[ny]?.[nx] !== 1) {
     pacman.x = nx;
@@ -184,35 +177,60 @@ function movePacman() {
   pellets = pellets.filter(p => {
     if (p.x === pacman.x && p.y === pacman.y) {
       score++;
-      document.getElementById("score").innerText = "Score: " + score;
       return false;
     }
     return true;
   });
 }
 
-function moveGhost() {
-  const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
-  const [dx, dy] = dirs[Math.floor(Math.random() * dirs.length)];
+function moveGhosts() {
+  ghosts.forEach(g => {
+    const dirs = [
+      [1,0],[-1,0],[0,1],[0,-1]
+    ];
 
-  let nx = ghost.x + dx;
-  let ny = ghost.y + dy;
+    const [dx,dy] = dirs[Math.floor(Math.random()*dirs.length)];
 
-  if (map[ny]?.[nx] !== 1) {
-    ghost.x = nx;
-    ghost.y = ny;
+    const nx = g.x + dx;
+    const ny = g.y + dy;
+
+    if (map[ny]?.[nx] !== 1) {
+      g.x = nx;
+      g.y = ny;
+    }
+  });
+}
+
+/* ---------------- COLLISION ---------------- */
+function check() {
+  ghosts.forEach(g => {
+    if (g.x === pacman.x && g.y === pacman.y) {
+      lives--;
+      updateUI();
+
+      pacman.x = 1;
+      pacman.y = 1;
+
+      if (lives <= 0) {
+        alert("Game Over! Score: " + score);
+        init();
+      }
+    }
+  });
+
+  if (pellets.length === 0) {
+    alert("You Win! Score: " + score);
+    init();
   }
 }
 
-function checkGameOver() {
-  if (pacman.x === ghost.x && pacman.y === ghost.y) {
-    gameOver = true;
-    setTimeout(() => {
-      alert("Game Over! Score: " + score);
-    }, 50);
-  }
+/* ---------------- UI ---------------- */
+function updateUI() {
+  document.getElementById("score").innerText = "Score: " + score;
+  document.getElementById("lives").innerText = "Lives: " + lives;
 }
 
+/* ---------------- INPUT ---------------- */
 document.addEventListener("keydown", e => {
   if (e.key === "ArrowRight") { pacman.dx = 1; pacman.dy = 0; }
   if (e.key === "ArrowLeft") { pacman.dx = -1; pacman.dy = 0; }
@@ -220,26 +238,30 @@ document.addEventListener("keydown", e => {
   if (e.key === "ArrowDown") { pacman.dx = 0; pacman.dy = 1; }
 });
 
+/* ---------------- LOOP (SLOWER PAC-MAN) ---------------- */
 function loop() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
 
   drawMap();
   drawPellets();
   drawPacman();
-  drawGhost();
+  drawGhosts();
 
   movePacman();
 
-  if (Math.random() < 0.2) moveGhost();
+  tick++;
+  if (tick % 12 === 0) {   // SLOW movement like real Pac-Man
+    moveGhosts();
+  }
 
-  checkGameOver();
+  check();
 
   requestAnimationFrame(loop);
 }
 
-/* BUTTONS */
-function restartGame() {
-  initGame();
+/* ---------------- BUTTONS ---------------- */
+function restart() {
+  init();
 }
 
 function goBack() {
@@ -247,7 +269,7 @@ function goBack() {
 }
 
 /* START */
-initGame();
+init();
 loop();
 </script>
 
