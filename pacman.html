@@ -10,7 +10,7 @@ body {
   margin: 0;
   background: #0f0f1a;
   color: white;
-  font-family: Arial, sans-serif;
+  font-family: Arial;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -25,11 +25,11 @@ body {
 
 button {
   background: #1a1a2e;
-  border: 1px solid #333;
   color: white;
+  border: 1px solid #333;
   padding: 6px 10px;
-  cursor: pointer;
   border-radius: 6px;
+  cursor: pointer;
 }
 
 canvas {
@@ -58,10 +58,10 @@ const ROWS = 20;
 const COLS = 20;
 
 let score, lives;
-let pac, ghosts, pellets, fruits;
-
+let pac, ghosts, pellets, power;
 let fearTimer = 0;
 
+// ---------- MAP (WITH GHOST HOUSE) ----------
 const map = [
 "####################",
 "#........##........#",
@@ -69,100 +69,110 @@ const map = [
 "#..................#",
 "#.####.######.####.#",
 "#..................#",
-"#.####.######.####.#",
-"#..................#",
-"#........##........#",
-"#........##........#",
-"#.####.######.####.#",
-"#..................#",
-"#.####.######.####.#",
+"#.####.##GG##.####.#",
+"#......##DD##......#",
+"#......##..##......#",
+"#......##..##......#",
+"#......##..##......#",
+"#......##..##......#",
+"#.####.##..##.####.#",
 "#..................#",
 "#.####...##...####.#",
-"#........##........#",
+"#..................#",
 "#..................#",
 "#.####.######.####.#",
 "#..................#",
 "####################"
 ];
 
+// G = ghost house
+// D = door
+
 // ---------- INIT ----------
 function reset(){
   score = 0;
   lives = 3;
+  fearTimer = 0;
 
   pac = {x:10,y:15,dx:0,dy:0};
 
   ghosts = [
-    {x:9,y:9,color:"#ff3b3b",type:"chase"},   // Blinky
-    {x:10,y:9,color:"#ff77ff",type:"ambush"}, // Pinky
-    {x:9,y:10,color:"#4de1ff",type:"random"},  // Inky
-    {x:10,y:10,color:"#ffb347",type:"random"}  // Clyde
+    {x:9,y:8,color:"#ff3b3b",home:{x:9,y:8},out:true},
+    {x:10,y:8,color:"#ff77ff",home:{x:10,y:8},out:false},
+    {x:9,y:9,color:"#4de1ff",home:{x:9,y:9},out:false},
+    {x:10,y:9,color:"#ffb347",home:{x:10,y:9},out:false}
   ];
 
   pellets = [];
-  fruits = [];
+  power = [];
 
   for(let y=0;y<ROWS;y++){
     for(let x=0;x<COLS;x++){
+
       if(map[y][x]===".") pellets.push({x,y});
+
+      // 4 classic power corners
+      if((x===1 && y===1) ||
+         (x===18 && y===1) ||
+         (x===1 && y===18) ||
+         (x===18 && y===18)){
+        power.push({x,y});
+      }
     }
   }
-
-  setInterval(spawnFruit, 12000);
 }
 
 // ---------- HELPERS ----------
-function isWall(x,y){
-  return map[y] && map[y][x] === "#";
+function wall(x,y){
+  return map[y] && map[y][x]==="#";
 }
 
-// WRAP TUNNELS
-function wrap(entity){
-  if(entity.x < 0) entity.x = COLS-1;
-  if(entity.x >= COLS) entity.x = 0;
-}
-
-// ---------- FRUIT ----------
-function spawnFruit(){
-  fruits.push({
-    x: Math.floor(Math.random()*18)+1,
-    y: Math.floor(Math.random()*18)+1,
-    timer: 400
-  });
+function isDoor(x,y){
+  return map[y] && map[y][x]==="D";
 }
 
 // ---------- DRAW ----------
 function draw(){
   ctx.clearRect(0,0,600,600);
 
-  // maze
   for(let y=0;y<ROWS;y++){
     for(let x=0;x<COLS;x++){
+
       if(map[y][x]==="#"){
-        ctx.fillStyle = "#111827";
+        ctx.fillStyle="#111827";
         ctx.fillRect(x*TILE,y*TILE,TILE,TILE);
+      }
+
+      if(map[y][x]==="G"){
+        ctx.fillStyle="#222";
+        ctx.fillRect(x*TILE,y*TILE,TILE,TILE);
+      }
+
+      if(map[y][x]==="D"){
+        ctx.fillStyle="#444";
+        ctx.fillRect(x*TILE,y*TILE,TILE,TILE/3);
       }
     }
   }
 
   // pellets
-  ctx.fillStyle = "#bbb";
+  ctx.fillStyle="#bbb";
   pellets.forEach(p=>{
     ctx.beginPath();
     ctx.arc(p.x*TILE+15,p.y*TILE+15,3,0,Math.PI*2);
     ctx.fill();
   });
 
-  // fruit
-  ctx.fillStyle = "#ff4d4d";
-  fruits.forEach(f=>{
+  // power pellets
+  ctx.fillStyle="#fff";
+  power.forEach(p=>{
     ctx.beginPath();
-    ctx.arc(f.x*TILE+15,f.y*TILE+15,7,0,Math.PI*2);
+    ctx.arc(p.x*TILE+15,p.y*TILE+15,7,0,Math.PI*2);
     ctx.fill();
   });
 
   // pacman
-  ctx.fillStyle = "yellow";
+  ctx.fillStyle="yellow";
   ctx.beginPath();
   ctx.arc(pac.x*TILE+15,pac.y*TILE+15,12,0.25*Math.PI,1.75*Math.PI);
   ctx.lineTo(pac.x*TILE+15,pac.y*TILE+15);
@@ -181,72 +191,71 @@ function draw(){
   });
 }
 
-// ---------- PAC MOVE ----------
+// ---------- MOVE ----------
+function canMove(x,y){
+  if(wall(x,y)) return false;
+  return true;
+}
+
+// ---------- PAC ----------
 function movePac(){
   let nx = pac.x + pac.dx;
   let ny = pac.y + pac.dy;
 
-  wrap({x:nx}); // visual wrap check
-
-  if(!isWall(nx,ny)){
+  if(canMove(nx,ny)){
     pac.x = nx;
     pac.y = ny;
   }
 
-  // pellets
   pellets = pellets.filter(p=>{
     if(p.x===pac.x && p.y===pac.y){
-      score += 10;
+      score+=10;
       return false;
     }
     return true;
   });
 
-  // fruit
-  fruits = fruits.filter(f=>{
-    if(f.x===pac.x && f.y===pac.y){
-      score += 100;
+  power = power.filter(p=>{
+    if(p.x===pac.x && p.y===pac.y){
+      score+=50;
+      fearTimer = 300; // FIXED FEAR MODE
       return false;
     }
-    return --f.timer > 0;
+    return true;
   });
 }
 
 // ---------- GHOST AI ----------
-function ghostMove(g){
+function moveGhost(g){
 
-  let options = [
+  // leave house one by one
+  if(!g.out){
+    if(Math.random()<0.01) g.out=true;
+    return;
+  }
+
+  let dirs = [
     {x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}
-  ].filter(d=>!isWall(g.x+d.x,g.y+d.y));
+  ].filter(d=>canMove(g.x+d.x,g.y+d.y));
 
-  if(options.length===0) return;
+  if(dirs.length===0) return;
 
   let move;
 
   if(fearTimer>0){
-    // RUN AWAY
-    move = options[Math.floor(Math.random()*options.length)];
-  }
-  else if(g.type==="chase"){
-    move = options.sort((a,b)=>
-      dist(g.x+a.x,g.y+a.y,pac.x,pac.y) -
-      dist(g.x+b.x,g.y+b.y,pac.x,pac.y)
-    )[0];
-  }
-  else if(g.type==="ambush"){
-    move = options[Math.floor(Math.random()*2)];
-  }
-  else{
-    move = options[Math.floor(Math.random()*options.length)];
+    // RUN AWAY (simple)
+    move = dirs[Math.floor(Math.random()*dirs.length)];
+  } else {
+    // chase pacman
+    dirs.sort((a,b)=>
+      Math.abs((g.x+a.x)-pac.x)+Math.abs((g.y+a.y)-pac.y) -
+      Math.abs((g.x+b.x)-pac.x)-Math.abs((g.y+b.y)-pac.y)
+    );
+    move = dirs[0];
   }
 
   g.x += move.x;
   g.y += move.y;
-}
-
-// distance helper
-function dist(x1,y1,x2,y2){
-  return Math.abs(x1-x2)+Math.abs(y1-y2);
 }
 
 // ---------- COLLISION ----------
@@ -255,7 +264,9 @@ function check(){
     if(g.x===pac.x && g.y===pac.y){
 
       if(fearTimer>0){
-        g.x=10; g.y=9;
+        g.x=g.home.x;
+        g.y=g.home.y;
+        g.out=false;
         score+=200;
       } else {
         lives--;
@@ -287,9 +298,9 @@ function loop(){
 
   draw();
 
-  if(tick%8===0){ // SLOW LIKE REAL PACMAN
+  if(tick%7===0){
     movePac();
-    ghosts.forEach(ghostMove);
+    ghosts.forEach(moveGhost);
     check();
   }
 
