@@ -1,40 +1,41 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Rift Hub - Pac-Man</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rift Hub - Pac Game</title>
 
 <style>
 body {
   margin: 0;
-  background: #0f0f1a;
-  color: white;
-  font-family: Arial;
+  background: #05060a;
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
+  height: 100vh;
+  font-family: Arial;
+  color: white;
 }
 
 #ui {
-  width: 600px;
-  display: flex;
-  justify-content: space-between;
-  padding: 10px;
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 10;
 }
 
 button {
-  background: #1a1a2e;
+  background: #222a3a;
   color: white;
   border: 1px solid #333;
   padding: 6px 10px;
-  border-radius: 6px;
+  margin-right: 5px;
   cursor: pointer;
 }
 
 canvas {
   background: #000;
-  border: 2px solid #1a1a2e;
+  border: 2px solid #1a2233;
 }
 </style>
 </head>
@@ -44,236 +45,174 @@ canvas {
 <div id="ui">
   <button onclick="restart()">Restart</button>
   <button onclick="history.back()">Back</button>
-  <div id="stats">Score: 0 | Lives: 3</div>
+  <span id="hud"></span>
 </div>
 
 <canvas id="c" width="600" height="600"></canvas>
 
 <script>
-const c = document.getElementById("c");
-const ctx = c.getContext("2d");
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
 
-const TILE = 30;
-const ROWS = 20;
-const COLS = 20;
+const size = 20;
+const rows = 30;
+const cols = 30;
+const tickRate = 140; // SLOW arcade speed
 
-let score, lives;
-let pac, ghosts, pellets, power;
+let score = 0;
+let lives = 3;
 let fearTimer = 0;
+let fruit = null;
 
-// ---------- MAP (WITH GHOST HOUSE) ----------
-const map = [
-"####################",
-"#........##........#",
-"#.####...##...####.#",
-"#..................#",
-"#.####.######.####.#",
-"#..................#",
-"#.####.##GG##.####.#",
-"#......##DD##......#",
-"#......##..##......#",
-"#......##..##......#",
-"#......##..##......#",
-"#......##..##......#",
-"#.####.##..##.####.#",
-"#..................#",
-"#.####...##...####.#",
-"#..................#",
-"#..................#",
-"#.####.######.####.#",
-"#..................#",
-"####################"
+function emptyGrid() {
+  return Array.from({ length: rows }, () => Array(cols).fill(0));
+}
+
+let map = emptyGrid();
+
+// outer walls
+for (let i = 0; i < rows; i++) {
+  map[i][0] = 1;
+  map[i][cols - 1] = 1;
+}
+for (let i = 0; i < cols; i++) {
+  map[0][i] = 1;
+  map[rows - 1][i] = 1;
+}
+
+// simple maze blocks
+for (let i = 0; i < 120; i++) {
+  map[Math.random()*rows|0][Math.random()*cols|0] = 1;
+}
+
+// ghost house
+const house = { x: 13, y: 13 };
+for (let y = 12; y <= 17; y++) {
+  for (let x = 12; x <= 17; x++) {
+    map[y][x] = 1;
+  }
+}
+map[12][15] = 0; // door
+
+let pellets = [];
+let power = [];
+
+for (let y = 1; y < rows - 1; y++) {
+  for (let x = 1; x < cols - 1; x++) {
+    if (map[y][x] === 0) {
+      pellets.push({x,y});
+    }
+  }
+}
+
+// power pellets corners
+power = [
+  {x:1,y:1},{x:1,y:28},{x:28,y:1},{x:28,y:28}
 ];
 
-// G = ghost house
-// D = door
+let pac = { x: 1, y: 1, dx: 1, dy: 0 };
 
-// ---------- INIT ----------
-function reset(){
-  score = 0;
-  lives = 3;
-  fearTimer = 0;
+let ghosts = [
+  {x:15,y:15,color:"red",home:true},
+  {x:14,y:15,color:"pink",home:true},
+  {x:15,y:14,color:"cyan",home:true},
+  {x:16,y:15,color:"orange",home:true},
+];
 
-  pac = {x:10,y:15,dx:0,dy:0};
-
-  ghosts = [
-    {x:9,y:8,color:"#ff3b3b",home:{x:9,y:8},out:true},
-    {x:10,y:8,color:"#ff77ff",home:{x:10,y:8},out:false},
-    {x:9,y:9,color:"#4de1ff",home:{x:9,y:9},out:false},
-    {x:10,y:9,color:"#ffb347",home:{x:10,y:9},out:false}
-  ];
-
-  pellets = [];
-  power = [];
-
-  for(let y=0;y<ROWS;y++){
-    for(let x=0;x<COLS;x++){
-
-      if(map[y][x]===".") pellets.push({x,y});
-
-      // 4 classic power corners
-      if((x===1 && y===1) ||
-         (x===18 && y===1) ||
-         (x===1 && y===18) ||
-         (x===18 && y===18)){
-        power.push({x,y});
-      }
-    }
-  }
+function wrap(o){
+  if (o.x < 0) o.x = cols-1;
+  if (o.x >= cols) o.x = 0;
+  if (o.y < 0) o.y = rows-1;
+  if (o.y >= rows) o.y = 0;
 }
 
-// ---------- HELPERS ----------
-function wall(x,y){
-  return map[y] && map[y][x]==="#";
+function valid(x,y){
+  return map[y]?.[x] !== 1;
 }
 
-function isDoor(x,y){
-  return map[y] && map[y][x]==="D";
-}
-
-// ---------- DRAW ----------
-function draw(){
-  ctx.clearRect(0,0,600,600);
-
-  for(let y=0;y<ROWS;y++){
-    for(let x=0;x<COLS;x++){
-
-      if(map[y][x]==="#"){
-        ctx.fillStyle="#111827";
-        ctx.fillRect(x*TILE,y*TILE,TILE,TILE);
-      }
-
-      if(map[y][x]==="G"){
-        ctx.fillStyle="#222";
-        ctx.fillRect(x*TILE,y*TILE,TILE,TILE);
-      }
-
-      if(map[y][x]==="D"){
-        ctx.fillStyle="#444";
-        ctx.fillRect(x*TILE,y*TILE,TILE,TILE/3);
-      }
-    }
-  }
-
-  // pellets
-  ctx.fillStyle="#bbb";
-  pellets.forEach(p=>{
-    ctx.beginPath();
-    ctx.arc(p.x*TILE+15,p.y*TILE+15,3,0,Math.PI*2);
-    ctx.fill();
-  });
-
-  // power pellets
-  ctx.fillStyle="#fff";
-  power.forEach(p=>{
-    ctx.beginPath();
-    ctx.arc(p.x*TILE+15,p.y*TILE+15,7,0,Math.PI*2);
-    ctx.fill();
-  });
-
-  // pacman
-  ctx.fillStyle="yellow";
-  ctx.beginPath();
-  ctx.arc(pac.x*TILE+15,pac.y*TILE+15,12,0.25*Math.PI,1.75*Math.PI);
-  ctx.lineTo(pac.x*TILE+15,pac.y*TILE+15);
-  ctx.fill();
-
-  // ghosts
-  ghosts.forEach(g=>{
-    ctx.fillStyle = fearTimer>0 ? "#3b82f6" : g.color;
-
-    ctx.beginPath();
-    ctx.arc(g.x*TILE+15,g.y*TILE+15,12,Math.PI,0);
-    ctx.lineTo(g.x*TILE+27,g.y*TILE+27);
-    ctx.lineTo(g.x*TILE+3,g.y*TILE+27);
-    ctx.closePath();
-    ctx.fill();
-  });
-}
-
-// ---------- MOVE ----------
-function canMove(x,y){
-  if(wall(x,y)) return false;
-  return true;
-}
-
-// ---------- PAC ----------
 function movePac(){
   let nx = pac.x + pac.dx;
   let ny = pac.y + pac.dy;
 
-  if(canMove(nx,ny)){
+  wrap({x:nx,y:ny});
+
+  if (valid(nx,ny)) {
     pac.x = nx;
     pac.y = ny;
   }
 
   pellets = pellets.filter(p=>{
-    if(p.x===pac.x && p.y===pac.y){
-      score+=10;
+    if (p.x === pac.x && p.y === pac.y) {
+      score += 10;
       return false;
     }
     return true;
   });
 
   power = power.filter(p=>{
-    if(p.x===pac.x && p.y===pac.y){
-      score+=50;
-      fearTimer = 300; // FIXED FEAR MODE
+    if (p.x === pac.x && p.y === pac.y) {
+      fearTimer = 80;
+      score += 50;
       return false;
     }
     return true;
   });
-}
 
-// ---------- GHOST AI ----------
-function moveGhost(g){
-
-  // leave house one by one
-  if(!g.out){
-    if(Math.random()<0.01) g.out=true;
-    return;
+  if (!fruit && Math.random() < 0.002) {
+    fruit = {x:10+Math.random()*10|0,y:10+Math.random()*10|0};
   }
 
+  if (fruit && fruit.x === pac.x && fruit.y === pac.y) {
+    score += 200;
+    fruit = null;
+  }
+}
+
+function ghostAI(g){
   let dirs = [
-    {x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}
-  ].filter(d=>canMove(g.x+d.x,g.y+d.y));
+    [1,0],[-1,0],[0,1],[0,-1]
+  ];
 
-  if(dirs.length===0) return;
+  let best = dirs[0];
+  let bestDist = 999;
 
-  let move;
+  for (let d of dirs) {
+    let nx = g.x + d[0];
+    let ny = g.y + d[1];
 
-  if(fearTimer>0){
-    // RUN AWAY (simple)
-    move = dirs[Math.floor(Math.random()*dirs.length)];
-  } else {
-    // chase pacman
-    dirs.sort((a,b)=>
-      Math.abs((g.x+a.x)-pac.x)+Math.abs((g.y+a.y)-pac.y) -
-      Math.abs((g.x+b.x)-pac.x)-Math.abs((g.y+b.y)-pac.y)
-    );
-    move = dirs[0];
+    if (!valid(nx,ny)) continue;
+
+    let dist = Math.abs(nx-pac.x)+Math.abs(ny-pac.y);
+
+    if (fearTimer > 0) dist *= -1; // flee mode
+
+    if (dist < bestDist) {
+      bestDist = dist;
+      best = d;
+    }
   }
 
-  g.x += move.x;
-  g.y += move.y;
+  g.x += best[0];
+  g.y += best[1];
+  wrap(g);
 }
 
-// ---------- COLLISION ----------
+function moveGhosts(){
+  ghosts.forEach(g=>ghostAI(g));
+}
+
 function check(){
   ghosts.forEach(g=>{
-    if(g.x===pac.x && g.y===pac.y){
-
-      if(fearTimer>0){
-        g.x=g.home.x;
-        g.y=g.home.y;
-        g.out=false;
-        score+=200;
+    if (g.x === pac.x && g.y === pac.y) {
+      if (fearTimer > 0) {
+        score += 100;
+        g.x = 15; g.y = 15;
       } else {
         lives--;
-        pac.x=10; pac.y=15;
+        pac.x = 1; pac.y = 1;
 
-        if(lives<=0){
-          alert("Game Over: "+score);
+        if (lives <= 0) {
+          alert("Game Over! Score: " + score);
           restart();
         }
       }
@@ -281,42 +220,81 @@ function check(){
   });
 }
 
-// ---------- INPUT ----------
-document.addEventListener("keydown",e=>{
-  if(e.key==="ArrowRight"){pac.dx=1;pac.dy=0;}
-  if(e.key==="ArrowLeft"){pac.dx=-1;pac.dy=0;}
-  if(e.key==="ArrowUp"){pac.dx=0;pac.dy=-1;}
-  if(e.key==="ArrowDown"){pac.dx=0;pac.dy=1;}
-});
+function draw(){
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0,0,600,600);
 
-// ---------- LOOP ----------
-let tick=0;
-
-function loop(){
-
-  if(fearTimer>0) fearTimer--;
-
-  draw();
-
-  if(tick%7===0){
-    movePac();
-    ghosts.forEach(moveGhost);
-    check();
+  // maze
+  for (let y=0;y<rows;y++){
+    for (let x=0;x<cols;x++){
+      if (map[y][x]===1){
+        ctx.fillStyle="#111a2b";
+        ctx.fillRect(x*20,y*20,20,20);
+      }
+    }
   }
 
-  tick++;
-  requestAnimationFrame(loop);
+  // pellets
+  ctx.fillStyle="#aaa";
+  pellets.forEach(p=>{
+    ctx.beginPath();
+    ctx.arc(p.x*20+10,p.y*20+10,2,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  // power pellets
+  ctx.fillStyle="white";
+  power.forEach(p=>{
+    ctx.beginPath();
+    ctx.arc(p.x*20+10,p.y*20+10,5,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  // fruit
+  if (fruit){
+    ctx.fillStyle="lime";
+    ctx.fillRect(fruit.x*20+5,fruit.y*20+5,10,10);
+  }
+
+  // pac
+  ctx.fillStyle="yellow";
+  ctx.beginPath();
+  ctx.arc(pac.x*20+10,pac.y*20+10,8,0,Math.PI*2);
+  ctx.fill();
+
+  // ghosts
+  ghosts.forEach(g=>{
+    ctx.fillStyle = fearTimer>0 ? "blue" : g.color;
+    ctx.fillRect(g.x*20+3,g.y*20+3,14,14);
+  });
+
+  ctx.fillStyle="white";
+  ctx.fillText("Score:"+score+" Lives:"+lives,10,590);
 }
 
-// ---------- UI ----------
+function loop(){
+  movePac();
+  moveGhosts();
+  check();
+
+  if (fearTimer>0) fearTimer--;
+
+  draw();
+}
+
+setInterval(loop,tickRate);
+
+document.addEventListener("keydown",e=>{
+  if (e.key==="ArrowUp"){pac.dx=0;pac.dy=-1;}
+  if (e.key==="ArrowDown"){pac.dx=0;pac.dy=1;}
+  if (e.key==="ArrowLeft"){pac.dx=-1;pac.dy=0;}
+  if (e.key==="ArrowRight"){pac.dx=1;pac.dy=0;}
+});
+
 function restart(){
-  reset();
-  loop();
+  location.reload();
 }
-
-reset();
-loop();
-
 </script>
+
 </body>
 </html>
