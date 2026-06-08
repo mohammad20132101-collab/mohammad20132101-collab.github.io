@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rift Hub - Pac-Man</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Pac-Man Classic</title>
 
 <style>
 body {
   margin: 0;
-  background: #0f0f1a;
+  background: #000;
   color: white;
   font-family: Arial, sans-serif;
   display: flex;
@@ -16,47 +16,34 @@ body {
   align-items: center;
 }
 
-header {
-  width: 100%;
-  background: #1a1a2e;
-  padding: 12px;
-  text-align: center;
+#ui {
+  display: flex;
+  justify-content: space-between;
+  width: 600px;
+  margin: 10px;
 }
 
 button {
-  background: #4c6fff;
+  background: #222;
   color: white;
-  border: none;
-  padding: 8px 12px;
-  margin: 5px;
-  border-radius: 6px;
+  border: 1px solid #444;
+  padding: 6px 12px;
   cursor: pointer;
 }
 
 canvas {
-  margin-top: 15px;
-  border: 3px solid #2a3a8f; /* darker arcade blue */
-  background: black;
-}
-
-#ui {
-  margin-top: 10px;
-  text-align: center;
+  background: #000;
+  border: 2px solid #222;
 }
 </style>
 </head>
 
 <body>
 
-<header>
-  <h2>🎮 Rift Hub - Pac-Man</h2>
-  <button onclick="goBack()">🔙 Back</button>
-  <button onclick="restart()">🔄 Restart</button>
-</header>
-
 <div id="ui">
-  <div id="score">Score: 0</div>
-  <div id="lives">Lives: 3</div>
+  <button onclick="restartGame()">Restart</button>
+  <button onclick="goBack()">Back</button>
+  <div id="info">Score: 0 | Lives: 3</div>
 </div>
 
 <canvas id="game" width="600" height="600"></canvas>
@@ -65,212 +52,247 @@ canvas {
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-const tile = 30;
-const rows = 20;
-const cols = 20;
+const TILE = 30;
+const ROWS = 20;
+const COLS = 20;
 
-let map, pacman, ghosts, pellets;
-let score, lives;
-let tick = 0;
+let score, lives, gameOver;
+let pellets = [];
+let powerPellets = [];
 
-/* ---------------- MAP (structured maze) ---------------- */
-function generateMap() {
-  const m = Array(rows).fill().map(() => Array(cols).fill(0));
+let pacman;
+let ghosts;
 
-  for (let y = 0; y < rows; y++) {
-    for (let x = 0; x < cols; x++) {
-      if (x === 0 || y === 0 || x === cols - 1 || y === rows - 1) {
-        m[y][x] = 1;
-      }
-      else if (x % 2 === 0 && y % 2 === 0) {
-        m[y][x] = 1;
-      }
-      else if (Math.random() < 0.08) {
-        m[y][x] = 1;
-      }
-    }
-  }
+const DIRS = [
+  {x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}
+];
 
-  m[1][1] = 0;
-  return m;
-}
+// ---------- SIMPLE CLASSIC MAZE ----------
+let map = [
+"####################",
+"#........##........#",
+"#.####...##...####.#",
+"#..................#",
+"#.####.######.####.#",
+"#..................#",
+"#.####.######.####.#",
+"#..................#",
+"#........##........#",
+"#........##........#",
+"#.####.######.####.#",
+"#..................#",
+"#.####.######.####.#",
+"#..................#",
+"#.####...##...####.#",
+"#........##........#",
+"#..................#",
+"#.####.######.####.#",
+"#..................#",
+"####################"
+];
 
-/* ---------------- INIT ---------------- */
-function init() {
-  map = generateMap();
-
+// ---------- INIT ----------
+function reset() {
   score = 0;
   lives = 3;
+  gameOver = false;
 
-  pacman = { x: 1, y: 1, dx: 1, dy: 0 };
+  pacman = { x: 10, y: 15, dx: 0, dy: 0 };
 
   ghosts = [
-    { x: cols-2, y: 1, dx: -1, dy: 0 },
-    { x: cols-2, y: rows-2, dx: 0, dy: -1 },
-    { x: 1, y: rows-2, dx: 1, dy: 0 },
-    { x: Math.floor(cols/2), y: Math.floor(rows/2), dx: 0, dy: 1 }
+    {x:9,y:9,color:"red",mode:"chase"},      // Blinky
+    {x:10,y:9,color:"pink",mode:"random"},   // Pinky
+    {x:9,y:10,color:"cyan",mode:"random"},    // Inky
+    {x:10,y:10,color:"orange",mode:"random"}  // Clyde
   ];
 
   pellets = [];
-  for (let y = 1; y < rows-1; y++) {
-    for (let x = 1; x < cols-1; x++) {
-      if (map[y][x] === 0) pellets.push({x,y});
+  powerPellets = [];
+
+  for (let y=0;y<ROWS;y++){
+    for (let x=0;x<COLS;x++){
+      if (map[y][x] === ".") pellets.push({x,y});
+      if (map[y][x] === "." && Math.random()<0.03)
+        powerPellets.push({x,y});
     }
   }
 
   updateUI();
 }
 
-/* ---------------- DRAW ---------------- */
-function drawMap() {
-  for (let y = 0; y < rows; y++) {
-    for (let x = 0; x < cols; x++) {
-      if (map[y][x] === 1) {
-        ctx.fillStyle = "#001a66"; // darker pacman blue
-        ctx.fillRect(x*tile, y*tile, tile, tile);
+// ---------- DRAW ----------
+function drawMaze(){
+  for (let y=0;y<ROWS;y++){
+    for (let x=0;x<COLS;x++){
+      if (map[y][x] === "#"){
+        ctx.fillStyle = "#111827";
+        ctx.fillRect(x*TILE,y*TILE,TILE,TILE);
       }
     }
   }
 }
 
-function drawPellets() {
-  ctx.fillStyle = "white";
-  pellets.forEach(p => {
+function drawPellets(){
+  ctx.fillStyle = "#bbb";
+  pellets.forEach(p=>{
     ctx.beginPath();
-    ctx.arc(p.x*tile+tile/2, p.y*tile+tile/2, 3, 0, Math.PI*2);
+    ctx.arc(p.x*TILE+15,p.y*TILE+15,3,0,Math.PI*2);
     ctx.fill();
   });
 }
 
-function drawPacman() {
-  const cx = pacman.x*tile + tile/2;
-  const cy = pacman.y*tile + tile/2;
+function drawPower(){
+  ctx.fillStyle = "#fff";
+  powerPellets.forEach(p=>{
+    ctx.beginPath();
+    ctx.arc(p.x*TILE+15,p.y*TILE+15,7,0,Math.PI*2);
+    ctx.fill();
+  });
+}
 
+function drawPacman(){
   ctx.fillStyle = "yellow";
   ctx.beginPath();
-  ctx.arc(cx, cy, tile/2-2, 0.2, Math.PI*1.8);
-  ctx.lineTo(cx, cy);
+  ctx.arc(
+    pacman.x*TILE+15,
+    pacman.y*TILE+15,
+    12,
+    0.25*Math.PI,
+    1.75*Math.PI
+  );
+  ctx.lineTo(pacman.x*TILE+15,pacman.y*TILE+15);
   ctx.fill();
 }
 
-function drawGhosts() {
-  ghosts.forEach((g,i) => {
-    const colors = ["red","pink","cyan","orange"];
-    ctx.fillStyle = colors[i];
-
+function drawGhosts(){
+  ghosts.forEach(g=>{
+    ctx.fillStyle = g.frightened ? "#3b82f6" : g.color;
     ctx.beginPath();
-    ctx.arc(g.x*tile+tile/2, g.y*tile+tile/2, tile/2-3, 0, Math.PI*2);
+    ctx.arc(g.x*TILE+15,g.y*TILE+15,12,Math.PI,0);
+    ctx.lineTo(g.x*TILE+27,g.y*TILE+27);
+    ctx.lineTo(g.x*TILE+3,g.y*TILE+27);
+    ctx.closePath();
     ctx.fill();
   });
 }
 
-/* ---------------- MOVEMENT ---------------- */
-function movePacman() {
+// ---------- MOVEMENT ----------
+function canMove(x,y){
+  return map[y] && map[y][x] !== "#";
+}
+
+function movePacman(){
   const nx = pacman.x + pacman.dx;
   const ny = pacman.y + pacman.dy;
 
-  if (map[ny]?.[nx] !== 1) {
+  if (canMove(nx,ny)){
     pacman.x = nx;
     pacman.y = ny;
   }
 
-  pellets = pellets.filter(p => {
-    if (p.x === pacman.x && p.y === pacman.y) {
-      score++;
+  // pellets
+  pellets = pellets.filter(p=>{
+    if (p.x===pacman.x && p.y===pacman.y){
+      score += 10;
+      return false;
+    }
+    return true;
+  });
+
+  // power pellets
+  powerPellets = powerPellets.filter(p=>{
+    if (p.x===pacman.x && p.y===pacman.y){
+      score += 50;
+      ghosts.forEach(g=>g.frightened=true);
+      setTimeout(()=>ghosts.forEach(g=>g.frightened=false),6000);
       return false;
     }
     return true;
   });
 }
 
-function moveGhosts() {
-  ghosts.forEach(g => {
-    const dirs = [
-      [1,0],[-1,0],[0,1],[0,-1]
-    ];
+function moveGhosts(){
+  ghosts.forEach(g=>{
+    let options = DIRS.filter(d=>canMove(g.x+d.x,g.y+d.y));
+    let move = options[Math.floor(Math.random()*options.length)];
 
-    const [dx,dy] = dirs[Math.floor(Math.random()*dirs.length)];
-
-    const nx = g.x + dx;
-    const ny = g.y + dy;
-
-    if (map[ny]?.[nx] !== 1) {
-      g.x = nx;
-      g.y = ny;
-    }
+    g.x += move.x;
+    g.y += move.y;
   });
 }
 
-/* ---------------- COLLISION ---------------- */
-function check() {
-  ghosts.forEach(g => {
-    if (g.x === pacman.x && g.y === pacman.y) {
-      lives--;
-      updateUI();
-
-      pacman.x = 1;
-      pacman.y = 1;
-
-      if (lives <= 0) {
-        alert("Game Over! Score: " + score);
-        init();
+// ---------- COLLISION ----------
+function check(){
+  ghosts.forEach(g=>{
+    if (g.x===pacman.x && g.y===pacman.y){
+      if (g.frightened){
+        g.x = 9; g.y = 9;
+        score += 200;
+      } else {
+        lives--;
+        pacman.x=10; pacman.y=15;
+        if (lives<=0){
+          gameOver=true;
+          alert("Game Over! Score: "+score);
+        }
       }
     }
   });
-
-  if (pellets.length === 0) {
-    alert("You Win! Score: " + score);
-    init();
-  }
 }
 
-/* ---------------- UI ---------------- */
-function updateUI() {
-  document.getElementById("score").innerText = "Score: " + score;
-  document.getElementById("lives").innerText = "Lives: " + lives;
-}
-
-/* ---------------- INPUT ---------------- */
-document.addEventListener("keydown", e => {
-  if (e.key === "ArrowRight") { pacman.dx = 1; pacman.dy = 0; }
-  if (e.key === "ArrowLeft") { pacman.dx = -1; pacman.dy = 0; }
-  if (e.key === "ArrowUp") { pacman.dx = 0; pacman.dy = -1; }
-  if (e.key === "ArrowDown") { pacman.dx = 0; pacman.dy = 1; }
+// ---------- INPUT ----------
+document.addEventListener("keydown",e=>{
+  if (e.key==="ArrowRight"){pacman.dx=1;pacman.dy=0;}
+  if (e.key==="ArrowLeft"){pacman.dx=-1;pacman.dy=0;}
+  if (e.key==="ArrowUp"){pacman.dx=0;pacman.dy=-1;}
+  if (e.key==="ArrowDown"){pacman.dx=0;pacman.dy=1;}
 });
 
-/* ---------------- LOOP (SLOWER PAC-MAN) ---------------- */
-function loop() {
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+// ---------- UI ----------
+function updateUI(){
+  document.getElementById("info").innerText =
+    `Score: ${score} | Lives: ${lives}`;
+}
 
-  drawMap();
+// ---------- LOOP (SLOW TICK STYLE) ----------
+let tick = 0;
+
+function loop(){
+  if (gameOver) return;
+
+  ctx.clearRect(0,0,600,600);
+
+  drawMaze();
   drawPellets();
+  drawPower();
   drawPacman();
   drawGhosts();
 
-  movePacman();
-
-  tick++;
-  if (tick % 12 === 0) {   // SLOW movement like real Pac-Man
+  if (tick % 10 === 0){
+    movePacman();
     moveGhosts();
+    check();
+    updateUI();
   }
 
-  check();
-
+  tick++;
   requestAnimationFrame(loop);
 }
 
-/* ---------------- BUTTONS ---------------- */
-function restart() {
-  init();
+// ---------- BUTTONS ----------
+function restartGame(){
+  reset();
+  loop();
 }
 
-function goBack() {
-  window.location.href = "index.html";
+function goBack(){
+  window.history.back();
 }
 
-/* START */
-init();
+// start
+reset();
 loop();
+
 </script>
 
 </body>
