@@ -1,1 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pac-Man Mini Game</title>
+<style>
+  body {
+    margin: 0;
+    background: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
 
+  canvas {
+    border: 3px solid #1e90ff;
+    background: #000;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="game" width="600" height="600"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const tileSize = 30;
+const rows = 20;
+const cols = 20;
+
+const map = Array(rows).fill().map(() => Array(cols).fill(0));
+
+// Border walls
+for (let r = 0; r < rows; r++) {
+  map[r][0] = 1;
+  map[r][cols - 1] = 1;
+}
+for (let c = 0; c < cols; c++) {
+  map[0][c] = 1;
+  map[rows - 1][c] = 1;
+}
+
+// Random inner walls
+for (let i = 0; i < 50; i++) {
+  map[Math.floor(Math.random() * rows)]
+     [Math.floor(Math.random() * cols)] = 1;
+}
+
+let pacman = {
+  x: 1,
+  y: 1,
+  dirX: 1,
+  dirY: 0,
+  mouth: 0
+};
+
+let ghost = {
+  x: cols - 2,
+  y: rows - 2
+};
+
+let score = 0;
+let pellets = [];
+
+for (let y = 1; y < rows - 1; y++) {
+  for (let x = 1; x < cols - 1; x++) {
+    if (map[y][x] === 0) {
+      pellets.push({ x, y });
+    }
+  }
+}
+
+function drawMap() {
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      if (map[y][x] === 1) {
+        ctx.fillStyle = "#0044ff";
+        ctx.fillRect(
+          x * tileSize,
+          y * tileSize,
+          tileSize,
+          tileSize
+        );
+      }
+    }
+  }
+}
+
+function drawPellets() {
+  ctx.fillStyle = "#fff";
+  pellets.forEach(p => {
+    ctx.beginPath();
+    ctx.arc(
+      p.x * tileSize + tileSize / 2,
+      p.y * tileSize + tileSize / 2,
+      4,
+      0,
+      Math.PI * 2
+    );
+    ctx.fill();
+  });
+}
+
+function drawPacman() {
+  const cx = pacman.x * tileSize + tileSize / 2;
+  const cy = pacman.y * tileSize + tileSize / 2;
+
+  pacman.mouth += 0.15;
+
+  const mouthOpen = Math.abs(Math.sin(pacman.mouth)) * 0.4;
+
+  let angle = 0;
+  if (pacman.dirX === 1) angle = 0;
+  if (pacman.dirX === -1) angle = Math.PI;
+  if (pacman.dirY === 1) angle = Math.PI / 2;
+  if (pacman.dirY === -1) angle = -Math.PI / 2;
+
+  ctx.fillStyle = "yellow";
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.arc(
+    cx,
+    cy,
+    tileSize / 2 - 2,
+    angle + mouthOpen,
+    angle + Math.PI * 2 - mouthOpen
+  );
+  ctx.fill();
+}
+
+function drawGhost() {
+  ctx.fillStyle = "red";
+  ctx.beginPath();
+  ctx.arc(
+    ghost.x * tileSize + tileSize / 2,
+    ghost.y * tileSize + tileSize / 2,
+    tileSize / 2 - 2,
+    Math.PI,
+    0
+  );
+  ctx.lineTo(
+    ghost.x * tileSize + tileSize - 2,
+    ghost.y * tileSize + tileSize - 2
+  );
+  ctx.lineTo(
+    ghost.x * tileSize + 2,
+    ghost.y * tileSize + tileSize - 2
+  );
+  ctx.closePath();
+  ctx.fill();
+}
+
+function movePacman() {
+  const nx = pacman.x + pacman.dirX;
+  const ny = pacman.y + pacman.dirY;
+
+  if (map[ny]?.[nx] !== 1) {
+    pacman.x = nx;
+    pacman.y = ny;
+  }
+
+  pellets = pellets.filter(p => {
+    if (p.x === pacman.x && p.y === pacman.y) {
+      score++;
+      return false;
+    }
+    return true;
+  });
+}
+
+function moveGhost() {
+  const dirs = [
+    [1,0],[-1,0],[0,1],[0,-1]
+  ];
+
+  const move = dirs[Math.floor(Math.random() * dirs.length)];
+
+  const nx = ghost.x + move[0];
+  const ny = ghost.y + move[1];
+
+  if (map[ny]?.[nx] !== 1) {
+    ghost.x = nx;
+    ghost.y = ny;
+  }
+}
+
+function checkCollision() {
+  if (pacman.x === ghost.x && pacman.y === ghost.y) {
+    alert("Game Over! Score: " + score);
+    location.reload();
+  }
+}
+
+document.addEventListener("keydown", e => {
+  if (e.key === "ArrowRight") {
+    pacman.dirX = 1;
+    pacman.dirY = 0;
+  }
+  if (e.key === "ArrowLeft") {
+    pacman.dirX = -1;
+    pacman.dirY = 0;
+  }
+  if (e.key === "ArrowUp") {
+    pacman.dirX = 0;
+    pacman.dirY = -1;
+  }
+  if (e.key === "ArrowDown") {
+    pacman.dirX = 0;
+    pacman.dirY = 1;
+  }
+});
+
+function gameLoop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  drawMap();
+  drawPellets();
+
+  movePacman();
+
+  if (Math.random() < 0.2) {
+    moveGhost();
+  }
+
+  drawPacman();
+  drawGhost();
+
+  checkCollision();
+
+  ctx.fillStyle = "#fff";
+  ctx.font = "20px Arial";
+  ctx.fillText("Score: " + score, 10, 25);
+
+  requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+</script>
+
+</body>
+</html>
