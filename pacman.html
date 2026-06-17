@@ -21,16 +21,12 @@
 			visibility: hidden
 		}
 
-		h1 {
-			font-size:72px;
-			letter-spacing:6px;
-			font-weight:900;
-			color:#60a5fa;
-			text-shadow:0 0 20px rgba(96,165,250,.7);
-			font-family: 'Permanent Marker', cursive;
-			text-align: center;
-			color: yellow;
-		}
+		header{
+  width:100%;
+  text-align:center;
+  padding:15px;
+  background:#1a1a2e;
+        }
 
 		body {
 			width: 342px;
@@ -46,8 +42,14 @@
 </head>
 <body>
 	<div id="shim">shim for font face</div>
+	<header>
 	<h1>◈ RIFT HUB ◈</h1>
-	<p style="text-align:center;">Sedang migrasi server dan upgrade engine 23:00 s/d 05:00. Mohon doanya :)</p>
+	</header>
+	<p style="text-align:center;">Catch the dots!</p>
+<div>
+  <button onclick="startGame()">Restart</button>
+  <button onclick="window.location.href='index.html'">Back</button>
+</div>
 	<div id="pacman"></div>
 
 	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.8.3/modernizr.min.js"></script>
