@@ -1,85 +1,132 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rift Word</title>
+
 <style>
-body {
-    background: #CCFF00;
-    color: #000080;
-    font-family: Arial, sans-serif;
-    text-align: center;
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Inter,Arial,sans-serif;
 }
 
-h1 {
-    margin-top: 20px;
+body{
+    background:#0B1020;
+    color:#F5F9FF;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    min-height:100vh;
+    padding:30px;
 }
 
-#board {
-    display: grid;
-    grid-template-columns: repeat(5, 60px);
-    gap: 5px;
-    justify-content: center;
-    margin: 20px auto;
+h1{
+    color:#3B82F6;
+    font-size:3rem;
+    margin-bottom:10px;
 }
 
-.tile {
-    width: 60px;
-    height: 60px;
-    border: 2px solid #000080;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 28px;
-    font-weight: bold;
-    background: white;
+.subtitle{
+    color:#9BB8FF;
+    margin-bottom:25px;
 }
 
-.correct {
-    background: #4CAF50;
-    color: white;
+#board{
+    display:grid;
+    grid-template-columns:repeat(5,70px);
+    gap:8px;
+    margin-bottom:25px;
 }
 
-.present {
-    background: #FFC107;
-    color: black;
+.tile{
+    width:70px;
+    height:70px;
+    background:#131B35;
+    border:2px solid #22325F;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:2rem;
+    font-weight:bold;
+    text-transform:uppercase;
 }
 
-.absent {
-    background: #777;
-    color: white;
+.correct{
+    background:#22C55E;
+    border-color:#22C55E;
 }
 
-input {
-    padding: 10px;
-    font-size: 18px;
-    text-transform: uppercase;
+.present{
+    background:#EAB308;
+    border-color:#EAB308;
+    color:#111;
 }
 
-button {
-    padding: 10px 20px;
-    font-size: 18px;
-    margin-left: 5px;
-    cursor: pointer;
+.absent{
+    background:#475569;
+    border-color:#475569;
 }
 
-#message {
-    margin-top: 20px;
-    font-size: 20px;
-    font-weight: bold;
+.controls{
+    display:flex;
+    gap:10px;
+}
+
+input{
+    background:#131B35;
+    border:2px solid #22325F;
+    color:white;
+    padding:12px;
+    font-size:1.1rem;
+    text-transform:uppercase;
+    text-align:center;
+    width:150px;
+}
+
+button{
+    background:#3B82F6;
+    color:white;
+    border:none;
+    padding:12px 18px;
+    cursor:pointer;
+    font-size:1rem;
+    border-radius:8px;
+}
+
+button:hover{
+    opacity:.9;
+}
+
+#message{
+    margin-top:20px;
+    font-size:1.2rem;
+    font-weight:bold;
+    min-height:30px;
+}
+
+.footer{
+    margin-top:20px;
+    color:#7A8CB8;
 }
 </style>
 </head>
 <body>
 
 <h1>Rift Word</h1>
+<div class="subtitle">Guess the 5-letter word</div>
 
 <div id="board"></div>
 
-<input id="guessInput" maxlength="5" placeholder="Guess">
-<button onclick="submitGuess()">Guess</button>
+<div class="controls">
+    <input id="guessInput" maxlength="5" placeholder="WORD">
+    <button onclick="submitGuess()">Guess</button>
+</div>
 
 <div id="message"></div>
+<div class="footer">6 guesses • Random word each game</div>
 
 <script>
 const words = [
@@ -91,100 +138,98 @@ const words = [
 "BOARD","BOOST","BOOTH","BOUND","BRAIN","BRAKE","BRAND","BRAVE","BREAD","BREAK",
 "BRICK","BRIEF","BRING","BROAD","BROKE","BROWN","BUILD","BURST","BUYER","CABLE",
 "CANDY","CARRY","CATCH","CAUSE","CHAIN","CHAIR","CHART","CHASE","CHEAP","CHECK",
-"CHEST","CHIEF","CHILD","CHINA","CHOSE","CIVIL","CLAIM","CLASS","CLEAN","CLEAR",
-"CLIMB","CLOCK","CLOSE","CLOUD","COACH","COAST","COULD","COUNT","COURT","COVER",
-"CRAZY","CREAM","CRIME","CROSS","CROWD","CROWN","CURVE","CYCLE","DAILY","DANCE",
-"DATED","DEALT","DEATH","DEBUT","DELAY","DEPTH","DOING","DOUBT","DOZEN","DRAFT",
-"DRAMA","DRAWN","DREAM","DRESS","DRINK","DRIVE","EARLY","EARTH","EIGHT","ELITE",
-"EMPTY","ENEMY","ENJOY","ENTER","ENTRY","EQUAL","ERROR","EVENT","EVERY","EXACT",
-"EXIST","EXTRA","FAITH","FALSE","FAULT","FIBER","FIELD","FIFTH","FIFTY","FIGHT",
-"FINAL","FIRST","FLAME","FLASH","FLEET","FLOOR","FOCUS","FORCE","FORTH","FORTY",
-"FOUND","FRAME","FRANK","FRESH","FRONT","FRUIT","FULLY","FUNNY","GIANT","GLASS",
-"GLOBE","GOING","GRACE","GRADE","GRAND","GRANT","GRASS","GREAT","GREEN","GROUP",
-"GROWN","GUARD","GUESS","GUEST","GUIDE","HAPPY","HEART","HEAVY","HORSE","HOTEL",
-"HOUSE","HUMAN","IDEAL","IMAGE","INDEX","INNER","INPUT","ISSUE","JELLY","JOINT",
-"JUDGE","JUICE","KNIFE","KNOWN","LABEL","LARGE","LASER","LATER","LAUGH","LAYER",
-"LEARN","LEASE","LEAST","LEAVE","LEGAL","LEVEL","LIGHT","LIMIT","LOCAL","LOGIC",
-"LOOSE","LUCKY","LUNCH","MAGIC","MAJOR","MAKER","MARCH","MATCH","MAYBE","METAL",
-"MIGHT","MINOR","MODEL","MONEY","MONTH","MORAL","MOTOR","MOUSE","MOUTH","MOVIE",
-"MUSIC","NEEDS","NEVER","NIGHT","NOISE","NORTH","NOVEL","NURSE","OCEAN","OFFER",
+"CHEST","CHIEF","CHILD","CLAIM","CLASS","CLEAN","CLEAR","CLOCK","CLOSE","CLOUD",
+"COACH","COAST","COUNT","COURT","COVER","CRAZY","CREAM","CRIME","CROSS","CROWD",
+"CROWN","CYCLE","DAILY","DANCE","DATED","DEATH","DEBUT","DELAY","DEPTH","DOUBT",
+"DOZEN","DRAFT","DRAMA","DRAWN","DREAM","DRESS","DRINK","DRIVE","EARLY","EARTH",
+"EIGHT","ELITE","EMPTY","ENEMY","ENJOY","ENTER","ENTRY","EQUAL","ERROR","EVENT",
+"EVERY","EXACT","EXIST","EXTRA","FAITH","FALSE","FAULT","FIELD","FIGHT","FINAL",
+"FIRST","FLAME","FLASH","FLEET","FLOOR","FOCUS","FORCE","FOUND","FRAME","FRESH",
+"FRONT","FRUIT","FUNNY","GIANT","GLASS","GLOBE","GOING","GRACE","GRADE","GRAND",
+"GRASS","GREAT","GREEN","GROUP","GUARD","GUESS","GUIDE","HAPPY","HEART","HEAVY",
+"HORSE","HOTEL","HOUSE","HUMAN","IDEAL","IMAGE","INDEX","INNER","INPUT","ISSUE",
+"JELLY","JOINT","JUDGE","JUICE","KNIFE","KNOWN","LABEL","LARGE","LASER","LATER",
+"LAUGH","LAYER","LEARN","LEASE","LEAST","LEAVE","LEGAL","LEVEL","LIGHT","LIMIT",
+"LOCAL","LOGIC","LUCKY","LUNCH","MAGIC","MAJOR","MAKER","MARCH","MATCH","MAYBE",
+"METAL","MIGHT","MINOR","MODEL","MONEY","MONTH","MORAL","MOTOR","MOUSE","MOUTH",
+"MOVIE","MUSIC","NEVER","NIGHT","NOISE","NORTH","NOVEL","NURSE","OCEAN","OFFER",
 "OFTEN","ORDER","OTHER","OWNER","PAINT","PANEL","PAPER","PARTY","PEACE","PHONE",
 "PHOTO","PIANO","PIECE","PILOT","PITCH","PLACE","PLAIN","PLANE","PLANT","PLATE",
 "POINT","POWER","PRESS","PRICE","PRIDE","PRIME","PRINT","PRIZE","PROOF","PROUD",
 "QUEEN","QUEST","QUICK","QUIET","RADIO","RAISE","RANGE","RAPID","REACH","READY",
 "RIGHT","RIVER","ROBOT","ROUGH","ROUND","ROUTE","ROYAL","RURAL","SCALE","SCENE",
-"SCOPE","SCORE","SENSE","SERVE","SEVEN","SHADE","SHAKE","SHALL","SHAPE","SHARE",
-"SHARP","SHEET","SHELF","SHIFT","SHINE","SHIRT","SHOCK","SHOOT","SHORT","SHOWN",
-"SIGHT","SINCE","SKILL","SLEEP","SLIDE","SMALL","SMART","SMILE","SMOKE","SOLID",
-"SOLVE","SOUND","SOUTH","SPACE","SPEAK","SPEED","SPEND","SPENT","SPICE","SPLIT",
-"SPOKE","SPORT","STAFF","STAGE","STAKE","STAND","START","STATE","STEAM","STEEL",
-"STICK","STILL","STOCK","STONE","STORE","STORM","STORY","STRIP","STUDY","STUFF",
-"STYLE","SUGAR","SUPER","SWEET","TABLE","TAKEN","TASTE","TEACH","THANK","THEME",
-"THERE","THICK","THING","THINK","THIRD","THOSE","THREE","THROW","TIGER","TITLE",
-"TODAY","TOPIC","TOTAL","TOUCH","TOUGH","TOWER","TRACK","TRADE","TRAIN","TREAT",
-"TREND","TRIAL","TRUCK","TRULY","TRUST","TRUTH","TWICE","UNDER","UNION","UNITY",
-"UPPER","URBAN","USAGE","VALUE","VIDEO","VISIT","VOICE","WASTE","WATCH","WATER",
-"WHEEL","WHERE","WHILE","WHITE","WHOLE","WORLD","WORRY","WORTH","WRITE","WRONG",
-"YOUTH","ZEBRA"
+"SCORE","SENSE","SERVE","SEVEN","SHADE","SHAKE","SHALL","SHAPE","SHARE","SHARP",
+"SHEET","SHELF","SHIFT","SHINE","SHIRT","SHOCK","SHOOT","SHORT","SHOWN","SIGHT",
+"SINCE","SKILL","SLEEP","SLIDE","SMALL","SMART","SMILE","SMOKE","SOLID","SOLVE",
+"SOUND","SOUTH","SPACE","SPEAK","SPEED","SPEND","SPICE","SPORT","STAFF","STAGE",
+"STAKE","STAND","START","STATE","STEAM","STEEL","STICK","STILL","STOCK","STONE",
+"STORE","STORM","STORY","STRIP","STUDY","STUFF","STYLE","SUGAR","SUPER","SWEET",
+"TABLE","TAKEN","TASTE","TEACH","THANK","THEME","THERE","THICK","THING","THINK",
+"THIRD","THOSE","THREE","THROW","TIGER","TITLE","TODAY","TOPIC","TOTAL","TOUCH",
+"TOUGH","TOWER","TRACK","TRADE","TRAIN","TREAT","TREND","TRIAL","TRUCK","TRUST",
+"TRUTH","TWICE","UNDER","UNION","UNITY","UPPER","URBAN","USAGE","VALUE","VIDEO",
+"VISIT","VOICE","WASTE","WATCH","WATER","WHEEL","WHERE","WHILE","WHITE","WHOLE",
+"WORLD","WORRY","WORTH","WRITE","WRONG","YOUTH","ZEBRA"
 ];
 
-const answer = words[Math.floor(Math.random() * words.length)];
+const answer = words[Math.floor(Math.random()*words.length)];
 
 const board = document.getElementById("board");
 const message = document.getElementById("message");
 
 let row = 0;
-const maxRows = 6;
 
-for(let i = 0; i < 30; i++) {
-    const tile = document.createElement("div");
-    tile.className = "tile";
+for(let i=0;i<30;i++){
+    const tile=document.createElement("div");
+    tile.className="tile";
     board.appendChild(tile);
 }
 
-function submitGuess() {
-    const input = document.getElementById("guessInput");
-    const guess = input.value.toUpperCase();
+function submitGuess(){
+    const input=document.getElementById("guessInput");
+    const guess=input.value.toUpperCase();
 
-    if (guess.length !== 5) {
-        message.textContent = "Enter 5 letters!";
+    if(guess.length!==5){
+        message.textContent="Enter a 5-letter word";
         return;
     }
 
-    const tiles = document.querySelectorAll(".tile");
+    const tiles=document.querySelectorAll(".tile");
 
-    for(let i = 0; i < 5; i++) {
-        const tile = tiles[row * 5 + i];
-        tile.textContent = guess[i];
+    for(let i=0;i<5;i++){
+        const tile=tiles[row*5+i];
+        tile.textContent=guess[i];
 
-        if (guess[i] === answer[i]) {
+        if(guess[i]===answer[i]){
             tile.classList.add("correct");
-        } else if (answer.includes(guess[i])) {
+        }else if(answer.includes(guess[i])){
             tile.classList.add("present");
-        } else {
+        }else{
             tile.classList.add("absent");
         }
     }
 
-    if (guess === answer) {
-        message.textContent = "You Win!";
-        disableGame();
+    if(guess===answer){
+        message.textContent="🎉 You won!";
+        input.disabled=true;
         return;
     }
 
     row++;
 
-    if (row >= maxRows) {
-        message.textContent = "You Lose! Word: " + answer;
-        disableGame();
+    if(row>=6){
+        message.textContent=`❌ The word was ${answer}`;
+        input.disabled=true;
     }
 
-    input.value = "";
+    input.value="";
 }
 
-function disableGame() {
-    document.getElementById("guessInput").disabled = true;
-}
+document.getElementById("guessInput").addEventListener("keydown",e=>{
+    if(e.key==="Enter"){
+        submitGuess();
+    }
+});
 </script>
 
 </body>
