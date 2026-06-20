@@ -175,15 +175,13 @@ function enterGuess(){
 
   let guess = "";
   for(let i=0;i<5;i++){
-    guess += tile(row,i).textContent.toLowerCase();
+    guess += (tile(row,i).textContent || "").trim().toLowerCase();
   }
 
+  console.log("GUESS:", JSON.stringify(guess)); // DEBUG (keep for now)
+
   if(!valid.has(guess)){
-    popup("Not in word list");
-    for(let i=0;i<5;i++){
-      tile(row,i).classList.add("rowshake");
-      setTimeout(()=>tile(row,i).classList.remove("rowshake"),400);
-    }
+    popup("Not in word list: " + guess);
     return;
   }
 
@@ -248,7 +246,7 @@ rows.forEach((r,i)=>{
   for(let ch of r){
     let b=document.createElement("button");
     b.className="key";
-    b.dataset.l=ch.toLowerCase();
+   b.dataset.l = ch.toLowerCase();
     b.textContent=ch;
     b.onclick=()=>typeLetter(ch);
     div.appendChild(b);
