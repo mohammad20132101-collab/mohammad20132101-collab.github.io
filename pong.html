@@ -42,6 +42,46 @@ button {
     font-size: 26px;
     margin: 10px;
 }
+#startScreen{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.85);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    z-index:999;
+}
+
+#menu{
+    background:#141428;
+    border:3px solid #4c6fff;
+    border-radius:20px;
+    padding:40px;
+    width:350px;
+    box-shadow:0 0 25px #4c6fff66;
+}
+
+#menu h1{
+    margin-top:0;
+    color:#4c6fff;
+}
+
+.modeBtn{
+    width:100%;
+    margin:8px 0;
+    font-size:18px;
+}
+
+.modeBtn.selected{
+    background:#6e85ff;
+    box-shadow:0 0 15px #4c6fff;
+}
+
+#startBtn{
+    width:100%;
+    margin-top:15px;
+    font-size:20px;
+}
 </style>
 </head>
 
@@ -51,10 +91,23 @@ button {
 <h1>🏓Pong</h1>
 </header>
 
-<div>
-<button onclick="goBack()">⬅ Back</button>
-<button onclick="setMode(1)">1 Player</button>
-<button onclick="setMode(2)">2 Players</button>
+<div id="startScreen">
+    <div id="menu">
+
+        <p>Select Mode</p>
+
+        <button onclick="chooseMode(1)" class="modeBtn" id="mode1">
+            🤖 1 Player
+        </button>
+
+        <button onclick="chooseMode(2)" class="modeBtn" id="mode2">
+            👥 2 Players
+        </button>
+
+        <button onclick="startGame()" id="startBtn">
+            ▶ Start Game
+        </button>
+    </div>
 </div>
 
 <div id="score">0 : 0</div>
@@ -67,6 +120,7 @@ const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
 let mode = 1;
+let gameStarted = false;
 
 const paddleWidth = 15;
 const paddleHeight = 100;
@@ -103,6 +157,22 @@ function goBack() {
 
 function setMode(m) {
     mode = m;
+}
+function chooseMode(m){
+    mode = m;
+
+    document
+        .querySelectorAll(".modeBtn")
+        .forEach(btn => btn.classList.remove("selected"));
+
+    document
+        .getElementById(m === 1 ? "mode1" : "mode2")
+        .classList.add("selected");
+}
+
+function startGame(){
+    gameStarted = true;
+    document.getElementById("startScreen").style.display = "none";
 }
 
 function resetBall(dir = 1) {
@@ -151,7 +221,7 @@ function bounce(paddle, isLeft) {
 }
 
 function update() {
-
+    if(!gameStarted) return;
     // paddles
     if (keys["ArrowUp"]) right.y -= right.speed;
     if (keys["ArrowDown"]) right.y += right.speed;
@@ -245,7 +315,7 @@ function draw() {
 
     ctx.shadowBlur = 0;
 }
-
+chooseMode(1);
 function loop() {
     update();
     draw();
