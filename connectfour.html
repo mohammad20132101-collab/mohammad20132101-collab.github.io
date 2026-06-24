@@ -14,7 +14,7 @@ body{
     text-align:center;
 }
 
-/* ===== START SCREEN ===== */
+/* ===== YOUR EXACT START MENU STYLE ===== */
 #startScreen{
     position:fixed;
     inset:0;
@@ -61,6 +61,22 @@ h1{
     color:#4c6fff;
 }
 
+button{
+    padding:10px 15px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    background:#4c6fff;
+    color:white;
+    margin:5px;
+}
+
+/* BOARD */
+#boardWrapper{
+    position:relative;
+    display:inline-block;
+}
+
 #board{
     display:grid;
     grid-template-columns:repeat(7,80px);
@@ -74,7 +90,7 @@ h1{
     box-shadow:0 0 20px #4c6fff55;
 }
 
-/* cell */
+/* CELLS */
 .cell{
     width:80px;
     height:80px;
@@ -84,18 +100,10 @@ h1{
     box-shadow: inset 0 0 10px rgba(0,0,0,0.7);
 }
 
-/* pieces */
-.p1{
-    background:#4c6fff;
-    box-shadow:0 0 15px #4c6fff;
-}
+.p1{ background:#4c6fff; box-shadow:0 0 15px #4c6fff; }
+.p2{ background:#9b5cff; box-shadow:0 0 15px #9b5cff; }
 
-.p2{
-    background:#9b5cff;
-    box-shadow:0 0 15px #9b5cff;
-}
-
-/* drop animation (no shake bug) */
+/* DROP FIX (no shaking bug) */
 .drop{
     animation:drop 0.2s ease;
 }
@@ -106,25 +114,21 @@ h1{
 }
 
 /* WIN LINE */
-.winLine{
+#winLine{
     position:absolute;
     height:6px;
     background:linear-gradient(90deg,#4c6fff,#9b5cff);
     box-shadow:0 0 15px #4c6fff;
     border-radius:10px;
+    transform-origin:left center;
     z-index:10;
-}
-
-#boardWrapper{
-    position:relative;
-    display:inline-block;
 }
 </style>
 </head>
 
 <body>
 
-<!-- ===== START MENU ===== -->
+<!-- ===== YOUR MENU (UNCHANGED STYLE) ===== -->
 <div id="startScreen">
     <div id="menu">
         <h1>Rift Connect 4</h1>
@@ -136,6 +140,9 @@ h1{
 
 <h1>Rift Connect 4</h1>
 
+<button onclick="backToMenu()">Back</button>
+<button onclick="restart()">Restart</button>
+
 <div id="boardWrapper">
     <div id="board"></div>
 </div>
@@ -144,31 +151,39 @@ h1{
 
 <script>
 
-const ROWS = 6;
-const COLS = 7;
+const ROWS=6, COLS=7;
 
-let board = [];
-let current = 1;
-let mode = 2;
-let gameOver = false;
+let board=[];
+let current=1;
+let gameOver=false;
 
-const boardEl = document.getElementById("board");
-const statusEl = document.getElementById("status");
+const boardEl=document.getElementById("board");
+const statusEl=document.getElementById("status");
+const wrapper=document.getElementById("boardWrapper");
 
-/* ===== START GAME ===== */
-function startGame(selectedMode){
-    mode = selectedMode;
+/* ===== MENU ===== */
+function startGame(mode){
     document.getElementById("startScreen").style.display="none";
     init();
 }
 
+function backToMenu(){
+    document.getElementById("startScreen").style.display="flex";
+    resetBoard();
+}
+
 /* ===== INIT ===== */
 function init(){
-    board = Array.from({length:ROWS},()=>Array(COLS).fill(0));
-    current = 1;
-    gameOver = false;
+    resetBoard();
     draw();
-    statusEl.textContent = "Player 1 starts";
+    statusEl.textContent="Player 1 starts";
+}
+
+function resetBoard(){
+    board=Array.from({length:ROWS},()=>Array(COLS).fill(0));
+    current=1;
+    gameOver=false;
+    clearWinLine();
 }
 
 /* ===== DRAW ===== */
@@ -178,14 +193,13 @@ function draw(){
     for(let r=0;r<ROWS;r++){
         for(let c=0;c<COLS;c++){
 
-            let cell = document.createElement("div");
+            let cell=document.createElement("div");
             cell.className="cell";
 
             if(board[r][c]===1) cell.classList.add("p1");
             if(board[r][c]===2) cell.classList.add("p2");
 
             cell.onclick=()=>play(c);
-
             boardEl.appendChild(cell);
         }
     }
@@ -199,57 +213,102 @@ function play(col){
     for(let r=ROWS-1;r>=0;r--){
         if(board[r][col]===0){
             board[r][col]=current;
-
             draw();
 
-            if(checkWin(r,col)){
-                statusEl.textContent = "Player " + current + " wins!";
-                drawWinLine();
+            let path=getWinPath(r,col);
+
+            if(path){
+                statusEl.textContent=`Player ${current} wins!`;
+                drawWinLine(path);
                 gameOver=true;
                 return;
             }
 
-            current = current===1 ? 2 : 1;
-            statusEl.textContent = "Player " + current + "'s turn";
-
+            current=current===1?2:1;
+            statusEl.textContent=`Player ${current}'s turn`;
             return;
         }
     }
 }
 
-/* ===== WIN CHECK ===== */
-function checkWin(r,c){
+/* ===== TRUE WIN PATH ===== */
+function getWinPath(r,c){
 
-    let p = board[r][c];
+    let p=board[r][c];
 
-    function count(dr,dc){
-        let i=1;
+    function dir(dr,dc){
+        let cells=[[r,c]];
         let rr=r+dr, cc=c+dc;
-        while(rr>=0 && rr<ROWS && cc>=0 && cc<COLS && board[rr][cc]===p){
-            i++; rr+=dr; cc+=dc;
+
+        while(rr>=0&&rr<ROWS&&cc>=0&&cc<COLS&&board[rr][cc]===p){
+            cells.push([rr,cc]);
+            rr+=dr; cc+=dc;
         }
-        return i;
+        return cells;
+    }
+
+    function check(dr,dc){
+        let a=dir(dr,dc);
+        let b=dir(-dr,-dc);
+        let all=[...a,...b];
+
+        if(all.length>=4){
+            return all.slice(0,4);
+        }
+        return null;
     }
 
     return (
-        count(0,1)+count(0,-1)-1>=4 ||
-        count(1,0)+count(-1,0)-1>=4 ||
-        count(1,1)+count(-1,-1)-1>=4 ||
-        count(1,-1)+count(-1,1)-1>=4
+        check(0,1) ||
+        check(1,0) ||
+        check(1,1) ||
+        check(1,-1)
     );
 }
 
-/* ===== WIN LINE ===== */
-function drawWinLine(){
-    let line = document.createElement("div");
-    line.className="winLine";
+/* ===== PERFECT ANGLED WIN LINE ===== */
+function drawWinLine(path){
 
-    line.style.width="520px";
-    line.style.top="50%";
-    line.style.left="50%";
-    line.style.transform="translate(-50%,-50%) rotate(0deg)";
+    clearWinLine();
 
-    document.getElementById("boardWrapper").appendChild(line);
+    let first=path[0];
+    let last=path[3];
+
+    let cells=document.querySelectorAll(".cell");
+
+    let start=cells[first[0]*COLS+first[1]].getBoundingClientRect();
+    let end=cells[last[0]*COLS+last[1]].getBoundingClientRect();
+    let wrap=wrapper.getBoundingClientRect();
+
+    let x1=start.left+40-wrap.left;
+    let y1=start.top+40-wrap.top;
+    let x2=end.left+40-wrap.left;
+    let y2=end.top+40-wrap.top;
+
+    let line=document.createElement("div");
+    line.id="winLine";
+
+    let length=Math.hypot(x2-x1,y2-y1);
+    let angle=Math.atan2(y2-y1,x2-x1)*180/Math.PI;
+
+    line.style.width=length+"px";
+    line.style.left=x1+"px";
+    line.style.top=y1+"px";
+    line.style.transform=`rotate(${angle}deg)`;
+
+    wrapper.appendChild(line);
+}
+
+function clearWinLine(){
+    let old=document.getElementById("winLine");
+    if(old) old.remove();
+}
+
+/* ===== RESTART ===== */
+function restart(){
+    resetBoard();
+    draw();
+    statusEl.textContent="Player 1 starts";
 }
 
 </script>
