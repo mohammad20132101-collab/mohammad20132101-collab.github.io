@@ -14,7 +14,7 @@ body{
     text-align:center;
 }
 
-/* ===== MENU ===== */
+/* MENU */
 #menu{
     position:absolute;
     width:100%;
@@ -53,7 +53,7 @@ body{
     background:#9b5cff;
 }
 
-/* ===== GAME ===== */
+/* GAME */
 #gameArea{
     display:none;
 }
@@ -62,7 +62,7 @@ h1{
     color:#4c6fff;
 }
 
-/* controls ABOVE board */
+/* CONTROLS ABOVE */
 #controls{
     display:flex;
     justify-content:center;
@@ -70,7 +70,16 @@ h1{
     margin-top:10px;
 }
 
-/* board */
+button{
+    background:#4c6fff;
+    border:none;
+    padding:10px 15px;
+    border-radius:8px;
+    color:white;
+    cursor:pointer;
+}
+
+/* BOARD */
 #board{
     display:grid;
     grid-template-columns:repeat(7,80px);
@@ -83,76 +92,49 @@ h1{
     border:3px solid #4c6fff;
 }
 
-/* cell */
 .cell{
     width:80px;
     height:80px;
     border-radius:50%;
     background:#0f0f1a;
-    position:relative;
-    overflow:hidden;
+    cursor:pointer;
 }
 
-/* pieces */
+/* PIECES */
 .player1{
-    background:#4c6fff;
+    background:#4c6fff;   /* BLUE */
     box-shadow:0 0 15px #4c6fff;
 }
 
 .player2{
-    background:#9b5cff;
+    background:#9b5cff;   /* PURPLE */
     box-shadow:0 0 15px #9b5cff;
 }
 
-/* REAL FALL ANIMATION */
-.piece{
-    width:80px;
-    height:80px;
-    border-radius:50%;
-    position:absolute;
-    top:-500px;
-    animation:fall 0.35s ease-out forwards;
-}
-
-@keyframes fall{
-    from{ transform:translateY(-600px); }
-    to{ transform:translateY(0); }
-}
-
-/* win */
+/* WIN ONLY 4 */
 .win-blue{
-    box-shadow:0 0 25px #9b5cff;
+    box-shadow:0 0 25px #9b5cff, 0 0 40px #9b5cff;
 }
 
 .win-purple{
-    box-shadow:0 0 25px #4c6fff;
-}
-
-button{
-    background:#4c6fff;
-    border:none;
-    padding:10px 15px;
-    border-radius:8px;
-    color:white;
-    cursor:pointer;
+    box-shadow:0 0 25px #4c6fff, 0 0 40px #4c6fff;
 }
 </style>
 </head>
 
 <body>
 
-<!-- ===== MENU ===== -->
+<!-- MENU -->
 <div id="menu">
     <div class="menuBox">
         <h1>🌀 Rift Connect 4</h1>
         <p>Select Mode</p>
-
         <button onclick="startGame(1)">1 Player</button>
         <button onclick="startGame(2)">2 Player</button>
     </div>
 </div>
 
-<!-- ===== GAME ===== -->
+<!-- GAME -->
 <div id="gameArea">
 
 <h1>Rift Connect 4</h1>
@@ -174,12 +156,12 @@ const ROWS = 6;
 const COLS = 7;
 
 let board = [];
-let current = "player1";
+let current = "player1";   // ALWAYS BLUE START
 let gameOver = false;
-let mode = 2; // 1 or 2 player
+let mode = 2;
 let winningCells = [];
 
-/* ===== MENU START ===== */
+/* MENU */
 function startGame(m){
     mode = m;
     document.getElementById("menu").style.display="none";
@@ -187,13 +169,13 @@ function startGame(m){
     init();
 }
 
-/* ===== INIT ===== */
+/* INIT */
 function init(){
     board = Array.from({length:ROWS}, ()=>Array(COLS).fill(null));
     createBoard();
 }
 
-/* ===== BOARD ===== */
+/* BOARD */
 function createBoard(){
     const boardEl = document.getElementById("board");
     boardEl.innerHTML="";
@@ -208,7 +190,7 @@ function createBoard(){
     }
 }
 
-/* ===== DROP (WITH FALL ANIMATION) ===== */
+/* DROP */
 function drop(col){
     if(gameOver) return;
 
@@ -216,39 +198,25 @@ function drop(col){
         if(!board[r][col]){
             board[r][col] = current;
 
-            animateDrop(r,col,current);
-
             if(checkWin(r,col)){
                 win(current);
             } else {
                 current = current==="player1" ? "player2" : "player1";
                 updateStatus();
 
+                // 1 PLAYER = HUMAN ALWAYS BLUE
                 if(mode===1 && current==="player2"){
                     setTimeout(aiMove,300);
                 }
             }
 
+            render();
             return;
         }
     }
 }
 
-/* ===== FALL ANIMATION ===== */
-function animateDrop(r,c,player){
-    const boardEl = document.getElementById("board");
-    const cells = document.querySelectorAll(".cell");
-
-    const idx = r*COLS+c;
-    const cell = cells[idx];
-
-    const piece = document.createElement("div");
-    piece.classList.add("piece",player);
-
-    cell.appendChild(piece);
-}
-
-/* ===== AI (SIMPLE RANDOM) ===== */
+/* SIMPLE AI (PURPLE ONLY) */
 function aiMove(){
     if(gameOver) return;
 
@@ -261,13 +229,37 @@ function aiMove(){
     drop(col);
 }
 
-/* ===== STATUS ===== */
-function updateStatus(){
-    document.getElementById("status").textContent =
-        current==="player1" ? "Blue's turn" : "Purple's turn";
+/* RENDER */
+function render(){
+    const cells = document.querySelectorAll(".cell");
+
+    for(let i=0;i<cells.length;i++){
+        cells[i].className="cell";
+    }
+
+    for(let r=0;r<ROWS;r++){
+        for(let c=0;c<COLS;c++){
+            let val=board[r][c];
+            if(val){
+                let idx=r*COLS+c;
+                cells[idx].classList.add(val);
+            }
+        }
+    }
+
+    for(let cell of winningCells){
+        let idx=cell.r*COLS+cell.c;
+        let el=cells[idx];
+
+        if(board[cell.r][cell.c]==="player1"){
+            el.classList.add("win-purple");
+        } else {
+            el.classList.add("win-blue");
+        }
+    }
 }
 
-/* ===== WIN CHECK (UNCHANGED LOGIC) ===== */
+/* WIN CHECK */
 function checkDir(r,c,dr,dc){
     let coords=[];
     let player=board[r][c];
@@ -309,33 +301,21 @@ function checkWin(r,c){
     return false;
 }
 
-/* ===== WIN ===== */
+/* WIN */
 function win(player){
     gameOver=true;
 
     document.getElementById("status").textContent =
         player==="player1" ? "Blue wins" : "Purple wins";
-
-    highlightWin();
 }
 
-/* ===== HIGHLIGHT ONLY 4 ===== */
-function highlightWin(){
-    const cells=document.querySelectorAll(".cell");
-
-    for(let cell of winningCells){
-        let idx=cell.r*COLS+cell.c;
-        let el=cells[idx];
-
-        if(board[cell.r][cell.c]==="player1"){
-            el.classList.add("win-purple");
-        } else {
-            el.classList.add("win-blue");
-        }
-    }
+/* STATUS */
+function updateStatus(){
+    document.getElementById("status").textContent =
+        current==="player1" ? "Blue's turn" : "Purple's turn";
 }
 
-/* ===== RESET ===== */
+/* RESET */
 function resetGame(){
     current="player1";
     gameOver=false;
