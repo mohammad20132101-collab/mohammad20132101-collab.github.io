@@ -14,8 +14,57 @@ body{
     text-align:center;
 }
 
+/* ===== MENU ===== */
+#menu{
+    position:absolute;
+    width:100%;
+    height:100%;
+    background:#0f0f1a;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    z-index:10;
+}
+
+.menuBox{
+    background:#141428;
+    padding:30px;
+    border-radius:15px;
+    border:3px solid #4c6fff;
+    box-shadow:0 0 25px #4c6fff55;
+}
+
+.menuBox h1{
+    color:#4c6fff;
+    margin-bottom:10px;
+}
+
+.menuBox button{
+    margin-top:15px;
+    padding:10px 20px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:16px;
+    background:#4c6fff;
+    color:white;
+    box-shadow:0 0 15px #4c6fff55;
+}
+
+.menuBox button:hover{
+    background:#9b5cff;
+    box-shadow:0 0 15px #9b5cff55;
+}
+
+/* ===== GAME AREA ===== */
+#gameArea{
+    display:none;
+}
+
+/* TITLE */
 h1{
     color:#4c6fff;
+    margin-top:15px;
 }
 
 /* CONTROLS */
@@ -65,7 +114,7 @@ button:hover{
     justify-content:center;
 }
 
-/* PLAYERS */
+/* PLAYERS (UNCHANGED) */
 .player1{
     background:#4c6fff;
     box-shadow:0 0 15px #4c6fff;
@@ -76,7 +125,7 @@ button:hover{
     box-shadow:0 0 15px #9b5cff;
 }
 
-/* WIN ONLY (APPLIED ONLY TO 4 CELLS) */
+/* WIN ONLY 4 PIECES */
 .win-blue{
     box-shadow:0 0 25px #9b5cff, 0 0 40px #9b5cff;
 }
@@ -89,6 +138,18 @@ button:hover{
 
 <body>
 
+<!-- ===== MENU ===== -->
+<div id="menu">
+    <div class="menuBox">
+        <h1>🌀 Rift Connect 4</h1>
+        <p>Blue vs Purple Rift Duel</p>
+        <button onclick="startGame()">Enter Rift</button>
+    </div>
+</div>
+
+<!-- ===== GAME ===== -->
+<div id="gameArea">
+
 <h1>🌀 Rift Connect 4</h1>
 
 <div id="controls">
@@ -100,6 +161,8 @@ button:hover{
 
 <h2 id="status">Blue's turn</h2>
 
+</div>
+
 <script>
 
 const ROWS = 6;
@@ -108,16 +171,22 @@ const COLS = 7;
 let board = [];
 let current = "player1";
 let gameOver = false;
+let winningCells = [];
 
-let winningCells = []; // 🔥 STORE ONLY THE 4 WINNING PIECES
+/* ===== MENU START ===== */
+function startGame(){
+    document.getElementById("menu").style.display="none";
+    document.getElementById("gameArea").style.display="block";
+    init();
+}
 
-// INIT
+/* ===== INIT (UNCHANGED LOGIC) ===== */
 function init(){
     board = Array.from({length:ROWS}, ()=>Array(COLS).fill(null));
     createBoard();
 }
 
-// CREATE BOARD
+/* ===== BOARD ===== */
 function createBoard(){
     const boardEl = document.getElementById("board");
     boardEl.innerHTML="";
@@ -126,15 +195,13 @@ function createBoard(){
         for(let c=0;c<COLS;c++){
             const cell = document.createElement("div");
             cell.classList.add("cell");
-            cell.dataset.r = r;
-            cell.dataset.c = c;
             cell.onclick = () => drop(c);
             boardEl.appendChild(cell);
         }
     }
 }
 
-// DROP
+/* ===== DROP (UNCHANGED GAMEPLAY) ===== */
 function drop(col){
     if(gameOver) return;
 
@@ -155,7 +222,7 @@ function drop(col){
     }
 }
 
-// RENDER
+/* ===== RENDER ===== */
 function render(){
     const cells = document.querySelectorAll(".cell");
 
@@ -173,46 +240,39 @@ function render(){
         }
     }
 
-    // 🔥 ONLY highlight winning 4
+    // only 4 winning pieces
     for(let cell of winningCells){
         let idx = cell.r*COLS + cell.c;
-
         let el = cells[idx];
 
         if(board[cell.r][cell.c] === "player1"){
-            el.classList.add("win-purple"); // opposite colour glow
+            el.classList.add("win-purple");
         } else {
             el.classList.add("win-blue");
         }
     }
 }
 
-// WIN CHECK (also STORE WINNING LINE)
+/* ===== WIN CHECK (UNCHANGED LOGIC BEHAVIOUR) ===== */
 function checkDir(r,c,dr,dc){
-    let coords = [];
+    let coords=[];
     let player = board[r][c];
 
-    let rr = r + dr;
-    let cc = c + dc;
+    let rr=r+dr, cc=c+dc;
 
-    while(
-        rr>=0 && rr<ROWS &&
-        cc>=0 && cc<COLS &&
-        board[rr][cc] === player
-    ){
+    while(rr>=0 && rr<ROWS && cc>=0 && cc<COLS && board[rr][cc]===player){
         coords.push({r:rr,c:cc});
-        rr += dr;
-        cc += dc;
+        rr+=dr;
+        cc+=dc;
     }
 
     return coords;
 }
 
 function checkWin(r,c){
-    let start = {r,c};
-    let player = board[r][c];
+    let start={r,c};
 
-    let dirs = [
+    let dirs=[
         [[1,0],[-1,0]],
         [[0,1],[0,-1]],
         [[1,1],[-1,-1]],
@@ -220,14 +280,14 @@ function checkWin(r,c){
     ];
 
     for(let d of dirs){
-        let line = [start];
+        let line=[start];
 
         for(let [dr,dc] of d){
             line = line.concat(checkDir(r,c,dr,dc));
         }
 
-        if(line.length >= 4){
-            winningCells = line.slice(0,4); // 🔥 ONLY 4 CELLS
+        if(line.length>=4){
+            winningCells=line.slice(0,4);
             return true;
         }
     }
@@ -235,33 +295,30 @@ function checkWin(r,c){
     return false;
 }
 
-// WIN
+/* ===== WIN TEXT ===== */
 function win(player){
-    gameOver = true;
+    gameOver=true;
 
     document.getElementById("status").textContent =
-        player === "player1" ? "Blue wins" : "Purple wins";
+        player==="player1" ? "Blue wins" : "Purple wins";
 
     render();
 }
 
-// STATUS
+/* ===== STATUS ===== */
 function updateStatus(){
     document.getElementById("status").textContent =
-        current === "player1" ? "Blue's turn" : "Purple's turn";
+        current==="player1" ? "Blue's turn" : "Purple's turn";
 }
 
-// RESET
+/* ===== RESET ===== */
 function resetGame(){
-    current = "player1";
-    gameOver = false;
-    winningCells = [];
+    current="player1";
+    gameOver=false;
+    winningCells=[];
     updateStatus();
     init();
 }
-
-// START
-init();
 
 </script>
 
