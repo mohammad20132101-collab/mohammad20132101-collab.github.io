@@ -14,19 +14,16 @@ body{
     text-align:center;
 }
 
-/* HEADER */
 h1{
     color:#4c6fff;
-    margin-top:15px;
 }
 
-/* BUTTON AREA (ABOVE GAME, CENTERED) */
+/* CONTROLS */
 #controls{
     display:flex;
     justify-content:center;
     gap:10px;
     margin-top:10px;
-    margin-bottom:10px;
 }
 
 button{
@@ -41,16 +38,15 @@ button{
 
 button:hover{
     background:#9b5cff;
-    box-shadow:0 0 12px #9b5cff55;
 }
 
-/* GAME BOARD */
+/* BOARD */
 #board{
     display:grid;
     grid-template-columns:repeat(7,80px);
     gap:8px;
     justify-content:center;
-    margin-top:10px;
+    margin-top:15px;
     background:#141428;
     padding:15px;
     border-radius:15px;
@@ -58,7 +54,6 @@ button:hover{
     box-shadow:0 0 20px #4c6fff55;
 }
 
-/* CELLS */
 .cell{
     width:80px;
     height:80px;
@@ -70,7 +65,7 @@ button:hover{
     justify-content:center;
 }
 
-/* PIECES */
+/* PLAYERS */
 .player1{
     background:#4c6fff;
     box-shadow:0 0 15px #4c6fff;
@@ -81,7 +76,7 @@ button:hover{
     box-shadow:0 0 15px #9b5cff;
 }
 
-/* WIN HIGHLIGHT (OPPOSITE COLOR RULE) */
+/* WIN ONLY (APPLIED ONLY TO 4 CELLS) */
 .win-blue{
     box-shadow:0 0 25px #9b5cff, 0 0 40px #9b5cff;
 }
@@ -97,7 +92,8 @@ button:hover{
 <h1>🌀 Rift Connect 4</h1>
 
 <div id="controls">
-    <button onclick="resetGame()">Reset Rift</button>
+    <button onclick="resetGame()">Reset</button>
+    <button onclick="window.location.href='index.html'">Back</button>
 </div>
 
 <div id="board"></div>
@@ -112,6 +108,8 @@ const COLS = 7;
 let board = [];
 let current = "player1";
 let gameOver = false;
+
+let winningCells = []; // 🔥 STORE ONLY THE 4 WINNING PIECES
 
 // INIT
 function init(){
@@ -128,29 +126,30 @@ function createBoard(){
         for(let c=0;c<COLS;c++){
             const cell = document.createElement("div");
             cell.classList.add("cell");
-            cell.dataset.col = c;
+            cell.dataset.r = r;
+            cell.dataset.c = c;
             cell.onclick = () => drop(c);
             boardEl.appendChild(cell);
         }
     }
 }
 
-// DROP PIECE
+// DROP
 function drop(col){
     if(gameOver) return;
 
     for(let r=ROWS-1;r>=0;r--){
         if(!board[r][col]){
             board[r][col] = current;
-            render();
 
             if(checkWin(r,col)){
                 win(current);
-                return;
+            } else {
+                current = current === "player1" ? "player2" : "player1";
+                updateStatus();
             }
 
-            current = current === "player1" ? "player2" : "player1";
-            updateStatus();
+            render();
             return;
         }
     }
@@ -173,74 +172,90 @@ function render(){
             }
         }
     }
+
+    // 🔥 ONLY highlight winning 4
+    for(let cell of winningCells){
+        let idx = cell.r*COLS + cell.c;
+
+        let el = cells[idx];
+
+        if(board[cell.r][cell.c] === "player1"){
+            el.classList.add("win-purple"); // opposite colour glow
+        } else {
+            el.classList.add("win-blue");
+        }
+    }
 }
 
-// WIN CHECK (FIXED: 4 IN A ROW)
+// WIN CHECK (also STORE WINNING LINE)
 function checkDir(r,c,dr,dc){
-    let count=0;
+    let coords = [];
     let player = board[r][c];
 
-    r+=dr;
-    c+=dc;
+    let rr = r + dr;
+    let cc = c + dc;
 
     while(
-        r>=0 && r<ROWS &&
-        c>=0 && c<COLS &&
-        board[r][c] === player
+        rr>=0 && rr<ROWS &&
+        cc>=0 && cc<COLS &&
+        board[rr][cc] === player
     ){
-        count++;
-        r+=dr;
-        c+=dc;
+        coords.push({r:rr,c:cc});
+        rr += dr;
+        cc += dc;
     }
 
-    return count;
+    return coords;
 }
 
 function checkWin(r,c){
-    return (
-        checkDir(r,c,1,0) + checkDir(r,c,-1,0) >= 3 ||
-        checkDir(r,c,0,1) + checkDir(r,c,0,-1) >= 3 ||
-        checkDir(r,c,1,1) + checkDir(r,c,-1,-1) >= 3 ||
-        checkDir(r,c,1,-1) + checkDir(r,c,-1,1) >= 3
-    );
+    let start = {r,c};
+    let player = board[r][c];
+
+    let dirs = [
+        [[1,0],[-1,0]],
+        [[0,1],[0,-1]],
+        [[1,1],[-1,-1]],
+        [[1,-1],[-1,1]]
+    ];
+
+    for(let d of dirs){
+        let line = [start];
+
+        for(let [dr,dc] of d){
+            line = line.concat(checkDir(r,c,dr,dc));
+        }
+
+        if(line.length >= 4){
+            winningCells = line.slice(0,4); // 🔥 ONLY 4 CELLS
+            return true;
+        }
+    }
+
+    return false;
 }
 
-// WIN HANDLER (FIXED TEXT + OPPOSITE COLOR LINE)
+// WIN
 function win(player){
     gameOver = true;
 
-    const status = document.getElementById("status");
+    document.getElementById("status").textContent =
+        player === "player1" ? "Blue wins" : "Purple wins";
 
-    if(player === "player1"){
-        status.textContent = "Blue wins";
-        highlightWin("win-purple"); // opposite colour line
-    } else {
-        status.textContent = "Purple wins";
-        highlightWin("win-blue");
-    }
-}
-
-// HIGHLIGHT WINNING PIECES (simple glow all same player pieces)
-function highlightWin(cls){
-    const cells = document.querySelectorAll(".cell");
-
-    cells.forEach(cell=>{
-        if(cell.classList.contains("player1") || cell.classList.contains("player2")){
-            cell.classList.add(cls);
-        }
-    });
+    render();
 }
 
 // STATUS
 function updateStatus(){
     document.getElementById("status").textContent =
-    current === "player1" ? "Blue's turn" : "Purple's turn";
+        current === "player1" ? "Blue's turn" : "Purple's turn";
 }
 
 // RESET
 function resetGame(){
     current = "player1";
     gameOver = false;
+    winningCells = [];
     updateStatus();
     init();
 }
