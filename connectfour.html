@@ -14,75 +14,43 @@ body{
     text-align:center;
 }
 
-/* ===== YOUR EXACT START MENU STYLE ===== */
-#startScreen{
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,0.85);
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    z-index:999;
-}
-
-#menu{
-    background:#141428;
-    border:3px solid #4c6fff;
-    border-radius:20px;
-    padding:40px;
-    width:350px;
-    box-shadow:0 0 25px #4c6fff66;
-}
-
-#menu h1{
-    margin-top:0;
-    color:#4c6fff;
-}
-
-.modeBtn{
-    width:100%;
-    margin:8px 0;
-    font-size:18px;
-    padding:10px;
-    border:none;
-    border-radius:10px;
-    cursor:pointer;
-    background:#4c6fff;
-    color:white;
-}
-
-.modeBtn.selected{
-    background:#6e85ff;
-    box-shadow:0 0 15px #4c6fff;
-}
-
-/* ===== GAME ===== */
+/* HEADER */
 h1{
     color:#4c6fff;
+    margin-top:15px;
+}
+
+/* BUTTON AREA (ABOVE GAME, CENTERED) */
+#controls{
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    margin-top:10px;
+    margin-bottom:10px;
 }
 
 button{
-    padding:10px 15px;
-    border:none;
-    border-radius:8px;
-    cursor:pointer;
     background:#4c6fff;
+    border:none;
+    padding:10px 15px;
+    border-radius:8px;
     color:white;
-    margin:5px;
+    cursor:pointer;
+    box-shadow:0 0 12px #4c6fff55;
 }
 
-/* BOARD */
-#boardWrapper{
-    position:relative;
-    display:inline-block;
+button:hover{
+    background:#9b5cff;
+    box-shadow:0 0 12px #9b5cff55;
 }
 
+/* GAME BOARD */
 #board{
     display:grid;
     grid-template-columns:repeat(7,80px);
     gap:8px;
     justify-content:center;
-    margin-top:20px;
+    margin-top:10px;
     background:#141428;
     padding:15px;
     border-radius:15px;
@@ -97,219 +65,188 @@ button{
     border-radius:50%;
     background:#0f0f1a;
     cursor:pointer;
-    box-shadow: inset 0 0 10px rgba(0,0,0,0.7);
+    display:flex;
+    align-items:center;
+    justify-content:center;
 }
 
-.p1{ background:#4c6fff; box-shadow:0 0 15px #4c6fff; }
-.p2{ background:#9b5cff; box-shadow:0 0 15px #9b5cff; }
-
-/* DROP FIX (no shaking bug) */
-.drop{
-    animation:drop 0.2s ease;
-}
-
-@keyframes drop{
-    from{transform:translateY(-120px);}
-    to{transform:translateY(0);}
-}
-
-/* WIN LINE */
-#winLine{
-    position:absolute;
-    height:6px;
-    background:linear-gradient(90deg,#4c6fff,#9b5cff);
+/* PIECES */
+.player1{
+    background:#4c6fff;
     box-shadow:0 0 15px #4c6fff;
-    border-radius:10px;
-    transform-origin:left center;
-    z-index:10;
+}
+
+.player2{
+    background:#9b5cff;
+    box-shadow:0 0 15px #9b5cff;
+}
+
+/* WIN HIGHLIGHT (OPPOSITE COLOR RULE) */
+.win-blue{
+    box-shadow:0 0 25px #9b5cff, 0 0 40px #9b5cff;
+}
+
+.win-purple{
+    box-shadow:0 0 25px #4c6fff, 0 0 40px #4c6fff;
 }
 </style>
 </head>
 
 <body>
 
-<!-- ===== YOUR MENU (UNCHANGED STYLE) ===== -->
-<div id="startScreen">
-    <div id="menu">
-        <h1>Rift Connect 4</h1>
-        <p>Select Mode</p>
-        <button class="modeBtn" onclick="startGame(1)">1 Player</button>
-        <button class="modeBtn" onclick="startGame(2)">2 Players</button>
-    </div>
+<h1>🌀 Rift Connect 4</h1>
+
+<div id="controls">
+    <button onclick="resetGame()">Reset Rift</button>
 </div>
 
-<h1>Rift Connect 4</h1>
+<div id="board"></div>
 
-<button onclick="backToMenu()">Back</button>
-<button onclick="restart()">Restart</button>
-
-<div id="boardWrapper">
-    <div id="board"></div>
-</div>
-
-<p id="status"></p>
+<h2 id="status">Blue's turn</h2>
 
 <script>
 
-const ROWS=6, COLS=7;
+const ROWS = 6;
+const COLS = 7;
 
-let board=[];
-let current=1;
-let gameOver=false;
+let board = [];
+let current = "player1";
+let gameOver = false;
 
-const boardEl=document.getElementById("board");
-const statusEl=document.getElementById("status");
-const wrapper=document.getElementById("boardWrapper");
-
-/* ===== MENU ===== */
-function startGame(mode){
-    document.getElementById("startScreen").style.display="none";
-    init();
-}
-
-function backToMenu(){
-    document.getElementById("startScreen").style.display="flex";
-    resetBoard();
-}
-
-/* ===== INIT ===== */
+// INIT
 function init(){
-    resetBoard();
-    draw();
-    statusEl.textContent="Player 1 starts";
+    board = Array.from({length:ROWS}, ()=>Array(COLS).fill(null));
+    createBoard();
 }
 
-function resetBoard(){
-    board=Array.from({length:ROWS},()=>Array(COLS).fill(0));
-    current=1;
-    gameOver=false;
-    clearWinLine();
-}
-
-/* ===== DRAW ===== */
-function draw(){
+// CREATE BOARD
+function createBoard(){
+    const boardEl = document.getElementById("board");
     boardEl.innerHTML="";
 
     for(let r=0;r<ROWS;r++){
         for(let c=0;c<COLS;c++){
-
-            let cell=document.createElement("div");
-            cell.className="cell";
-
-            if(board[r][c]===1) cell.classList.add("p1");
-            if(board[r][c]===2) cell.classList.add("p2");
-
-            cell.onclick=()=>play(c);
+            const cell = document.createElement("div");
+            cell.classList.add("cell");
+            cell.dataset.col = c;
+            cell.onclick = () => drop(c);
             boardEl.appendChild(cell);
         }
     }
 }
 
-/* ===== PLAY ===== */
-function play(col){
-
+// DROP PIECE
+function drop(col){
     if(gameOver) return;
 
     for(let r=ROWS-1;r>=0;r--){
-        if(board[r][col]===0){
-            board[r][col]=current;
-            draw();
+        if(!board[r][col]){
+            board[r][col] = current;
+            render();
 
-            let path=getWinPath(r,col);
-
-            if(path){
-                statusEl.textContent=`Player ${current} wins!`;
-                drawWinLine(path);
-                gameOver=true;
+            if(checkWin(r,col)){
+                win(current);
                 return;
             }
 
-            current=current===1?2:1;
-            statusEl.textContent=`Player ${current}'s turn`;
+            current = current === "player1" ? "player2" : "player1";
+            updateStatus();
             return;
         }
     }
 }
 
-/* ===== TRUE WIN PATH ===== */
-function getWinPath(r,c){
+// RENDER
+function render(){
+    const cells = document.querySelectorAll(".cell");
 
-    let p=board[r][c];
-
-    function dir(dr,dc){
-        let cells=[[r,c]];
-        let rr=r+dr, cc=c+dc;
-
-        while(rr>=0&&rr<ROWS&&cc>=0&&cc<COLS&&board[rr][cc]===p){
-            cells.push([rr,cc]);
-            rr+=dr; cc+=dc;
-        }
-        return cells;
+    for(let i=0;i<cells.length;i++){
+        cells[i].className="cell";
     }
 
-    function check(dr,dc){
-        let a=dir(dr,dc);
-        let b=dir(-dr,-dc);
-        let all=[...a,...b];
-
-        if(all.length>=4){
-            return all.slice(0,4);
+    for(let r=0;r<ROWS;r++){
+        for(let c=0;c<COLS;c++){
+            let val = board[r][c];
+            if(val){
+                let idx = r*COLS+c;
+                cells[idx].classList.add(val);
+            }
         }
-        return null;
+    }
+}
+
+// WIN CHECK (FIXED: 4 IN A ROW)
+function checkDir(r,c,dr,dc){
+    let count=0;
+    let player = board[r][c];
+
+    r+=dr;
+    c+=dc;
+
+    while(
+        r>=0 && r<ROWS &&
+        c>=0 && c<COLS &&
+        board[r][c] === player
+    ){
+        count++;
+        r+=dr;
+        c+=dc;
     }
 
+    return count;
+}
+
+function checkWin(r,c){
     return (
-        check(0,1) ||
-        check(1,0) ||
-        check(1,1) ||
-        check(1,-1)
+        checkDir(r,c,1,0) + checkDir(r,c,-1,0) >= 3 ||
+        checkDir(r,c,0,1) + checkDir(r,c,0,-1) >= 3 ||
+        checkDir(r,c,1,1) + checkDir(r,c,-1,-1) >= 3 ||
+        checkDir(r,c,1,-1) + checkDir(r,c,-1,1) >= 3
     );
 }
 
-/* ===== PERFECT ANGLED WIN LINE ===== */
-function drawWinLine(path){
+// WIN HANDLER (FIXED TEXT + OPPOSITE COLOR LINE)
+function win(player){
+    gameOver = true;
 
-    clearWinLine();
+    const status = document.getElementById("status");
 
-    let first=path[0];
-    let last=path[3];
-
-    let cells=document.querySelectorAll(".cell");
-
-    let start=cells[first[0]*COLS+first[1]].getBoundingClientRect();
-    let end=cells[last[0]*COLS+last[1]].getBoundingClientRect();
-    let wrap=wrapper.getBoundingClientRect();
-
-    let x1=start.left+40-wrap.left;
-    let y1=start.top+40-wrap.top;
-    let x2=end.left+40-wrap.left;
-    let y2=end.top+40-wrap.top;
-
-    let line=document.createElement("div");
-    line.id="winLine";
-
-    let length=Math.hypot(x2-x1,y2-y1);
-    let angle=Math.atan2(y2-y1,x2-x1)*180/Math.PI;
-
-    line.style.width=length+"px";
-    line.style.left=x1+"px";
-    line.style.top=y1+"px";
-    line.style.transform=`rotate(${angle}deg)`;
-
-    wrapper.appendChild(line);
+    if(player === "player1"){
+        status.textContent = "Blue wins";
+        highlightWin("win-purple"); // opposite colour line
+    } else {
+        status.textContent = "Purple wins";
+        highlightWin("win-blue");
+    }
 }
 
-function clearWinLine(){
-    let old=document.getElementById("winLine");
-    if(old) old.remove();
+// HIGHLIGHT WINNING PIECES (simple glow all same player pieces)
+function highlightWin(cls){
+    const cells = document.querySelectorAll(".cell");
+
+    cells.forEach(cell=>{
+        if(cell.classList.contains("player1") || cell.classList.contains("player2")){
+            cell.classList.add(cls);
+        }
+    });
 }
 
-/* ===== RESTART ===== */
-function restart(){
-    resetBoard();
-    draw();
-    statusEl.textContent="Player 1 starts";
+// STATUS
+function updateStatus(){
+    document.getElementById("status").textContent =
+    current === "player1" ? "Blue's turn" : "Purple's turn";
 }
+
+// RESET
+function resetGame(){
+    current = "player1";
+    gameOver = false;
+    updateStatus();
+    init();
+}
+
+// START
+init();
 
 </script>
 
