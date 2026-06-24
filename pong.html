@@ -82,6 +82,18 @@ button {
     margin-top:15px;
     font-size:20px;
 }
+    #backBtn{
+    position:absolute;
+    top:15px;
+    left:15px;
+    background:#4c6fff;
+    color:white;
+    border:none;
+    padding:10px 15px;
+    border-radius:8px;
+    cursor:pointer;
+    z-index:1000;
+}
 </style>
 </head>
 
@@ -90,10 +102,12 @@ button {
 <header>
 <h1>🏓Pong</h1>
 </header>
-
+<div>
+    <button onclick="goBack()">⬅ Back</button>
+</div>
 <div id="startScreen">
     <div id="menu">
-
+    <h1>Rift Pong</h1>
         <p>Select Mode</p>
 
         <button onclick="chooseMode(1)" class="modeBtn" id="mode1">
