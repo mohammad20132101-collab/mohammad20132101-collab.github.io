@@ -36,16 +36,14 @@ body{
 
 .menuBox h1{
     color:#4c6fff;
-    margin-bottom:10px;
 }
 
 .menuBox button{
-    margin-top:15px;
+    margin:10px;
     padding:10px 20px;
     border:none;
     border-radius:8px;
     cursor:pointer;
-    font-size:16px;
     background:#4c6fff;
     color:white;
     box-shadow:0 0 15px #4c6fff55;
@@ -53,21 +51,18 @@ body{
 
 .menuBox button:hover{
     background:#9b5cff;
-    box-shadow:0 0 15px #9b5cff55;
 }
 
-/* ===== GAME AREA ===== */
+/* ===== GAME ===== */
 #gameArea{
     display:none;
 }
 
-/* TITLE */
 h1{
     color:#4c6fff;
-    margin-top:15px;
 }
 
-/* CONTROLS */
+/* controls ABOVE board */
 #controls{
     display:flex;
     justify-content:center;
@@ -75,21 +70,7 @@ h1{
     margin-top:10px;
 }
 
-button{
-    background:#4c6fff;
-    border:none;
-    padding:10px 15px;
-    border-radius:8px;
-    color:white;
-    cursor:pointer;
-    box-shadow:0 0 12px #4c6fff55;
-}
-
-button:hover{
-    background:#9b5cff;
-}
-
-/* BOARD */
+/* board */
 #board{
     display:grid;
     grid-template-columns:repeat(7,80px);
@@ -100,21 +81,19 @@ button:hover{
     padding:15px;
     border-radius:15px;
     border:3px solid #4c6fff;
-    box-shadow:0 0 20px #4c6fff55;
 }
 
+/* cell */
 .cell{
     width:80px;
     height:80px;
     border-radius:50%;
     background:#0f0f1a;
-    cursor:pointer;
-    display:flex;
-    align-items:center;
-    justify-content:center;
+    position:relative;
+    overflow:hidden;
 }
 
-/* PLAYERS (UNCHANGED) */
+/* pieces */
 .player1{
     background:#4c6fff;
     box-shadow:0 0 15px #4c6fff;
@@ -125,13 +104,37 @@ button:hover{
     box-shadow:0 0 15px #9b5cff;
 }
 
-/* WIN ONLY 4 PIECES */
+/* REAL FALL ANIMATION */
+.piece{
+    width:80px;
+    height:80px;
+    border-radius:50%;
+    position:absolute;
+    top:-500px;
+    animation:fall 0.35s ease-out forwards;
+}
+
+@keyframes fall{
+    from{ transform:translateY(-600px); }
+    to{ transform:translateY(0); }
+}
+
+/* win */
 .win-blue{
-    box-shadow:0 0 25px #9b5cff, 0 0 40px #9b5cff;
+    box-shadow:0 0 25px #9b5cff;
 }
 
 .win-purple{
-    box-shadow:0 0 25px #4c6fff, 0 0 40px #4c6fff;
+    box-shadow:0 0 25px #4c6fff;
+}
+
+button{
+    background:#4c6fff;
+    border:none;
+    padding:10px 15px;
+    border-radius:8px;
+    color:white;
+    cursor:pointer;
 }
 </style>
 </head>
@@ -142,15 +145,17 @@ button:hover{
 <div id="menu">
     <div class="menuBox">
         <h1>🌀 Rift Connect 4</h1>
-        <p>Blue vs Purple Rift Duel</p>
-        <button onclick="startGame()">Enter Rift</button>
+        <p>Select Mode</p>
+
+        <button onclick="startGame(1)">1 Player</button>
+        <button onclick="startGame(2)">2 Player</button>
     </div>
 </div>
 
 <!-- ===== GAME ===== -->
 <div id="gameArea">
 
-<h1>🌀 Rift Connect 4</h1>
+<h1>Rift Connect 4</h1>
 
 <div id="controls">
     <button onclick="resetGame()">Reset</button>
@@ -171,16 +176,18 @@ const COLS = 7;
 let board = [];
 let current = "player1";
 let gameOver = false;
+let mode = 2; // 1 or 2 player
 let winningCells = [];
 
 /* ===== MENU START ===== */
-function startGame(){
+function startGame(m){
+    mode = m;
     document.getElementById("menu").style.display="none";
     document.getElementById("gameArea").style.display="block";
     init();
 }
 
-/* ===== INIT (UNCHANGED LOGIC) ===== */
+/* ===== INIT ===== */
 function init(){
     board = Array.from({length:ROWS}, ()=>Array(COLS).fill(null));
     createBoard();
@@ -201,7 +208,7 @@ function createBoard(){
     }
 }
 
-/* ===== DROP (UNCHANGED GAMEPLAY) ===== */
+/* ===== DROP (WITH FALL ANIMATION) ===== */
 function drop(col){
     if(gameOver) return;
 
@@ -209,54 +216,61 @@ function drop(col){
         if(!board[r][col]){
             board[r][col] = current;
 
+            animateDrop(r,col,current);
+
             if(checkWin(r,col)){
                 win(current);
             } else {
-                current = current === "player1" ? "player2" : "player1";
+                current = current==="player1" ? "player2" : "player1";
                 updateStatus();
+
+                if(mode===1 && current==="player2"){
+                    setTimeout(aiMove,300);
+                }
             }
 
-            render();
             return;
         }
     }
 }
 
-/* ===== RENDER ===== */
-function render(){
+/* ===== FALL ANIMATION ===== */
+function animateDrop(r,c,player){
+    const boardEl = document.getElementById("board");
     const cells = document.querySelectorAll(".cell");
 
-    for(let i=0;i<cells.length;i++){
-        cells[i].className="cell";
-    }
+    const idx = r*COLS+c;
+    const cell = cells[idx];
 
-    for(let r=0;r<ROWS;r++){
-        for(let c=0;c<COLS;c++){
-            let val = board[r][c];
-            if(val){
-                let idx = r*COLS+c;
-                cells[idx].classList.add(val);
-            }
-        }
-    }
+    const piece = document.createElement("div");
+    piece.classList.add("piece",player);
 
-    // only 4 winning pieces
-    for(let cell of winningCells){
-        let idx = cell.r*COLS + cell.c;
-        let el = cells[idx];
-
-        if(board[cell.r][cell.c] === "player1"){
-            el.classList.add("win-purple");
-        } else {
-            el.classList.add("win-blue");
-        }
-    }
+    cell.appendChild(piece);
 }
 
-/* ===== WIN CHECK (UNCHANGED LOGIC BEHAVIOUR) ===== */
+/* ===== AI (SIMPLE RANDOM) ===== */
+function aiMove(){
+    if(gameOver) return;
+
+    let valid=[];
+    for(let c=0;c<COLS;c++){
+        if(board[0][c]===null) valid.push(c);
+    }
+
+    let col = valid[Math.floor(Math.random()*valid.length)];
+    drop(col);
+}
+
+/* ===== STATUS ===== */
+function updateStatus(){
+    document.getElementById("status").textContent =
+        current==="player1" ? "Blue's turn" : "Purple's turn";
+}
+
+/* ===== WIN CHECK (UNCHANGED LOGIC) ===== */
 function checkDir(r,c,dr,dc){
     let coords=[];
-    let player = board[r][c];
+    let player=board[r][c];
 
     let rr=r+dr, cc=c+dc;
 
@@ -283,7 +297,7 @@ function checkWin(r,c){
         let line=[start];
 
         for(let [dr,dc] of d){
-            line = line.concat(checkDir(r,c,dr,dc));
+            line=line.concat(checkDir(r,c,dr,dc));
         }
 
         if(line.length>=4){
@@ -295,20 +309,30 @@ function checkWin(r,c){
     return false;
 }
 
-/* ===== WIN TEXT ===== */
+/* ===== WIN ===== */
 function win(player){
     gameOver=true;
 
     document.getElementById("status").textContent =
         player==="player1" ? "Blue wins" : "Purple wins";
 
-    render();
+    highlightWin();
 }
 
-/* ===== STATUS ===== */
-function updateStatus(){
-    document.getElementById("status").textContent =
-        current==="player1" ? "Blue's turn" : "Purple's turn";
+/* ===== HIGHLIGHT ONLY 4 ===== */
+function highlightWin(){
+    const cells=document.querySelectorAll(".cell");
+
+    for(let cell of winningCells){
+        let idx=cell.r*COLS+cell.c;
+        let el=cells[idx];
+
+        if(board[cell.r][cell.c]==="player1"){
+            el.classList.add("win-purple");
+        } else {
+            el.classList.add("win-blue");
+        }
+    }
 }
 
 /* ===== RESET ===== */
