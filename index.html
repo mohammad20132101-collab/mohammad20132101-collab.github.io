@@ -47,13 +47,12 @@ header {
   border-radius: 8px;
   border: none;
 }
+
 .game-grid {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 15px;
   padding: 10px;
-  flex-wrap: wrap;
 }
 
 .exclusives-list {
@@ -70,8 +69,6 @@ header {
   border-radius: 12px;
   text-align: center;
   overflow: hidden;
-  width: 250px;      /* fixed width */
-  flex: 0 0 250px;   /* prevents stretching/shrinking */
 }
 
 .game-card img {
@@ -96,7 +93,22 @@ a {
   margin: 0 10px;
   cursor: pointer;
 }
-</style>
+.game-grid.one {
+  display: flex;
+  justify-content: center;
+}
+
+.game-grid.two {
+  display: flex;
+  justify-content: space-between;
+}
+
+.game-grid.three {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+}
+</style>      
 </head>
 
 <body>
@@ -337,6 +349,18 @@ document.getElementById("search").addEventListener("input", function () {
 /* MUSIC */
 const music = document.getElementById("bgMusic");
 music.volume = 0.05;
+  function fixLayout(){
+  const grid = document.querySelector(".game-grid");
+  const items = document.querySelectorAll(".game-card");
+
+  grid.classList.remove("one","two","three");
+
+  if(items.length === 1) grid.classList.add("one");
+  else if(items.length === 2) grid.classList.add("two");
+  else grid.classList.add("three");
+}
+
+fixLayout();
 </script>
 
 </body>
