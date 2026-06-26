@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rift Perfect Draw</title>
+<title>Rift Perfect Circle</title>
 
 <style>
 body{
@@ -15,9 +15,9 @@ body{
 }
 
 h1{
+  margin:10px;
   color:#4c6fff;
   text-shadow:0 0 12px #4c6fff;
-  margin:10px;
 }
 
 #score{
@@ -31,31 +31,27 @@ canvas{
   border:3px solid #4c6fff;
   border-radius:10px;
   box-shadow:0 0 25px #4c6fff33;
-  margin-top:10px;
 }
 </style>
 </head>
 
 <body>
 
-<h1>🌀 Rift Perfect Draw</h1>
+<h1>🌀 Rift Perfect Circle</h1>
 <div id="score">Hold mouse to draw</div>
 
 <canvas id="c" width="500" height="500"></canvas>
 
 <script>
-let canvas = document.getElementById("c");
-let ctx = canvas.getContext("2d");
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
 
 let drawing = false;
 let finished = false;
-
 let points = [];
-let pathStarted = false;
 
-let center = {x:250, y:250};
-
-let score = 0;
+const center = {x:250,y:250};
+let lastScore = 0;
 
 /* RESET */
 function reset(){
@@ -63,16 +59,15 @@ function reset(){
   points = [];
   drawing = false;
   finished = false;
-  pathStarted = false;
-  score = 0;
-  updateScore("Hold mouse to draw");
+  lastScore = 0;
   drawCenter();
+  setText("Hold mouse to draw");
 }
 
 /* CENTER DOT */
 function drawCenter(){
   ctx.fillStyle="#4c6fff";
-  ctx.shadowBlur=12;
+  ctx.shadowBlur=10;
   ctx.shadowColor="#4c6fff";
   ctx.beginPath();
   ctx.arc(center.x,center.y,5,0,Math.PI*2);
@@ -80,131 +75,141 @@ function drawCenter(){
 }
 drawCenter();
 
-/* START DRAW */
-canvas.addEventListener("mousedown", (e)=>{
-
-  if(finished){
-    reset();
-  }
+/* START */
+canvas.addEventListener("mousedown", ()=>{
+  if(finished) reset();
 
   drawing = true;
-
-  ctx.beginPath(); // real stroke start
-  pathStarted = true;
+  ctx.beginPath();
 });
 
-/* STOP DRAW */
+/* END */
 canvas.addEventListener("mouseup", ()=>{
   if(!drawing) return;
 
   drawing = false;
   finished = true;
 
-  let final = calculateScore();
-  updateScore("Final Score: " + final.toFixed(1) + "%");
+  setText("Final: " + lastScore.toFixed(1) + "%");
 });
 
 /* DRAW */
 canvas.addEventListener("mousemove", (e)=>{
   if(!drawing || finished) return;
 
-  let rect = canvas.getBoundingClientRect();
-  let x = e.clientX - rect.left;
-  let y = e.clientY - rect.top;
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
 
   points.push({x,y});
 
-  drawLine(x,y);
+  let acc = pointAccuracy(x,y);
+  drawStroke(x,y,acc);
 
-  let live = liveScore(x,y);
-  updateScore("Score: " + live.toFixed(1) + "%");
+  lastScore = computeScore();
+  setText("Score: " + lastScore.toFixed(1) + "%");
 });
 
-/* REAL LINE (not dots) */
-function drawLine(x,y){
+/* 🎨 COLOURED REAL STROKE */
+function drawStroke(x,y,acc){
+
+  let col = "#ff4444";
+  if(acc > 80) col = "#00ff99";
+  else if(acc > 50) col = "#ffdd55";
+
+  ctx.strokeStyle = col;
+  ctx.shadowBlur = 6;
+  ctx.shadowColor = col;
+  ctx.lineWidth = 3;
 
   ctx.lineTo(x,y);
-  ctx.strokeStyle = "#4c6fff";
-  ctx.lineWidth = 3;
-  ctx.shadowBlur = 8;
-  ctx.shadowColor = "#4c6fff";
   ctx.stroke();
 }
 
-/* LIVE SCORE (robust) */
-function liveScore(x,y){
-  if(points.length < 5) return 0;
-
-  let r = estimatedRadius();
-
-  let error = 0;
-
-  for(let p of points){
-    let d = dist(p.x,p.y,center.x,center.y);
-    error += Math.abs(d - r);
-  }
-
-  let base = 100 - (error / points.length / 2);
-
-  return clamp(base, 0, 100);
-}
-
-/* FINAL SCORE (better + size aware) */
-function calculateScore(){
+/* 🧠 BEST-FIT CIRCLE APPROX (REAL GAME METHOD) */
+function computeScore(){
 
   if(points.length < 10) return 0;
 
-  let r = estimatedRadius();
+  // Step 1: estimate center (average of points)
+  let cx = 0, cy = 0;
+  for(let p of points){
+    cx += p.x;
+    cy += p.y;
+  }
+  cx /= points.length;
+  cy /= points.length;
 
+  // Step 2: estimate radius
+  let r = 0;
+  for(let p of points){
+    r += dist(p.x,p.y,cx,cy);
+  }
+  r /= points.length;
+
+  // Step 3: error (variance from circle)
   let error = 0;
   let wobble = 0;
 
   for(let i=1;i<points.length;i++){
     let p = points[i];
-    let d = dist(p.x,p.y,center.x,center.y);
 
+    let d = dist(p.x,p.y,cx,cy);
     error += Math.abs(d - r);
 
-    // wobble penalty (random lines get punished)
-    wobble += dist(points[i-1].x,points[i-1].y,p.x,p.y);
+    wobble += dist(points[i],points[i-1]);
   }
 
   let avgError = error / points.length;
   let avgWobble = wobble / points.length;
 
-  // FINAL COMBINATION SCORE
+  // REALISTIC SCORING MODEL
   let score =
     100
-    - avgError * 1.8
-    - Math.abs(avgWobble - 5) * 2;
+    - (avgError / r) * 130
+    - Math.abs(avgWobble - 5) * 1.5;
 
   return clamp(score,0,100);
 }
 
-/* AUTO DETECT SIZE (fixes your BIGGEST problem) */
-function estimatedRadius(){
-  let total = 0;
+/* LIVE POINT ACCURACY */
+function pointAccuracy(x,y){
 
+  let cx = averageX();
+  let cy = averageY();
+  let r = averageRadius(cx,cy);
+
+  let d = dist(x,y,cx,cy);
+
+  return Math.max(0, 100 - Math.abs(d - r) * 1.5);
+}
+
+/* helpers */
+function averageX(){
+  return points.reduce((a,p)=>a+p.x,0)/Math.max(points.length,1);
+}
+function averageY(){
+  return points.reduce((a,p)=>a+p.y,0)/Math.max(points.length,1);
+}
+function averageRadius(cx,cy){
+  let sum = 0;
   for(let p of points){
-    total += dist(p.x,p.y,center.x,center.y);
+    sum += dist(p.x,p.y,cx,cy);
   }
-
-  return total / points.length;
+  return sum / Math.max(points.length,1);
 }
 
-/* DIST */
 function dist(x1,y1,x2,y2){
-  return Math.sqrt((x1-x2)**2 + (y1-y2)**2);
+  return Math.hypot(x1-x2,y1-y2);
 }
 
-/* CLAMP */
 function clamp(v,min,max){
   return Math.max(min,Math.min(max,v));
 }
 
 /* UI */
-function updateScore(text){
-  document.getElementById("score").innerText = text;
+function setText(t){
+  document.getElementById("score").innerText = t;
 }
 </script>
 
