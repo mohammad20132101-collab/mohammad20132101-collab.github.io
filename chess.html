@@ -52,7 +52,7 @@ button{
   margin-top:20px;
 }
 
-/* CAPTURES */
+/* CAPTURES FIXED */
 .captures{
   width:160px;
   min-height:560px;
@@ -78,6 +78,7 @@ button{
   align-items:center;
   font-size:30px;
   cursor:pointer;
+  box-sizing:border-box;
 }
 
 .light{ background:#141428; }
@@ -86,10 +87,18 @@ button{
 .blue{ color:#4c6fff; }
 .purple{ color:#9b5cff; }
 
-/* FIXED HIGHLIGHTS (VISIBLE AGAIN) */
-.move{ background:#2a4a7a !important; }
-.capture{ background:#7a2a2a !important; }
-.selected{ outline:2px solid #4c6fff; }
+/* ✔ FIXED GREEN HIGHLIGHT */
+.move{ background:#1f5f3a !important; }
+
+/* ✔ FULL BORDER SELECTION (ALL SIDES) */
+.selected{
+  border:3px solid #4c6fff !important;
+  box-shadow:0 0 10px #4c6fff;
+  box-sizing:border-box;
+}
+
+/* capture highlight */
+.capture{ background:#6b2a2a !important; }
 
 /* PROMO */
 #promo{
@@ -113,7 +122,6 @@ button{
 
 <body>
 
-<!-- MENU -->
 <div id="menu">
   <div class="menuBox">
     <h1>🌀 Rift Chess</h1>
@@ -122,25 +130,19 @@ button{
   </div>
 </div>
 
-<!-- GAME -->
 <div id="game">
 
 <h1 id="status">Blue's turn</h1>
-<p style="color:#9aa0ff;font-size:14px;">No en passant • No castling</p>
 
 <div class="container">
-
   <div class="captures" id="capPurple">🟣 Captured</div>
-
   <div id="board"></div>
-
   <div class="captures" id="capBlue">🟦 Captured</div>
-
 </div>
 
 </div>
 
-<!-- PROMOTION -->
+<!-- PROMO -->
 <div id="promo">
   <div class="promoBox">
     <button onclick="promote('q')">Queen</button>
@@ -159,15 +161,14 @@ let mode=2;
 
 let capBlue=[];
 let capPurple=[];
-
 let promo=null;
 
+/* PIECES */
 const P={
   bp:"♟",br:"♜",bn:"♞",bb:"♝",bq:"♛",bk:"♚",
   pp:"♟",pr:"♜",pn:"♞",pb:"♝",pq:"♛",pk:"♚"
 };
 
-/* START MODE (FIXED) */
 function start(m){
   mode=m;
   document.getElementById("menu").style.display="none";
@@ -211,6 +212,8 @@ function draw(){
       b.appendChild(d);
     }
   }
+
+  renderCaptures();
 }
 
 /* CLICK */
@@ -232,7 +235,6 @@ function click(r,c){
 
     turn = turn==="blue"?"purple":"blue";
     update();
-
     draw();
 
     if(mode===1 && turn==="purple"){
@@ -241,7 +243,7 @@ function click(r,c){
   }
 }
 
-/* MOVE */
+/* MOVE + CAPTURE */
 function move(fr,fc,tr,tc){
 
   let p=board[fr][fc];
@@ -253,22 +255,9 @@ function move(fr,fc,tr,tc){
 
   board[tr][tc]=p;
   board[fr][fc]=null;
-
-  if(p[1]==="p" && (tr===0||tr===7)){
-    promo={r:tr,c:tc,color:p[0]};
-    document.getElementById("promo").style.display="flex";
-  }
 }
 
-/* PROMOTE */
-function promote(type){
-  board[promo.r][promo.c]=promo.color+type;
-  promo=null;
-  document.getElementById("promo").style.display="none";
-  draw();
-}
-
-/* LEGAL */
+/* LEGAL FIX (BLOCKING ADDED) */
 function legal(fr,fc,tr,tc){
   let p=board[fr][fc];
   if(!p) return false;
@@ -276,27 +265,49 @@ function legal(fr,fc,tr,tc){
   let dr=tr-fr, dc=tc-fc;
   let t=p[1];
 
+  // pawn
   if(t==="p"){
     let dir=p[0]==="b"?-1:1;
 
     if(dc===0 && !board[tr][tc]){
       if(dr===dir) return true;
-      if((fr===1||fr===6)&&dr===2*dir) return true;
+      if((fr===1||fr===6)&&dr===2*dir && !board[fr+dir][fc]) return true;
     }
 
     if(Math.abs(dc)===1 && dr===dir && board[tr][tc]) return true;
   }
 
-  if(t==="r") return dr===0||dc===0;
-  if(t==="b") return Math.abs(dr)===Math.abs(dc);
-  if(t==="q") return dr===0||dc===0||Math.abs(dr)===Math.abs(dc);
+  // ROOK / BISHOP / QUEEN NEED BLOCK CHECK
+  if(t==="r"||t==="b"||t==="q"){
+    if(t==="r" && !(dr===0||dc===0)) return false;
+    if(t==="b" && Math.abs(dr)!==Math.abs(dc)) return false;
+    if(t==="q" && !(dr===0||dc===0||Math.abs(dr)===Math.abs(dc))) return false;
+
+    return clearPath(fr,fc,tr,tc);
+  }
+
   if(t==="k") return Math.abs(dr)<=1&&Math.abs(dc)<=1;
   if(t==="n") return (Math.abs(dr)===2&&Math.abs(dc)===1)||(Math.abs(dr)===1&&Math.abs(dc)===2);
 
   return false;
 }
 
-/* HIGHLIGHT FIXED */
+/* ✔ THIS FIXES “JUMPING PIECES” */
+function clearPath(fr,fc,tr,tc){
+  let dr=Math.sign(tr-fr);
+  let dc=Math.sign(tc-fc);
+
+  let r=fr+dr,c=fc+dc;
+
+  while(r!==tr||c!==tc){
+    if(board[r][c]) return false;
+    r+=dr;
+    c+=dc;
+  }
+  return true;
+}
+
+/* HIGHLIGHT */
 function showMoves(r,c){
   clearHints();
 
@@ -308,12 +319,8 @@ function showMoves(r,c){
 
     if(!legal(r,c,rr,cc)) continue;
 
-    if(board[rr][cc]){
-      if(board[rr][cc][0]===turn[0]) continue;
-      cells[i].classList.add("capture");
-    } else {
-      cells[i].classList.add("move");
-    }
+    if(board[rr][cc]) cells[i].classList.add("capture");
+    else cells[i].classList.add("move");
   }
 
   cells[r*8+c].classList.add("selected");
@@ -325,9 +332,17 @@ function clearHints(){
   });
 }
 
-/* SIMPLE AI (FIXED MODE) */
-function ai(){
+/* CAPTURES UI FIX */
+function renderCaptures(){
+  document.getElementById("capBlue").innerHTML =
+    "🟦 Captured<br>"+capBlue.map(x=>P[x]).join(" ");
 
+  document.getElementById("capPurple").innerHTML =
+    "🟣 Captured<br>"+capPurple.map(x=>P[x]).join(" ");
+}
+
+/* SIMPLE AI */
+function ai(){
   let moves=[];
 
   for(let r=0;r<8;r++){
@@ -355,7 +370,7 @@ function ai(){
   draw();
 }
 
-/* STATUS (FIXED) */
+/* STATUS */
 function update(){
   document.getElementById("status").textContent =
     turn==="blue"?"Blue's turn":"Purple's turn";
