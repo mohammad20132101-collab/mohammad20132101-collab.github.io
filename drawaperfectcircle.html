@@ -3,27 +3,51 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rift Perfect Circle</title>
+<title>Rift Hub - Perfect Circle v2</title>
 
 <style>
 body{
   margin:0;
-  font-family:Arial;
   background:#0f0f1a;
+  font-family:Arial;
   color:white;
-  text-align:center;
+  overflow:hidden;
 }
 
 h1{
-  margin:10px;
+  text-align:center;
   color:#4c6fff;
   text-shadow:0 0 12px #4c6fff;
+  margin:10px;
+}
+
+/* HUD */
+#hud{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+}
+
+.panel{
+  background:#141428;
+  border:2px solid #4c6fff;
+  border-radius:10px;
+  padding:10px 20px;
+  box-shadow:0 0 15px #4c6fff33;
+  min-width:180px;
+  text-align:center;
 }
 
 #score{
-  font-size:22px;
   color:#00ff99;
+  font-size:20px;
   text-shadow:0 0 10px #00ff99;
+}
+
+#wrap{
+  display:flex;
+  justify-content:center;
+  margin-top:15px;
 }
 
 canvas{
@@ -31,172 +55,248 @@ canvas{
   border:3px solid #4c6fff;
   border-radius:10px;
   box-shadow:0 0 25px #4c6fff33;
+  cursor:crosshair;
 }
 </style>
 </head>
 
 <body>
 
-<h1>🌀 Rift Perfect Circle</h1>
-<div id="score">Hold mouse to draw</div>
+<h1>🌀 Rift Hub — Perfect Circle v2</h1>
 
-<canvas id="c" width="500" height="500"></canvas>
+<div id="hud">
+  <div class="panel" id="score">Hold mouse to draw</div>
+  <div class="panel">Mode: Circle</div>
+</div>
+
+<div id="wrap">
+<canvas id="c" width="520" height="520"></canvas>
+</div>
 
 <script>
+/* ===============================
+   CORE ENGINE (EXPANDED VERSION)
+================================ */
+
 const canvas = document.getElementById("c");
 const ctx = canvas.getContext("2d");
 
-let drawing = false;
-let finished = false;
-let points = [];
+let session = {
+  drawing:false,
+  finished:false,
+  points:[],
+  lastScore:0,
+  lastRenderTime:0
+};
 
-const center = {x:250,y:250};
-let lastScore = 0;
+/* ===============================
+   INIT
+================================ */
+function init(){
+  resetSession();
+}
 
-/* RESET */
-function reset(){
-  ctx.clearRect(0,0,500,500);
-  points = [];
-  drawing = false;
-  finished = false;
-  lastScore = 0;
+/* ===============================
+   RESET SESSION
+================================ */
+function resetSession(){
+
+  session.points = [];
+  session.drawing = false;
+  session.finished = false;
+  session.lastScore = 0;
+
+  clear();
   drawCenter();
-  setText("Hold mouse to draw");
+
+  updateUI("Hold mouse to draw");
 }
 
-/* CENTER DOT */
+/* ===============================
+   CLEAR CANVAS
+================================ */
+function clear(){
+  ctx.clearRect(0,0,520,520);
+}
+
+/* ===============================
+   CENTER MARKER
+================================ */
 function drawCenter(){
+  const c = getCenter();
+
+  ctx.save();
   ctx.fillStyle="#4c6fff";
-  ctx.shadowBlur=10;
+  ctx.shadowBlur=14;
   ctx.shadowColor="#4c6fff";
+
   ctx.beginPath();
-  ctx.arc(center.x,center.y,5,0,Math.PI*2);
+  ctx.arc(c.x,c.y,5,0,Math.PI*2);
   ctx.fill();
+
+  ctx.restore();
 }
-drawCenter();
 
-/* START */
-canvas.addEventListener("mousedown", ()=>{
-  if(finished) reset();
+/* ===============================
+   INPUT SYSTEM
+================================ */
+canvas.addEventListener("mousedown", () => {
 
-  drawing = true;
+  if(session.finished){
+    resetSession();
+  }
+
+  session.drawing = true;
   ctx.beginPath();
 });
 
-/* END */
-canvas.addEventListener("mouseup", ()=>{
-  if(!drawing) return;
+canvas.addEventListener("mouseup", () => {
 
-  drawing = false;
-  finished = true;
+  if(!session.drawing) return;
 
-  setText("Final: " + lastScore.toFixed(1) + "%");
+  session.drawing = false;
+  session.finished = true;
+
+  let final = computeScore();
+  session.lastScore = final;
+
+  updateUI("Final: " + final.toFixed(1) + "%");
 });
 
-/* DRAW */
-canvas.addEventListener("mousemove", (e)=>{
-  if(!drawing || finished) return;
+canvas.addEventListener("mousemove", (e) => {
 
-  const rect = canvas.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
+  if(!session.drawing || session.finished) return;
 
-  points.push({x,y});
+  const r = canvas.getBoundingClientRect();
 
-  let acc = pointAccuracy(x,y);
-  drawStroke(x,y,acc);
+  const x = e.clientX - r.left;
+  const y = e.clientY - r.top;
 
-  lastScore = computeScore();
-  setText("Score: " + lastScore.toFixed(1) + "%");
+  session.points.push({x,y});
+
+  renderStroke(x,y);
+
+  let live = computeScore();
+  session.lastScore = live;
+
+  updateUI("Score: " + live.toFixed(1) + "%");
 });
 
-/* 🎨 COLOURED REAL STROKE */
-function drawStroke(x,y,acc){
+/* ===============================
+   STROKE RENDER ENGINE (SMOOTH)
+================================ */
+function renderStroke(x,y){
 
-  let col = "#ff4444";
+  const pts = session.points;
+
+  if(pts.length < 2) return;
+
+  const fit = fitCircle(pts);
+  if(!fit.r || fit.r <= 0) return;
+
+  const p = pts[pts.length-1];
+  const d = dist(p.x,p.y,fit.x,fit.y);
+
+  const acc = clamp(100 - (Math.abs(d-fit.r)/fit.r)*150,0,100);
+
+  let col = "#ff4d4d";
   if(acc > 80) col = "#00ff99";
-  else if(acc > 50) col = "#ffdd55";
+  else if(acc > 50) col = "#ffd24d";
+
+  ctx.save();
 
   ctx.strokeStyle = col;
+  ctx.lineWidth = 3;
   ctx.shadowBlur = 6;
   ctx.shadowColor = col;
-  ctx.lineWidth = 3;
+
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
 
   ctx.lineTo(x,y);
   ctx.stroke();
+
+  ctx.restore();
 }
 
-/* 🧠 BEST-FIT CIRCLE APPROX (REAL GAME METHOD) */
+/* ===============================
+   SCORING ENGINE (IMPROVED)
+================================ */
 function computeScore(){
 
-  if(points.length < 10) return 0;
+  const pts = session.points;
 
-  // Step 1: estimate center (average of points)
-  let cx = 0, cy = 0;
-  for(let p of points){
-    cx += p.x;
-    cy += p.y;
-  }
-  cx /= points.length;
-  cy /= points.length;
+  if(pts.length < 12) return 0;
 
-  // Step 2: estimate radius
-  let r = 0;
-  for(let p of points){
-    r += dist(p.x,p.y,cx,cy);
-  }
-  r /= points.length;
+  const fit = fitCircle(pts);
 
-  // Step 3: error (variance from circle)
+  if(!fit.r || fit.r <= 0) return 0;
+
   let error = 0;
   let wobble = 0;
 
-  for(let i=1;i<points.length;i++){
-    let p = points[i];
+  for(let i=0;i<pts.length;i++){
 
-    let d = dist(p.x,p.y,cx,cy);
-    error += Math.abs(d - r);
+    const p = pts[i];
+    const d = dist(p.x,p.y,fit.x,fit.y);
 
-    wobble += dist(points[i],points[i-1]);
+    error += Math.abs(d - fit.r);
+
+    if(i > 0){
+      wobble += dist(pts[i],pts[i-1]);
+    }
   }
 
-  let avgError = error / points.length;
-  let avgWobble = wobble / points.length;
+  const avgError = error / pts.length;
+  const avgWobble = wobble / pts.length;
 
-  // REALISTIC SCORING MODEL
   let score =
     100
-    - (avgError / r) * 130
-    - Math.abs(avgWobble - 5) * 1.5;
+    - (avgError / fit.r) * 135
+    - Math.abs(avgWobble - 4.8) * 1.1;
+
+  /* closure penalty */
+  const start = pts[0];
+  const end = pts[pts.length-1];
+
+  const closure = dist(start.x,start.y,end.x,end.y);
+
+  score -= (closure / fit.r) * 12;
 
   return clamp(score,0,100);
 }
 
-/* LIVE POINT ACCURACY */
-function pointAccuracy(x,y){
+/* ===============================
+   BEST FIT CIRCLE (STABLE)
+================================ */
+function fitCircle(pts){
 
-  let cx = averageX();
-  let cy = averageY();
-  let r = averageRadius(cx,cy);
+  let cx = 0, cy = 0;
 
-  let d = dist(x,y,cx,cy);
-
-  return Math.max(0, 100 - Math.abs(d - r) * 1.5);
-}
-
-/* helpers */
-function averageX(){
-  return points.reduce((a,p)=>a+p.x,0)/Math.max(points.length,1);
-}
-function averageY(){
-  return points.reduce((a,p)=>a+p.y,0)/Math.max(points.length,1);
-}
-function averageRadius(cx,cy){
-  let sum = 0;
-  for(let p of points){
-    sum += dist(p.x,p.y,cx,cy);
+  for(let p of pts){
+    cx += p.x;
+    cy += p.y;
   }
-  return sum / Math.max(points.length,1);
+
+  cx /= pts.length;
+  cy /= pts.length;
+
+  let r = 0;
+
+  for(let p of pts){
+    r += dist(p.x,p.y,cx,cy);
+  }
+
+  r /= pts.length;
+
+  return {x:cx,y:cy,r:r};
+}
+
+/* ===============================
+   HELPERS
+================================ */
+function getCenter(){
+  return {x:260,y:260};
 }
 
 function dist(x1,y1,x2,y2){
@@ -207,10 +307,13 @@ function clamp(v,min,max){
   return Math.max(min,Math.min(max,v));
 }
 
-/* UI */
-function setText(t){
+function updateUI(t){
   document.getElementById("score").innerText = t;
 }
+
+/* INIT */
+init();
+
 </script>
 
 </body>
