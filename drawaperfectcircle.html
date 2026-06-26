@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rift Draw</title>
+<title>Rift Perfect Draw</title>
 
 <style>
 body{
@@ -20,32 +20,10 @@ h1{
   margin:10px;
 }
 
-#ui{
-  display:flex;
-  justify-content:center;
-  gap:10px;
-  margin:10px;
-}
-
-button{
-  padding:10px 14px;
-  border:none;
-  border-radius:8px;
-  background:#141428;
-  color:white;
-  border:2px solid #4c6fff;
-  cursor:pointer;
-}
-
-button:hover{
-  box-shadow:0 0 12px #4c6fff;
-}
-
 #score{
   font-size:22px;
   color:#00ff99;
   text-shadow:0 0 10px #00ff99;
-  margin-bottom:10px;
 }
 
 canvas{
@@ -53,24 +31,15 @@ canvas{
   border:3px solid #4c6fff;
   border-radius:10px;
   box-shadow:0 0 25px #4c6fff33;
+  margin-top:10px;
 }
 </style>
 </head>
 
 <body>
 
-<h1>🌀 Rift Draw</h1>
-
-<div id="ui">
-  <button onclick="setMode('circle')">Circle</button>
-  <button onclick="setMode('square')">Square</button>
-  <button onclick="setMode('triangle')">Triangle</button>
-  <br>
-  <button onclick="reset()">Reset</button>
-  <button onclick="window.location.href='index.html'">Back</button>
-</div>
-
-<div id="score">Accuracy: 0%</div>
+<h1>🌀 Rift Perfect Draw</h1>
+<div id="score">Hold mouse to draw</div>
 
 <canvas id="c" width="500" height="500"></canvas>
 
@@ -79,32 +48,27 @@ let canvas = document.getElementById("c");
 let ctx = canvas.getContext("2d");
 
 let drawing = false;
-let points = [];
-let mode = "circle";
-let score = 0;
 let finished = false;
 
-let center = {x:250, y:250};
-let startPoint = null;
+let points = [];
+let mode = "circle";
 
-function setMode(m){
-  mode = m;
-  reset();
-}
+let center = {x:250,y:250};
+let score = 0;
 
 /* RESET */
 function reset(){
   ctx.clearRect(0,0,500,500);
   points = [];
-  score = 0;
+  drawing = false;
   finished = false;
-  startPoint = null;
-  updateScore(0);
-  drawCenterDot();
+  score = 0;
+  updateScore("Hold mouse to draw");
+  drawCenter();
 }
 
 /* CENTER DOT */
-function drawCenterDot(){
+function drawCenter(){
   ctx.fillStyle="#4c6fff";
   ctx.shadowBlur=12;
   ctx.shadowColor="#4c6fff";
@@ -112,24 +76,31 @@ function drawCenterDot(){
   ctx.arc(center.x,center.y,5,0,Math.PI*2);
   ctx.fill();
 }
-drawCenterDot();
+drawCenter();
 
-/* DRAWING EVENTS */
+/* START DRAW */
 canvas.addEventListener("mousedown", (e)=>{
-  if(finished) return;
+
+  if(finished){
+    reset();
+    drawCenter();
+    return;
+  }
 
   drawing = true;
-  let rect = canvas.getBoundingClientRect();
-  let x = e.clientX - rect.left;
-  let y = e.clientY - rect.top;
-
-  startPoint = {x,y};
 });
 
+/* STOP DRAW (finish attempt) */
 canvas.addEventListener("mouseup", ()=>{
+  if(!drawing) return;
+
   drawing = false;
+  finished = true;
+
+  updateScore("Final Score: " + score + "%");
 });
 
+/* DRAW LOOP */
 canvas.addEventListener("mousemove", (e)=>{
   if(!drawing || finished) return;
 
@@ -137,33 +108,21 @@ canvas.addEventListener("mousemove", (e)=>{
   let x = e.clientX - rect.left;
   let y = e.clientY - rect.top;
 
-  if(startPoint && distance(x,y,startPoint.x,startPoint.y) < 15 && points.length > 30){
-    finished = true;
-    updateScore(score);
-    return;
-  }
-
   points.push({x,y});
 
-  let s = getPointScore(x,y);
-
+  let s = pointScore(x,y);
   drawPoint(x,y,s);
+
   calculateScore();
 });
 
-/* DISTANCE */
-function distance(x1,y1,x2,y2){
-  return Math.sqrt((x1-x2)**2 + (y1-y2)**2);
-}
+/* LIVE POINT COLOUR */
+function drawPoint(x,y,s){
 
-/* COLOUR LOGIC */
-function drawPoint(x,y,scoreVal){
+  let col = "#ff8844";
 
-  let col;
-
-  if(scoreVal > 80) col = "#00ff99";
-  else if(scoreVal > 50) col = "#ffff66";
-  else col = "#ff8844";
+  if(s > 80) col = "#00ff99";
+  else if(s > 50) col = "#ffff66";
 
   ctx.fillStyle = col;
   ctx.shadowBlur = 6;
@@ -174,94 +133,36 @@ function drawPoint(x,y,scoreVal){
   ctx.fill();
 }
 
-/* LIVE SCORE */
-function calculateScore(){
+/* POINT SCORE */
+function pointScore(x,y){
+  let r = 120;
+  let d = Math.hypot(x-center.x,y-center.y);
 
+  return Math.max(0, 100 - Math.abs(d-r)*1.2);
+}
+
+/* FINAL SCORE */
+function calculateScore(){
   if(points.length < 10) return;
 
-  let error = 0;
-
-  if(mode === "circle") error = circleError();
-  if(mode === "square") error = squareError();
-  if(mode === "triangle") error = triangleError();
-
-  score = Math.max(0, Math.min(100, Math.round(100 - error)));
-
-  updateScore(score);
-}
-
-/* 🔵 CIRCLE */
-function circleError(){
-  let r = 120;
   let total = 0;
+  let r = 120;
 
   for(let p of points){
-    let d = distance(p.x,p.y,center.x,center.y);
-    total += Math.abs(d - r);
+    let d = Math.hypot(p.x-center.x,p.y-center.y);
+    total += Math.abs(d-r);
   }
 
-  return total / points.length / 1.8;
+  score = Math.max(0, Math.min(100,
+    Math.round(100 - total / points.length / 1.8)
+  ));
+
+  updateScore("Score: " + score + "%");
 }
 
-/* 🟪 SQUARE */
-function squareError(){
-  let size = 200;
-  let left = center.x - size/2;
-  let right = center.x + size/2;
-  let top = center.y - size/2;
-  let bottom = center.y + size/2;
-
-  let err = 0;
-
-  for(let p of points){
-    let dx = Math.min(Math.abs(p.x-left), Math.abs(p.x-right));
-    let dy = Math.min(Math.abs(p.y-top), Math.abs(p.y-bottom));
-    err += Math.min(dx,dy);
-  }
-
-  return err / points.length;
-}
-
-/* 🔺 TRIANGLE */
-function triangleError(){
-  let A = {x:250,y:120};
-  let B = {x:120,y:380};
-  let C = {x:380,y:380};
-
-  let err = 0;
-
-  for(let p of points){
-    let d1 = distToLine(p,A,B);
-    let d2 = distToLine(p,B,C);
-    let d3 = distToLine(p,C,A);
-    err += Math.min(d1,d2,d3);
-  }
-
-  return err / points.length;
-}
-
-/* LINE DIST */
-function distToLine(p,a,b){
-  let A = p.x-a.x;
-  let B = p.y-a.y;
-  let C = b.x-a.x;
-  let D = b.y-a.y;
-
-  let dot = A*C + B*D;
-  let len = C*C + D*D;
-
-  let t = len ? dot/len : 0;
-
-  let x = a.x + t*C;
-  let y = a.y + t*D;
-
-  return distance(p.x,p.y,x,y);
-}
-
-/* SCORE UI */
-function updateScore(s){
-  document.getElementById("score").innerText =
-    "Accuracy: " + s + "%";
+/* UI */
+function updateScore(text){
+  document.getElementById("score").innerText = text;
 }
 </script>
 
