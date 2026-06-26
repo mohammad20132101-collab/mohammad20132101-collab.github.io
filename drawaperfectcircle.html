@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rift Draw Score</title>
+<title>Rift Perfect Draw</title>
 
 <style>
 body{
@@ -16,11 +16,11 @@ body{
 
 h1{
   color:#4c6fff;
-  text-shadow:0 0 10px #4c6fff;
-  margin-top:10px;
+  text-shadow:0 0 12px #4c6fff;
+  margin:10px;
 }
 
-#hub{
+#ui{
   display:flex;
   justify-content:center;
   gap:10px;
@@ -32,8 +32,8 @@ button{
   border:none;
   border-radius:8px;
   background:#141428;
-  border:2px solid #4c6fff;
   color:white;
+  border:2px solid #4c6fff;
   cursor:pointer;
 }
 
@@ -42,33 +42,33 @@ button:hover{
 }
 
 #score{
-  font-size:20px;
-  margin:10px;
+  font-size:22px;
   color:#00ff99;
   text-shadow:0 0 10px #00ff99;
+  margin-bottom:10px;
 }
 
 canvas{
   background:#141428;
   border:3px solid #4c6fff;
   border-radius:10px;
-  box-shadow:0 0 20px #4c6fff33;
+  box-shadow:0 0 25px #4c6fff33;
 }
 </style>
 </head>
 
 <body>
 
-<h1>🌀 Rift Draw Accuracy Game</h1>
+<h1>🌀 Rift Perfect Draw</h1>
 
-<div id="hub">
+<div id="ui">
   <button onclick="setMode('circle')">Circle</button>
   <button onclick="setMode('square')">Square</button>
   <button onclick="setMode('triangle')">Triangle</button>
-  <button onclick="clearCanvas()">Clear</button>
+  <button onclick="reset()">Reset</button>
 </div>
 
-<div id="score">Score: 0%</div>
+<div id="score">Accuracy: 0%</div>
 
 <canvas id="c" width="500" height="500"></canvas>
 
@@ -80,82 +80,128 @@ let drawing = false;
 let points = [];
 let mode = "circle";
 let score = 0;
+let finished = false;
 
 let center = {x:250, y:250};
+let startPoint = null;
 
 function setMode(m){
   mode = m;
-  clearCanvas();
+  reset();
 }
 
-function clearCanvas(){
+/* RESET */
+function reset(){
   ctx.clearRect(0,0,500,500);
   points = [];
   score = 0;
+  finished = false;
+  startPoint = null;
   updateScore(0);
+  drawCenterDot();
 }
 
-/* DRAW HANDLING */
-canvas.addEventListener("mousedown", ()=> drawing=true);
-canvas.addEventListener("mouseup", ()=> drawing=false);
+/* CENTER DOT */
+function drawCenterDot(){
+  ctx.fillStyle="#4c6fff";
+  ctx.shadowBlur=12;
+  ctx.shadowColor="#4c6fff";
+  ctx.beginPath();
+  ctx.arc(center.x,center.y,5,0,Math.PI*2);
+  ctx.fill();
+}
+drawCenterDot();
 
-canvas.addEventListener("mousemove", function(e){
-  if(!drawing) return;
+/* DRAWING EVENTS */
+canvas.addEventListener("mousedown", (e)=>{
+  if(finished) return;
+
+  drawing = true;
+  let rect = canvas.getBoundingClientRect();
+  let x = e.clientX - rect.left;
+  let y = e.clientY - rect.top;
+
+  startPoint = {x,y};
+});
+
+canvas.addEventListener("mouseup", ()=>{
+  drawing = false;
+});
+
+canvas.addEventListener("mousemove", (e)=>{
+  if(!drawing || finished) return;
 
   let rect = canvas.getBoundingClientRect();
   let x = e.clientX - rect.left;
   let y = e.clientY - rect.top;
 
+  if(startPoint && distance(x,y,startPoint.x,startPoint.y) < 15 && points.length > 30){
+    finished = true;
+    updateScore(score);
+    return;
+  }
+
   points.push({x,y});
 
-  ctx.fillStyle="#4c6fff";
-  ctx.beginPath();
-  ctx.arc(x,y,2,0,Math.PI*2);
-  ctx.fill();
+  let s = getPointScore(x,y);
 
+  drawPoint(x,y,s);
   calculateScore();
 });
 
-/* SCORE SYSTEM */
+/* DISTANCE */
+function distance(x1,y1,x2,y2){
+  return Math.sqrt((x1-x2)**2 + (y1-y2)**2);
+}
+
+/* COLOUR LOGIC */
+function drawPoint(x,y,scoreVal){
+
+  let col;
+
+  if(scoreVal > 80) col = "#00ff99";
+  else if(scoreVal > 50) col = "#ffff66";
+  else col = "#ff8844";
+
+  ctx.fillStyle = col;
+  ctx.shadowBlur = 6;
+  ctx.shadowColor = col;
+
+  ctx.beginPath();
+  ctx.arc(x,y,2.5,0,Math.PI*2);
+  ctx.fill();
+}
+
+/* LIVE SCORE */
 function calculateScore(){
 
   if(points.length < 10) return;
 
   let error = 0;
 
-  if(mode === "circle"){
-    error = circleError();
-  }
+  if(mode === "circle") error = circleError();
+  if(mode === "square") error = squareError();
+  if(mode === "triangle") error = triangleError();
 
-  if(mode === "square"){
-    error = squareError();
-  }
+  score = Math.max(0, Math.min(100, Math.round(100 - error)));
 
-  if(mode === "triangle"){
-    error = triangleError();
-  }
-
-  score = Math.max(0, Math.round(100 - error));
   updateScore(score);
 }
 
-/* 🔵 CIRCLE ERROR */
+/* 🔵 CIRCLE */
 function circleError(){
   let r = 120;
   let total = 0;
 
   for(let p of points){
-    let dx = p.x - center.x;
-    let dy = p.y - center.y;
-    let dist = Math.sqrt(dx*dx + dy*dy);
-
-    total += Math.abs(dist - r);
+    let d = distance(p.x,p.y,center.x,center.y);
+    total += Math.abs(d - r);
   }
 
-  return total / points.length / 2;
+  return total / points.length / 1.8;
 }
 
-/* 🟪 SQUARE ERROR */
+/* 🟪 SQUARE */
 function squareError(){
   let size = 200;
   let left = center.x - size/2;
@@ -163,50 +209,41 @@ function squareError(){
   let top = center.y - size/2;
   let bottom = center.y + size/2;
 
-  let error = 0;
+  let err = 0;
 
   for(let p of points){
-    let dx = Math.min(
-      Math.abs(p.x - left),
-      Math.abs(p.x - right)
-    );
-
-    let dy = Math.min(
-      Math.abs(p.y - top),
-      Math.abs(p.y - bottom)
-    );
-
-    error += Math.min(dx,dy);
+    let dx = Math.min(Math.abs(p.x-left), Math.abs(p.x-right));
+    let dy = Math.min(Math.abs(p.y-top), Math.abs(p.y-bottom));
+    err += Math.min(dx,dy);
   }
 
-  return error / points.length;
+  return err / points.length;
 }
 
-/* 🔺 TRIANGLE ERROR */
+/* 🔺 TRIANGLE */
 function triangleError(){
-  let A = {x:250, y:120};
-  let B = {x:120, y:380};
-  let C = {x:380, y:380};
+  let A = {x:250,y:120};
+  let B = {x:120,y:380};
+  let C = {x:380,y:380};
 
-  let error = 0;
+  let err = 0;
 
   for(let p of points){
     let d1 = distToLine(p,A,B);
     let d2 = distToLine(p,B,C);
     let d3 = distToLine(p,C,A);
-
-    error += Math.min(d1,d2,d3);
+    err += Math.min(d1,d2,d3);
   }
 
-  return error / points.length;
+  return err / points.length;
 }
 
-/* distance to line */
+/* LINE DIST */
 function distToLine(p,a,b){
-  let A = p.x - a.x;
-  let B = p.y - a.y;
-  let C = b.x - a.x;
-  let D = b.y - a.y;
+  let A = p.x-a.x;
+  let B = p.y-a.y;
+  let C = b.x-a.x;
+  let D = b.y-a.y;
 
   let dot = A*C + B*D;
   let len = C*C + D*D;
@@ -216,14 +253,13 @@ function distToLine(p,a,b){
   let x = a.x + t*C;
   let y = a.y + t*D;
 
-  let dx = p.x - x;
-  let dy = p.y - y;
-
-  return Math.sqrt(dx*dx + dy*dy);
+  return distance(p.x,p.y,x,y);
 }
 
+/* SCORE UI */
 function updateScore(s){
-  document.getElementById("score").innerText = "Score: " + s + "%";
+  document.getElementById("score").innerText =
+    "Accuracy: " + s + "%";
 }
 </script>
 
