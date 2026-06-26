@@ -1,1 +1,378 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rift Chess</title>
 
+<style>
+body{
+  margin:0;
+  font-family:Arial;
+  background:#0f0f1a;
+  color:white;
+  text-align:center;
+}
+
+/* MENU */
+#menu{
+  position:absolute;
+  width:100%;
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#0f0f1a;
+}
+
+.menuBox{
+  background:#141428;
+  padding:30px;
+  border-radius:15px;
+  border:3px solid #4c6fff;
+}
+
+.menuBox button{
+  margin:10px;
+  padding:10px 20px;
+  border:none;
+  background:#4c6fff;
+  color:white;
+  border-radius:8px;
+}
+
+/* GAME */
+#game{ display:none; }
+
+#board{
+  display:grid;
+  grid-template-columns:repeat(8,70px);
+  justify-content:center;
+  margin-top:20px;
+  border:3px solid #4c6fff;
+}
+
+/* SQUARE */
+.cell{
+  width:70px;
+  height:70px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-size:28px;
+  cursor:pointer;
+  background:#141428;
+  position:relative;
+}
+
+/* board pattern */
+.cell:nth-child(even){ background:#101022; }
+
+/* PIECES */
+.blue{ color:#4c6fff; text-shadow:0 0 8px #4c6fff; }
+.purple{ color:#9b5cff; text-shadow:0 0 8px #9b5cff; }
+
+/* MOVE HIGHLIGHT */
+.move{ background:#2a2a55 !important; }
+.capture{ background:#552a55 !important; }
+.selected{ outline:2px solid #4c6fff; }
+
+/* ANIMATION PIECE */
+.piece{
+  position:absolute;
+  transition:transform 0.25s ease;
+}
+
+/* BUTTONS */
+button{
+  margin:5px;
+  padding:8px 15px;
+  border:none;
+  background:#4c6fff;
+  color:white;
+  border-radius:6px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="menu">
+  <div class="menuBox">
+    <h1>🌀 Rift Chess</h1>
+    <button onclick="start(1)">1 Player</button>
+    <button onclick="start(2)">2 Player</button>
+  </div>
+</div>
+
+<div id="game">
+  <h1>Rift Chess</h1>
+  <div id="board"></div>
+  <h3 id="status">Blue's turn</h3>
+  <button onclick="reset()">Reset</button>
+</div>
+
+<script>
+
+let board=[];
+let turn="blue";
+let selected=null;
+let mode=2;
+let gameOver=false;
+
+const pieces={
+  bp:"♟", br:"♜", bn:"♞", bb:"♝", bq:"♛", bk:"♚",
+  pp:"♟", pr:"♜", pn:"♞", pb:"♝", pq:"♛", pk:"♚"
+};
+
+function start(m){
+  mode=m;
+  document.getElementById("menu").style.display="none";
+  document.getElementById("game").style.display="block";
+  setup();
+  draw();
+}
+
+/* INIT */
+function setup(){
+  board=Array(8).fill().map(()=>Array(8).fill(null));
+
+  // pawns
+  for(let i=0;i<8;i++){
+    board[1][i]="bp";
+    board[6][i]="pp";
+  }
+
+  // main pieces
+  const back=["r","n","b","q","k","b","n","r"];
+  for(let i=0;i<8;i++){
+    board[0][i]="b"+back[i];
+    board[7][i]="p"+back[i];
+  }
+}
+
+/* DRAW */
+function draw(){
+  let b=document.getElementById("board");
+  b.innerHTML="";
+
+  for(let r=0;r<8;r++){
+    for(let c=0;c<8;c++){
+
+      let cell=document.createElement("div");
+      cell.className="cell";
+
+      let p=board[r][c];
+
+      if(p){
+        cell.innerHTML=`<span class='piece ${p[0]==='b'?'blue':'purple'}'>${pieces[p]}</span>`;
+      }
+
+      cell.onclick=()=>click(r,c);
+      b.appendChild(cell);
+    }
+  }
+}
+
+/* CLICK */
+function click(r,c){
+
+  if(gameOver) return;
+
+  let p=board[r][c];
+
+  // select
+  if(p && p[0]===turn[0]){
+    selected={r,c};
+    showMoves(r,c);
+    return;
+  }
+
+  // move
+  if(selected && legal(selected.r,selected.c,r,c)){
+    animateMove(selected.r,selected.c,r,c);
+
+    board[r][c]=board[selected.r][selected.c];
+    board[selected.r][selected.c]=null;
+
+    selected=null;
+    clearHints();
+
+    turn = turn==="blue"?"purple":"blue";
+    update();
+
+    if(mode===1 && turn==="purple"){
+      setTimeout(ai,200);
+    }
+  }
+}
+
+/* MOVE RULES (FULL BASIC CHESS) */
+function legal(fr,fc,tr,tc){
+  let p=board[fr][fc];
+  if(!p) return false;
+
+  let dr=tr-fr;
+  let dc=tc-fc;
+  let type=p[1];
+
+  let enemy = p[0]!==board[tr]?.[tc]?.[0];
+
+  // pawn
+  if(type==="p"){
+    let dir = p[0]==="b"?1:-1;
+
+    if(dc===0 && !board[tr][tc]){
+      if(dr===dir) return true;
+      if((fr===1||fr===6) && dr===2*dir && !board[fr+dir][fc]) return true;
+    }
+
+    if(Math.abs(dc)===1 && dr===dir && board[tr][tc]){
+      return true;
+    }
+  }
+
+  // rook
+  if(type==="r"){
+    if(dr===0||dc===0) return pathClear(fr,fc,tr,tc);
+  }
+
+  // bishop
+  if(type==="b"){
+    if(Math.abs(dr)===Math.abs(dc)) return pathClear(fr,fc,tr,tc);
+  }
+
+  // queen
+  if(type==="q"){
+    if(dr===0||dc===0||Math.abs(dr)===Math.abs(dc))
+      return pathClear(fr,fc,tr,tc);
+  }
+
+  // king
+  if(type==="k"){
+    return Math.abs(dr)<=1 && Math.abs(dc)<=1;
+  }
+
+  // knight
+  if(type==="n"){
+    return (Math.abs(dr)===2&&Math.abs(dc)===1) ||
+           (Math.abs(dr)===1&&Math.abs(dc)===2);
+  }
+
+  return false;
+}
+
+/* PATH CHECK */
+function pathClear(fr,fc,tr,tc){
+  let dr=Math.sign(tr-fr);
+  let dc=Math.sign(tc-fc);
+
+  let r=fr+dr, c=fc+dc;
+
+  while(r!==tr || c!==tc){
+    if(board[r][c]) return false;
+    r+=dr;
+    c+=dc;
+  }
+  return true;
+}
+
+/* MOVE ANIMATION */
+function animateMove(fr,fc,tr,tc){
+  let cells=document.querySelectorAll(".cell");
+  let from = cells[fr*8+fc];
+  let to = cells[tr*8+tc];
+
+  let piece=from.innerHTML;
+  let ghost=document.createElement("div");
+  ghost.innerHTML=piece;
+  ghost.style.position="fixed";
+  ghost.style.left=from.getBoundingClientRect().left+"px";
+  ghost.style.top=from.getBoundingClientRect().top+"px";
+  ghost.style.transition="0.25s";
+  document.body.appendChild(ghost);
+
+  setTimeout(()=>{
+    ghost.style.left=to.getBoundingClientRect().left+"px";
+    ghost.style.top=to.getBoundingClientRect().top+"px";
+  },10);
+
+  setTimeout(()=>ghost.remove(),250);
+}
+
+/* AI (balanced) */
+function ai(){
+  let moves=[];
+
+  for(let r=0;r<8;r++){
+    for(let c=0;c<8;c++){
+      let p=board[r][c];
+      if(p && p[0]==="p"){
+        for(let rr=0;rr<8;rr++){
+          for(let cc=0;cc<8;cc++){
+            if(legal(r,c,rr,cc)){
+              moves.push([r,c,rr,cc]);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if(!moves.length) return;
+
+  let m=moves[Math.floor(Math.random()*moves.length)];
+
+  board[m[2]][m[3]]=board[m[0]][m[1]];
+  board[m[0]][m[1]]=null;
+
+  turn="blue";
+  update();
+  draw();
+}
+
+/* HIGHLIGHT MOVES */
+function showMoves(r,c){
+  clearHints();
+
+  let cells=document.querySelectorAll(".cell");
+
+  for(let i=0;i<64;i++){
+    let rr=Math.floor(i/8);
+    let cc=i%8;
+
+    if(legal(r,c,rr,cc)){
+      if(board[rr][cc]){
+        cells[i].classList.add("capture");
+      }else{
+        cells[i].classList.add("move");
+      }
+    }
+  }
+
+  cells[r*8+c].classList.add("selected");
+}
+
+function clearHints(){
+  document.querySelectorAll(".cell").forEach(c=>{
+    c.classList.remove("move","capture","selected");
+  });
+}
+
+function update(){
+  document.getElementById("status")=
+    document.getElementById("status").textContent =
+    turn==="blue"?"Blue's turn":"Purple's turn";
+}
+
+function reset(){
+  setup();
+  turn="blue";
+  gameOver=false;
+  draw();
+}
+
+</script>
+
+</body>
+</html>
