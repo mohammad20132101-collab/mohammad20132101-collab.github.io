@@ -14,15 +14,11 @@ body{
   text-align:center;
 }
 
+/* TITLE */
 h1{
   margin:15px;
   color:#4c6fff;
   text-shadow:0 0 12px #4c6fff;
-}
-
-/* MAIN BOX */
-#game{
-  margin-top:20px;
 }
 
 /* SCORE */
@@ -30,7 +26,7 @@ h1{
   display:flex;
   justify-content:center;
   gap:20px;
-  margin-bottom:20px;
+  margin:10px;
 }
 
 .box{
@@ -42,10 +38,38 @@ h1{
   box-shadow:0 0 15px #4c6fff33;
 }
 
+/* GAME AREA */
+#arena{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:60px;
+  margin-top:30px;
+}
+
+/* HANDS */
+.hand{
+  font-size:90px;
+  filter: drop-shadow(0 0 10px #4c6fff);
+  transition:0.3s;
+}
+
+.label{
+  margin-top:10px;
+  color:#aaa;
+}
+
+/* CENTER VS */
+#vs{
+  font-size:30px;
+  color:#00ff99;
+  text-shadow:0 0 10px #00ff99;
+}
+
 /* RESULT */
 #result{
   font-size:22px;
-  margin:15px;
+  margin:20px;
   color:#00ff99;
   text-shadow:0 0 10px #00ff99;
 }
@@ -56,12 +80,11 @@ button{
   border:2px solid #4c6fff;
   color:white;
   padding:12px 18px;
-  margin:10px;
+  margin:8px;
   border-radius:10px;
   cursor:pointer;
   font-size:16px;
   transition:0.2s;
-  box-shadow:0 0 10px #4c6fff22;
 }
 
 button:hover{
@@ -69,9 +92,15 @@ button:hover{
   box-shadow:0 0 15px #4c6fff66;
 }
 
-#reset{
-  margin-top:20px;
-  background:#4c6fff;
+/* BACK */
+#back{
+  background:#1a1a2e;
+  border:2px solid #9b5cff;
+  color:#9b5cff;
+}
+
+#back:hover{
+  box-shadow:0 0 15px #9b5cff66;
 }
 </style>
 </head>
@@ -80,24 +109,38 @@ button:hover{
 
 <h1>🌀 Rift Rock Paper Scissors</h1>
 
-<div id="game">
+<div id="scoreBoard">
+  <div class="box">You: <span id="playerScore">0</span></div>
+  <div class="box">AI: <span id="aiScore">0</span></div>
+</div>
 
-  <div id="scoreBoard">
-    <div class="box">You: <span id="playerScore">0</span></div>
-    <div class="box">AI: <span id="aiScore">0</span></div>
-  </div>
-
-  <div id="result">Choose your move</div>
+<div id="arena">
 
   <div>
-    <button onclick="play('rock')">✊ Rock</button>
-    <button onclick="play('paper')">✋ Paper</button>
-    <button onclick="play('scissors')">✌ Scissors</button>
+    <div id="playerHand" class="hand">✊</div>
+    <div class="label">YOU</div>
   </div>
 
-  <button id="reset" onclick="resetGame()">Reset</button>
-  <button onclick="window.location.href='index.html'">Back</button>
+  <div id="vs">VS</div>
 
+  <div>
+    <div id="aiHand" class="hand">✊</div>
+    <div class="label">AI</div>
+  </div>
+
+</div>
+
+<div id="result">Choose your move</div>
+
+<div>
+  <button onclick="play('rock')">✊ Rock</button>
+  <button onclick="play('paper')">✋ Paper</button>
+  <button onclick="play('scissors')">✌ Scissors</button>
+</div>
+
+<div>
+  <button onclick="resetGame()">Reset</button>
+  <button id="back" onclick="goBack()">⬅ Back</button>
 </div>
 
 <script>
@@ -105,54 +148,68 @@ button:hover{
 let player = 0;
 let ai = 0;
 
+const playerHand = document.getElementById("playerHand");
+const aiHand = document.getElementById("aiHand");
+
 const resultText = document.getElementById("result");
+
 const pScore = document.getElementById("playerScore");
 const aScore = document.getElementById("aiScore");
 
+/* MAP HANDS */
+function getHand(x){
+  if(x === "rock") return "✊";
+  if(x === "paper") return "✋";
+  return "✌";
+}
+
+/* PLAY */
 function play(choice){
 
   const options = ["rock","paper","scissors"];
   const aiChoice = options[Math.floor(Math.random()*3)];
 
-  let result = "";
+  /* ANIMATION RESET */
+  playerHand.innerText = "✊";
+  aiHand.innerText = "✊";
+  resultText.innerText = "...";
+  resultText.style.color = "#00ff99";
 
-  if(choice === aiChoice){
-    result = "Draw!";
-  }
-  else if(
-    (choice === "rock" && aiChoice === "scissors") ||
-    (choice === "paper" && aiChoice === "rock") ||
-    (choice === "scissors" && aiChoice === "paper")
-  ){
-    result = "You Win!";
-    player++;
-  }
-  else{
-    result = "AI Wins!";
-    ai++;
-  }
+  setTimeout(()=>{
 
-  updateUI(choice, aiChoice, result);
+    playerHand.innerText = getHand(choice);
+    aiHand.innerText = getHand(aiChoice);
+
+    let result = "";
+
+    if(choice === aiChoice){
+      result = "Draw!";
+      resultText.style.color = "#ffd24d";
+    }
+    else if(
+      (choice==="rock" && aiChoice==="scissors") ||
+      (choice==="paper" && aiChoice==="rock") ||
+      (choice==="scissors" && aiChoice==="paper")
+    ){
+      result = "You Win!";
+      player++;
+      resultText.style.color = "#00ff99";
+    }
+    else{
+      result = "AI Wins!";
+      ai++;
+      resultText.style.color = "#ff4d4d";
+    }
+
+    resultText.innerText = result;
+
+    pScore.innerText = player;
+    aScore.innerText = ai;
+
+  },500);
 }
 
-function updateUI(p, a, r){
-
-  resultText.innerText = `You: ${p} | AI: ${a} → ${r}`;
-
-  pScore.innerText = player;
-  aScore.innerText = ai;
-
-  if(r === "You Win!"){
-    resultText.style.color = "#00ff99";
-  }
-  else if(r === "AI Wins!"){
-    resultText.style.color = "#ff4d4d";
-  }
-  else{
-    resultText.style.color = "#ffd24d";
-  }
-}
-
+/* RESET */
 function resetGame(){
   player = 0;
   ai = 0;
@@ -160,8 +217,16 @@ function resetGame(){
   pScore.innerText = "0";
   aScore.innerText = "0";
 
+  playerHand.innerText = "✊";
+  aiHand.innerText = "✊";
+
   resultText.innerText = "Choose your move";
   resultText.style.color = "#00ff99";
+}
+
+/* BACK */
+function goBack(){
+  window.location.href = "index.html";
 }
 
 </script>
