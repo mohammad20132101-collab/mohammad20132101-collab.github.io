@@ -86,9 +86,9 @@ h1{ color:#4c6fff; }
   background:#1a1a2e !important;
   box-shadow:0 0 20px #4c6fff, 0 0 40px #9b5cff;
   transform:scale(1.08);
-  transition:0.2s;
 }
 
+/* BUTTONS */
 button{
   margin:5px;
   padding:8px 15px;
@@ -123,7 +123,7 @@ button{
 <h2 id="status">Blue's turn</h2>
 
 <button onclick="resetGame()">Reset</button>
-<button onclick="window.location.href='index.html'">Back</button>
+<button onclick="location.reload()">Back</button>
 
 </div>
 
@@ -163,6 +163,7 @@ function draw(){
   });
 }
 
+/* ---------------- MOVE ---------------- */
 function move(i){
   if(gameOver || board[i] !== "") return;
 
@@ -175,8 +176,7 @@ function move(i){
   }
 
   if(checkDraw()){
-    gameOver=true;
-    document.getElementById("status").textContent="Draw!";
+    endGame("Draw!");
     return;
   }
 
@@ -188,8 +188,10 @@ function move(i){
   }
 }
 
-/* 🧠 SMART BUT BEATABLE AI */
+/* ---------------- AI ---------------- */
 function aiMove(){
+
+  if(gameOver) return;
 
   let empty = board.map((v,i)=>v===""?i:null).filter(v=>v!==null);
 
@@ -215,6 +217,7 @@ function aiMove(){
     if(testMove(i,"X")){
       board[i]="O";
       draw();
+      if(checkDraw()) return endGame("Draw!");
       current="X";
       updateStatus();
       return;
@@ -225,18 +228,20 @@ function aiMove(){
   if(board[4]===""){
     board[4]="O";
     draw();
+    if(checkDraw()) return endGame("Draw!");
     current="X";
     updateStatus();
     return;
   }
 
-  // 4️⃣ SMART RANDOM
+  // 4️⃣ PRIORITY MOVE
   let priority=[4,0,2,6,8,1,3,5,7];
 
   for(let i of priority){
     if(board[i]===""){
       board[i]="O";
       draw();
+      if(checkDraw()) return endGame("Draw!");
       current="X";
       updateStatus();
       return;
@@ -244,7 +249,7 @@ function aiMove(){
   }
 }
 
-/* WIN CHECK */
+/* ---------------- WIN CHECK ---------------- */
 function checkWin(p){
   const w=[
     [0,1,2],[3,4,5],[6,7,8],
@@ -254,21 +259,25 @@ function checkWin(p){
   return w.some(c=>c.every(i=>board[i]===p));
 }
 
-/* DRAW CHECK FIX */
+/* ---------------- DRAW CHECK ---------------- */
 function checkDraw(){
-  return board.every(c => c !== "");
+  return board.every(c => c !== "") && !gameOver;
 }
 
-/* END */
+/* ---------------- END ---------------- */
 function end(p){
   gameOver=true;
   document.getElementById("status").textContent =
     p==="X" ? "Blue wins" : "Purple wins";
-
   highlightWin(p);
 }
 
-/* WIN HIGHLIGHT */
+function endGame(text){
+  gameOver=true;
+  document.getElementById("status").textContent=text;
+}
+
+/* ---------------- WIN GLOW ---------------- */
 function highlightWin(player){
   const wins=[
     [0,1,2],[3,4,5],[6,7,8],
@@ -288,11 +297,15 @@ function highlightWin(player){
   }
 }
 
+/* ---------------- STATUS ---------------- */
 function updateStatus(){
+  if(gameOver) return;
+
   document.getElementById("status").textContent =
     current==="X" ? "Blue's turn" : "Purple's turn";
 }
 
+/* ---------------- RESET ---------------- */
 function resetGame(){
   board=["","","","","","","","",""];
   current="X";
