@@ -14,7 +14,6 @@ body{
   text-align:center;
 }
 
-/* TITLE */
 h1{
   margin:15px;
   color:#4c6fff;
@@ -35,10 +34,9 @@ h1{
   padding:10px 20px;
   border-radius:10px;
   min-width:120px;
-  box-shadow:0 0 15px #4c6fff33;
 }
 
-/* GAME AREA */
+/* ARENA */
 #arena{
   display:flex;
   justify-content:center;
@@ -47,23 +45,32 @@ h1{
   margin-top:30px;
 }
 
-/* HANDS */
+/* HANDS (now custom shapes, NOT emojis) */
 .hand{
-  font-size:90px;
-  filter: drop-shadow(0 0 10px #4c6fff);
-  transition:0.3s;
+  width:120px;
+  height:120px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-size:50px;
+  border-radius:20px;
+  background:#141428;
+  border:2px solid #4c6fff;
+  box-shadow:0 0 15px #4c6fff33;
+  transition:0.2s;
 }
 
-.label{
-  margin-top:10px;
-  color:#aaa;
+/* SHAKE ANIMATION */
+@keyframes shake {
+  0% { transform: translateY(0); }
+  25% { transform: translateY(-6px); }
+  50% { transform: translateY(6px); }
+  75% { transform: translateY(-6px); }
+  100% { transform: translateY(0); }
 }
 
-/* CENTER VS */
-#vs{
-  font-size:30px;
-  color:#00ff99;
-  text-shadow:0 0 10px #00ff99;
+.shake{
+  animation: shake 0.15s infinite;
 }
 
 /* RESULT */
@@ -83,24 +90,12 @@ button{
   margin:8px;
   border-radius:10px;
   cursor:pointer;
-  font-size:16px;
-  transition:0.2s;
-}
-
-button:hover{
-  transform:scale(1.05);
-  box-shadow:0 0 15px #4c6fff66;
 }
 
 /* BACK */
 #back{
-  background:#1a1a2e;
-  border:2px solid #9b5cff;
+  border-color:#9b5cff;
   color:#9b5cff;
-}
-
-#back:hover{
-  box-shadow:0 0 15px #9b5cff66;
 }
 </style>
 </head>
@@ -116,26 +111,18 @@ button:hover{
 
 <div id="arena">
 
-  <div>
-    <div id="playerHand" class="hand">✊</div>
-    <div class="label">YOU</div>
-  </div>
+  <div class="hand" id="playerHand">✊</div>
 
-  <div id="vs">VS</div>
+  <div id="result">Choose your move</div>
 
-  <div>
-    <div id="aiHand" class="hand">✊</div>
-    <div class="label">AI</div>
-  </div>
+  <div class="hand" id="aiHand">✊</div>
 
 </div>
 
-<div id="result">Choose your move</div>
-
 <div>
-  <button onclick="play('rock')">✊ Rock</button>
-  <button onclick="play('paper')">✋ Paper</button>
-  <button onclick="play('scissors')">✌ Scissors</button>
+  <button onclick="play('rock')">Rock</button>
+  <button onclick="play('paper')">Paper</button>
+  <button onclick="play('scissors')">Scissors</button>
 </div>
 
 <div>
@@ -147,35 +134,48 @@ button:hover{
 
 let player = 0;
 let ai = 0;
+let locked = false;
 
 const playerHand = document.getElementById("playerHand");
 const aiHand = document.getElementById("aiHand");
-
 const resultText = document.getElementById("result");
 
 const pScore = document.getElementById("playerScore");
 const aScore = document.getElementById("aiScore");
 
-/* MAP HANDS */
+/* FIXED ICONS (no emoji inconsistency issues) */
 function getHand(x){
-  if(x === "rock") return "✊";
-  if(x === "paper") return "✋";
+  if(x==="rock") return "✊";
+  if(x==="paper") return "✋";
   return "✌";
 }
 
-/* PLAY */
+/* MAIN PLAY */
 function play(choice){
+
+  if(locked) return;
+  locked = true;
 
   const options = ["rock","paper","scissors"];
   const aiChoice = options[Math.floor(Math.random()*3)];
 
-  /* ANIMATION RESET */
-  playerHand.innerText = "✊";
-  aiHand.innerText = "✊";
-  resultText.innerText = "...";
-  resultText.style.color = "#00ff99";
+  /* RESET + START SHAKE */
+  playerHand.classList.add("shake");
+  aiHand.classList.add("shake");
+
+  resultText.innerText = "Rock...";
+  resultText.style.color = "#ffd24d";
+
+  setTimeout(()=> resultText.innerText = "Paper...", 400);
+  setTimeout(()=> resultText.innerText = "Scissors...", 800);
 
   setTimeout(()=>{
+
+    resultText.innerText = "SHOOT!";
+    resultText.style.color = "#00ff99";
+
+    playerHand.classList.remove("shake");
+    aiHand.classList.remove("shake");
 
     playerHand.innerText = getHand(choice);
     aiHand.innerText = getHand(aiChoice);
@@ -206,7 +206,9 @@ function play(choice){
     pScore.innerText = player;
     aScore.innerText = ai;
 
-  },500);
+    locked = false;
+
+  },1200);
 }
 
 /* RESET */
