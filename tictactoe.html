@@ -33,9 +33,7 @@ body{
   box-shadow:0 0 25px #4c6fff55;
 }
 
-.menuBox h1{
-  color:#4c6fff;
-}
+.menuBox h1{ color:#4c6fff; }
 
 .menuBox button{
   margin:10px;
@@ -73,7 +71,6 @@ h1{ color:#4c6fff; }
   border:2px solid #4c6fff;
 }
 
-/* PLAYERS */
 .blue{
   color:#4c6fff;
   text-shadow:0 0 10px #4c6fff;
@@ -177,6 +174,12 @@ function move(i){
     return;
   }
 
+  if(checkDraw()){
+    gameOver=true;
+    document.getElementById("status").textContent="Draw!";
+    return;
+  }
+
   current = current==="X" ? "O" : "X";
   updateStatus();
 
@@ -185,7 +188,7 @@ function move(i){
   }
 }
 
-/* 🧠 SMART AI */
+/* 🧠 SMART BUT BEATABLE AI */
 function aiMove(){
 
   let empty = board.map((v,i)=>v===""?i:null).filter(v=>v!==null);
@@ -197,18 +200,17 @@ function aiMove(){
     return win;
   }
 
-  // 1️⃣ win
+  // 1️⃣ WIN
   for(let i of empty){
     if(testMove(i,"O")){
       board[i]="O";
       draw();
       end("O");
-      current="X";
       return;
     }
   }
 
-  // 2️⃣ block
+  // 2️⃣ BLOCK
   for(let i of empty){
     if(testMove(i,"X")){
       board[i]="O";
@@ -219,8 +221,18 @@ function aiMove(){
     }
   }
 
-  // 3️⃣ center priority
+  // 3️⃣ CENTER
+  if(board[4]===""){
+    board[4]="O";
+    draw();
+    current="X";
+    updateStatus();
+    return;
+  }
+
+  // 4️⃣ SMART RANDOM
   let priority=[4,0,2,6,8,1,3,5,7];
+
   for(let i of priority){
     if(board[i]===""){
       board[i]="O";
@@ -242,17 +254,21 @@ function checkWin(p){
   return w.some(c=>c.every(i=>board[i]===p));
 }
 
-/* END + GLOW */
+/* DRAW CHECK FIX */
+function checkDraw(){
+  return board.every(c => c !== "");
+}
+
+/* END */
 function end(p){
   gameOver=true;
-
   document.getElementById("status").textContent =
     p==="X" ? "Blue wins" : "Purple wins";
 
   highlightWin(p);
 }
 
-/* ✨ WIN HIGHLIGHT */
+/* WIN HIGHLIGHT */
 function highlightWin(player){
   const wins=[
     [0,1,2],[3,4,5],[6,7,8],
