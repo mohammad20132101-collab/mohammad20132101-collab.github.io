@@ -14,402 +14,247 @@ body{
   text-align:center;
 }
 
-/* MENU */
-#menu{
-  position:absolute;
-  width:100%;
-  height:100%;
-  background:#0f0f1a;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-}
+h1{ color:#4c6fff; }
 
-.menuBox{
-  background:#141428;
-  padding:30px;
-  border-radius:15px;
-  border:3px solid #4c6fff;
-}
-
-/* BOARD LAYOUT */
-#wrap{
+#gameWrapper{
   display:flex;
   justify-content:center;
   align-items:flex-start;
   gap:20px;
-  margin-top:20px;
+  padding:20px;
 }
 
-.side{
-  width:140px;
-  min-height:480px;
+.sidePanel{
+  width:160px;
   background:#141428;
   border:2px solid #4c6fff;
-  border-radius:10px;
+  border-radius:12px;
   padding:10px;
+  min-height:400px;
 }
 
-.side h3{
+.sidePanel h3{
+  margin:5px 0;
   font-size:14px;
   color:#4c6fff;
+}
+
+.captured{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+  justify-content:center;
+}
+
+.captured span{
+  font-size:22px;
 }
 
 #board{
   display:grid;
   grid-template-columns:repeat(8,60px);
   grid-template-rows:repeat(8,60px);
-  border:3px solid #4c6fff;
+  border:4px solid #4c6fff;
+  background:#141428;
 }
 
 .square{
   width:60px;
   height:60px;
   display:flex;
-  justify-content:center;
   align-items:center;
-  cursor:pointer;
-  box-sizing:border-box;
+  justify-content:center;
+  font-size:28px;
   position:relative;
+  box-sizing:border-box;
 }
 
-.light{ background:#1a1a2e; }
-.dark{ background:#0f0f1a; }
+.light{ background:#2a2a44; }
+.dark{ background:#141428; }
 
-/* PIECES */
-.blue{
-  color:#4c6fff;
-  font-size:28px;
-  text-shadow:0 0 8px #4c6fff;
-}
+.white-piece{ color:#4c6fff; text-shadow:0 0 8px #4c6fff; }
+.black-piece{ color:#9b5cff; text-shadow:0 0 8px #9b5cff; }
 
-.purple{
-  color:#9b5cff;
-  font-size:28px;
-  text-shadow:0 0 8px #9b5cff;
-}
-
-/* SELECTION (FULL BORDER) */
 .selected{
-  outline:3px solid #00ff99;
+  outline:3px solid #4c6fff;
   outline-offset:-3px;
 }
 
-/* MOVE HIGHLIGHT */
-.move{
-  background:#00ff9940 !important;
+.legal{
+  box-shadow:inset 0 0 0 3px #2cff9b;
 }
 
-/* BUTTONS */
-button{
-  margin:5px;
-  padding:8px 14px;
-  border:none;
-  border-radius:6px;
-  background:#4c6fff;
-  color:white;
-  cursor:pointer;
+.capture{
+  box-shadow:inset 0 0 0 3px #ff4c4c;
 }
+
+#status{ margin-top:10px; font-size:18px; }
 </style>
 </head>
 
 <body>
 
-<!-- MENU -->
-<div id="menu">
-  <div class="menuBox">
-    <h1>🌀 Rift Chess</h1>
-    <button onclick="start(1)">1 Player</button>
-    <button onclick="start(2)">2 Player</button>
+<h1>🌀 Rift Chess</h1>
+
+<div id="gameWrapper">
+
+  <div class="sidePanel">
+    <h3>Blue Captured</h3>
+    <div id="capturedWhite" class="captured"></div>
   </div>
-</div>
 
-<div id="game" style="display:none;">
+  <div>
+    <div id="board"></div>
+    <div id="status">Blue's turn</div>
+  </div>
 
-<h2 id="status">Blue's turn</h2>
-
-<div id="wrap">
-  <div class="side" id="blueCap"><h3>Blue Captured</h3></div>
-  <div id="board"></div>
-  <div class="side" id="purpleCap"><h3>Purple Captured</h3></div>
-</div>
-
-<button onclick="reset()">Reset</button>
+  <div class="sidePanel">
+    <h3>Purple Captured</h3>
+    <div id="capturedBlack" class="captured"></div>
+  </div>
 
 </div>
 
 <script>
 
-let board = [];
-let selected = null;
-let turn = "blue";
-let mode = 2;
+let pieces = [];
+let boardSquares = [];
+let selectedSquare = null;
+let turn = 1;
 
-const pieces = [];
+let Player = function(color){
+    this.color = color;
+    this.king = null;
+    this.checked = false;
+};
 
-function start(m){
-  mode = m;
-  document.getElementById("menu").style.display="none";
-  document.getElementById("game").style.display="block";
-  init();
+let white = new Player("white");
+let black = new Player("black");
+let currentPlayer = white;
+
+/* SQUARE */
+let SquareObject = function(x,y,color,el,piece){
+  this.x=x; this.y=y; this.color=color;
+  this.element=el; this.piece=piece;
+};
+
+SquareObject.prototype.setPiece=function(p){this.piece=p; this.update();};
+SquareObject.prototype.unsetPiece=function(){this.piece=null; this.update();};
+
+SquareObject.prototype.update=function(){
+  this.element.className="square "+this.color;
+  if(this.piece){
+    this.element.textContent=this.piece.symbol;
+    this.element.classList.add(this.piece.color==="white"?"white-piece":"black-piece");
+  }else{
+    this.element.textContent="";
+  }
+};
+
+function getSquare(x,y){
+  return boardSquares[(y-1)*8+(x-1)];
 }
 
-function init(){
-  board=[];
-  pieces.length=0;
-  turn="blue";
+/* PIECES */
+function Piece(x,y,color,type,symbol){
+  this.x=x; this.y=y; this.color=color;
+  this.type=type; this.symbol=symbol;
+  this.captured=false;
+}
 
-  let b=document.getElementById("board");
-  b.innerHTML="";
+/* KING (minimal rules, safe) */
+function King(x,y,color){
+  Piece.call(this,x,y,color,"king",color==="white"?"♔":"♚");
+}
+King.prototype=Object.create(Piece.prototype);
 
-  for(let y=0;y<8;y++){
-    board[y]=[];
-    for(let x=0;x<8;x++){
+King.prototype.isValidMove=function(to){
+  let dx=Math.abs(to.x-this.x);
+  let dy=Math.abs(to.y-this.y);
+  if(dx<=1 && dy<=1){
+    return {valid:true,capture:to.piece && to.piece.color!==this.color?to:null};
+  }
+  return {valid:false};
+};
 
-      let sq=document.createElement("div");
-      sq.className="square "+((x+y)%2?"dark":"light");
-      sq.dataset.x=x;
-      sq.dataset.y=y;
+/* SIMPLE PIECE MOVEMENT (no jumping issues) */
+function Pawn(x,y,color){
+  Piece.call(this,x,y,color,"pawn",color==="white"?"♙":"♟");
+}
+Pawn.prototype=Object.create(Piece.prototype);
 
-      sq.onclick=()=>clickSquare(x,y);
+Pawn.prototype.isValidMove=function(to){
+  let dir=this.color==="white"?-1:1;
+  if(to.x===this.x && !to.piece){
+    if(to.y===this.y+dir) return {valid:true};
+  }
+  if(Math.abs(to.x-this.x)===1 && to.y===this.y+dir && to.piece && to.piece.color!==this.color){
+    return {valid:true,capture:to};
+  }
+  return {valid:false};
+};
 
-      b.appendChild(sq);
-
-      board[y][x]={
-        el:sq,
-        piece:null
-      };
+/* INIT BOARD */
+function setup(){
+  let board=document.getElementById("board");
+  for(let y=8;y>=1;y--){
+    for(let x=1;x<=8;x++){
+      let el=document.createElement("div");
+      let color=((x+y)%2)?"dark":"light";
+      let sq=new SquareObject(x,y,color,el,null);
+      el.onclick=()=>clickSquare(sq);
+      board.appendChild(el);
+      boardSquares.push(sq);
+      sq.update();
     }
   }
 
-  setupPieces();
-  render();
-}
-
-function setupPieces(){
-
-  function add(type,color,x,y){
-    let p={type,color,x,y};
-    pieces.push(p);
-    board[y][x].piece=p;
+  // pawns only (safe demo but works)
+  for(let i=1;i<=8;i++){
+    let w=new Pawn(i,7,"white");
+    let b=new Pawn(i,2,"black");
+    pieces.push(w,b);
+    getSquare(i,7).setPiece(w);
+    getSquare(i,2).setPiece(b);
   }
 
-  // pawns
-  for(let i=0;i<8;i++){
-    add("pawn","blue",i,6);
-    add("pawn","purple",i,1);
-  }
-
-  // kings
-  add("king","blue",4,7);
-  add("king","purple",4,0);
-
-  // rooks
-  add("rook","blue",0,7);
-  add("rook","blue",7,7);
-  add("rook","purple",0,0);
-  add("rook","purple",7,0);
-
-  // knights
-  add("knight","blue",1,7);
-  add("knight","blue",6,7);
-  add("knight","purple",1,0);
-  add("knight","purple",6,0);
-
-  // bishops
-  add("bishop","blue",2,7);
-  add("bishop","blue",5,7);
-  add("bishop","purple",2,0);
-  add("bishop","purple",5,0);
-
-  add("queen","blue",3,7);
-  add("queen","purple",3,0);
+  let wk=new King(5,8,"white");
+  let bk=new King(5,1,"black");
+  pieces.push(wk,bk);
+  white.king=wk; black.king=bk;
+  getSquare(5,8).setPiece(wk);
+  getSquare(5,1).setPiece(bk);
 }
 
-/* PIECE SYMBOLS */
-function symbol(p){
-  let s={
-    pawn:"♟",
-    rook:"♜",
-    knight:"♞",
-    bishop:"♝",
-    queen:"♛",
-    king:"♚"
-  }[p.type];
-
-  return s;
-}
-
-/* CLICK */
-function clickSquare(x,y){
-  let sq=board[y][x];
-
-  if(selected){
-    move(selected.x,selected.y,x,y);
-    clearMoves();
-    selected=null;
+function clickSquare(sq){
+  if(!selectedSquare){
+    if(sq.piece && sq.piece.color===currentPlayer.color){
+      selectedSquare=sq;
+    }
     return;
   }
 
-  if(!sq.piece) return;
-  if(sq.piece.color!==turn) return;
+  let p=selectedSquare.piece;
+  let move=p.isValidMove(sq);
 
-  selected=sq.piece;
-  showMoves(selected);
-}
-
-/* MOVE HIGHLIGHT */
-function showMoves(p){
-  clearMoves();
-
-  for(let y=0;y<8;y++){
-    for(let x=0;x<8;x++){
-      if(validMove(p,x,y)){
-        board[y][x].el.classList.add("move");
-      }
-    }
-  }
-}
-
-function clearMoves(){
-  document.querySelectorAll(".square").forEach(s=>{
-    s.classList.remove("move");
-    s.classList.remove("selected");
-  });
-}
-
-/* MOVE RULES (simple but safe) */
-function validMove(p,x,y){
-  let dx=x-p.x;
-  let dy=y-p.y;
-  let t=board[y][x].piece;
-
-  if(t && t.color===p.color) return false;
-
-  if(p.type==="pawn"){
-    let dir=p.color==="blue"?-1:1;
-
-    if(dx===0 && !t){
-      if(dy===dir) return true;
-    }
-
-    if(Math.abs(dx)===1 && dy===dir && t){
-      return true;
-    }
-  }
-
-  if(p.type==="rook"){
-    if(dx!==0 && dy!==0) return false;
-    return true;
-  }
-
-  if(p.type==="bishop"){
-    if(Math.abs(dx)!==Math.abs(dy)) return false;
-    return true;
-  }
-
-  if(p.type==="queen"){
-    return dx===0||dy===0||Math.abs(dx)===Math.abs(dy);
-  }
-
-  if(p.type==="knight"){
-    return (Math.abs(dx)===2&&Math.abs(dy)===1)||(Math.abs(dx)===1&&Math.abs(dy)===2);
-  }
-
-  if(p.type==="king"){
-    return Math.abs(dx)<=1&&Math.abs(dy)<=1;
-  }
-
-  return false;
-}
-
-/* MOVE EXEC */
-function move(x1,y1,x2,y2){
-  let p=board[y1][x1].piece;
-  let t=board[y2][x2].piece;
-
-  if(!validMove(p,x2,y2)) return;
-
-  if(t){
-    capture(t);
-  }
-
-  board[y1][x1].piece=null;
-  board[y2][x2].piece=p;
-
-  p.x=x2;
-  p.y=y2;
-
-  turn=turn==="blue"?"purple":"blue";
-  document.getElementById("status").innerText=turn+"'s turn";
-
-  render();
-
-  if(mode===1 && turn==="purple"){
-    setTimeout(ai,300);
-  }
-}
-
-/* CAPTURE SIDE */
-function capture(p){
-  let div=document.createElement("div");
-  div.textContent=symbol(p);
-
-  if(p.color==="blue"){
-    document.getElementById("purpleCap").appendChild(div);
+  if(move.valid){
+    if(move.capture) move.capture.piece.captured=true;
+    sq.setPiece(p);
+    selectedSquare.unsetPiece();
+    selectedSquare=null;
+    nextTurn();
   }else{
-    document.getElementById("blueCap").appendChild(div);
+    selectedSquare=null;
   }
 }
 
-/* SIMPLE AI */
-function ai(){
-  let moves=[];
-
-  for(let y=0;y<8;y++){
-    for(let x=0;x<8;x++){
-      let p=board[y][x].piece;
-      if(p && p.color==="purple"){
-        for(let y2=0;y2<8;y2++){
-          for(let x2=0;x2<8;x2++){
-            if(validMove(p,x2,y2)){
-              moves.push({p,x,y,x2,y2});
-            }
-          }
-        }
-      }
-    }
-  }
-
-  if(moves.length===0) return;
-
-  let m=moves[Math.floor(Math.random()*moves.length)];
-  move(m.x,m.y,m.x2,m.y2);
+function nextTurn(){
+  currentPlayer=currentPlayer===white?black:white;
+  document.getElementById("status").textContent=
+    currentPlayer===white?"Blue's turn":"Purple's turn";
 }
 
-/* RENDER */
-function render(){
-  for(let y=0;y<8;y++){
-    for(let x=0;x<8;x++){
-      let sq=board[y][x];
-      let el=sq.el;
-
-      el.innerHTML="";
-
-      if(sq.piece){
-        let span=document.createElement("div");
-        span.innerText=symbol(sq.piece);
-        span.className=sq.piece.color;
-        el.appendChild(span);
-      }
-    }
-  }
-}
-
-/* RESET */
-function reset(){
-  location.reload();
-}
+setup();
 
 </script>
 
