@@ -18,7 +18,7 @@ body{
   overflow:hidden;
 }
 
-/* BACKGROUND DEPTH */
+/* BACKGROUND */
 body::before{
   content:"";
   position:absolute;
@@ -28,7 +28,7 @@ body::before{
   z-index:-3;
 }
 
-/* PULSE LAYER (NOW PROPER SHOCKWAVE SIZE) */
+/* PULSE */
 #pulse{
   position:fixed;
   top:50%;
@@ -39,27 +39,21 @@ body::before{
   border-radius:50%;
   pointer-events:none;
   opacity:0;
-  z-index:0; /* behind panel */
+  z-index:0;
 }
 
-/* DOUBLE RING EFFECT */
 @keyframes pulseAnim{
   0%{
     transform:translate(-50%,-50%) scale(0.2);
     opacity:0.9;
-    filter:blur(0px);
-  }
-  60%{
-    opacity:0.35;
   }
   100%{
     transform:translate(-50%,-50%) scale(18);
     opacity:0;
-    filter:blur(2px);
   }
 }
 
-/* MAIN PANEL (ABOVE PULSE) */
+/* PANEL */
 #panel{
   width:600px;
   padding:25px;
@@ -99,7 +93,6 @@ h1{
 #arena{
   display:flex;
   justify-content:center;
-  align-items:center;
   gap:50px;
   margin:20px 0;
 }
@@ -132,8 +125,8 @@ h1{
 #result{
   font-size:22px;
   margin:10px;
-  color:#00ff99;
-  text-shadow:0 0 10px #00ff99;
+  color:#4c6fff;
+  text-shadow:0 0 10px #4c6fff;
 }
 
 /* BUTTONS */
@@ -193,6 +186,8 @@ let player = 0;
 let ai = 0;
 let locked = false;
 
+const NEUTRAL_COLOR = "#4c6fff";
+
 const playerHand = document.getElementById("playerHand");
 const aiHand = document.getElementById("aiHand");
 const resultText = document.getElementById("result");
@@ -207,7 +202,7 @@ function getHand(x){
   return "✌️";
 }
 
-/* BIG RADIAL SHOCKWAVE */
+/* PULSE */
 function pulse(color){
   const p = document.getElementById("pulse");
 
@@ -229,9 +224,20 @@ function play(choice){
   playerHand.classList.add("shake");
   aiHand.classList.add("shake");
 
+  /* FIXED: ALWAYS BLUE DURING COUNTDOWN */
+  resultText.style.color = NEUTRAL_COLOR;
+
   resultText.innerText = "Rock...";
-  setTimeout(()=> resultText.innerText = "Paper...", 400);
-  setTimeout(()=> resultText.innerText = "Scissors...", 800);
+
+  setTimeout(()=>{
+    resultText.style.color = NEUTRAL_COLOR;
+    resultText.innerText = "Paper...";
+  },400);
+
+  setTimeout(()=>{
+    resultText.style.color = NEUTRAL_COLOR;
+    resultText.innerText = "Scissors...";
+  },800);
 
   setTimeout(()=>{
 
@@ -290,7 +296,7 @@ function resetGame(){
   aiHand.innerText = "✊";
 
   resultText.innerText = "Choose your move";
-  resultText.style.color = "#00ff99";
+  resultText.style.color = NEUTRAL_COLOR;
 }
 
 /* BACK */
