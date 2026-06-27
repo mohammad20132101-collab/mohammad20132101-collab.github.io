@@ -599,16 +599,14 @@ function startGame(m){
 }
 function aiMove(){
 
-  // collect all valid moves
   let moves = [];
 
-  for(let y=0;y<dotCount;y++){
-    for(let x=0;x<dotCount;x++){
+  for(let y = 0; y < dotCount; y++){
+    for(let x = 0; x < dotCount; x++){
 
       let dot = dotArray.find(d => d.gx === x && d.gy === y);
       if(!dot) continue;
 
-      // check neighbors
       let dirs = [
         {dx:1,dy:0},
         {dx:-1,dy:0},
@@ -625,24 +623,112 @@ function aiMove(){
 
         origin = dot;
 
-if(checkValidMove(target)){
-    moves.push({
-        from: dot,
-        to: target
-    });
-}
+        if(checkValidMove(target)){
 
-origin = null;
+          let score = 0;
+
+          // =========================
+          // 🟩 1. CENTER CONTROL
+          // =========================
+          let center = dotCount / 2;
+          score += (dotCount - (Math.abs(nx - center) + Math.abs(ny - center)));
+
+          // =========================
+          // 🟨 2. SAFE POSITIONING (avoid bad setups)
+          // =========================
+          let danger = countAlmost3Line(nx, ny);
+          score -= danger * 50; // BIG penalty
+
+          // =========================
+          // 🟥 3. SQUARE COMPLETION (VERY IMPORTANT)
+          // =========================
+          let squareGain = countSquareGain(nx, ny);
+          score += squareGain * 100; // HUGE reward
+
+          // =========================
+          // 🟦 4. EXTRA OPTIONS
+          // =========================
+          let openSides = 0;
+          for(let nd of dirs){
+            let nnx = nx + nd.dx;
+            let nny = ny + nd.dy;
+            if(dotArray.find(p => p.gx === nnx && p.gy === nny)){
+              openSides++;
+            }
+          }
+          score += openSides * 3;
+
+          // small randomness
+          score += Math.random() * 2;
+
+          moves.push({from: dot, to: target, score});
+        }
+
+        origin = null;
       }
     }
   }
 
   if(moves.length === 0) return;
 
- let choice = moves[Math.floor(Math.random() * moves.length)];
+  moves.sort((a,b) => b.score - a.score);
+  let choice = moves[0];
 
-origin = choice.from;
-createLink(choice.to);
+  origin = choice.from;
+  createLink(choice.to);
+}
+function countAlmost3Line(x, y){
+  let count = 0;
+
+  let dirs = [
+    {dx:1,dy:0},
+    {dx:0,dy:1}
+  ];
+
+  for(let d of dirs){
+    let line = 1;
+
+    // check both directions
+    for(let i of [-1,1]){
+      let nx = x + d.dx * i;
+      let ny = y + d.dy * i;
+
+      if(dotArray.find(p => p.gx === nx && p.gy === ny)){
+        line++;
+      }
+    }
+
+    // if it creates a "3 structure", it's dangerous
+    if(line === 3) count++;
+  }
+
+  return count;
+}
+function countSquareGain(x, y){
+  let gain = 0;
+
+  let size = 1;
+
+  // check all possible square directions
+  let patterns = [
+    [{dx:1,dy:0},{dx:0,dy:1},{dx:1,dy:1}],
+    [{dx:-1,dy:0},{dx:0,dy:1},{dx:-1,dy:1}],
+    [{dx:1,dy:0},{dx:0,dy:-1},{dx:1,dy:-1}],
+    [{dx:-1,dy:0},{dx:0,dy:-1},{dx:-1,dy:-1}]
+  ];
+
+  for(let p of patterns){
+
+    let a = dotArray.find(d => d.gx === x + p[0].dx && d.gy === y + p[0].dy);
+    let b = dotArray.find(d => d.gx === x + p[1].dx && d.gy === y + p[1].dy);
+    let c = dotArray.find(d => d.gx === x + p[2].dx && d.gy === y + p[2].dy);
+
+    if(a && b && c){
+      gain++;
+    }
+  }
+
+  return gain;
 }
 </script>
 
