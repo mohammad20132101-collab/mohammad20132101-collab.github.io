@@ -1,1 +1,331 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rift Dots & Boxes</title>
 
+<style>
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:#0f0f1a;
+  color:white;
+  text-align:center;
+}
+
+/* ---------------- MENU ---------------- */
+#menu{
+  position:absolute;
+  width:100%;
+  height:100%;
+  background:#0f0f1a;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+.menuBox{
+  background:#141428;
+  padding:30px;
+  border-radius:15px;
+  border:3px solid #4c6fff;
+  box-shadow:0 0 25px #4c6fff55;
+}
+
+.menuBox h1{
+  color:#4c6fff;
+}
+
+.menuBox button{
+  margin:10px;
+  padding:10px 20px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  background:#4c6fff;
+  color:white;
+  box-shadow:0 0 10px rgba(76,108,255,0.4);
+}
+
+/* ---------------- GAME ---------------- */
+#gameArea{
+  display:none;
+}
+
+header{
+  background:#1a1a2e;
+  padding:15px;
+  border-bottom:2px solid #4c6fff;
+  box-shadow:0 0 20px rgba(76,108,255,0.3);
+}
+
+button{
+  margin:5px;
+  padding:8px 15px;
+  border:none;
+  background:#4c6fff;
+  color:white;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+/* GRID */
+#game{
+  display:grid;
+  justify-content:center;
+  margin-top:20px;
+  gap:0;
+}
+
+/* DOT */
+.dot{
+  width:14px;
+  height:14px;
+  background:white;
+  border-radius:50%;
+  box-shadow:0 0 10px rgba(255,255,255,0.6);
+  margin:auto;
+}
+
+/* LINE */
+.line{
+  background:#2a2a40;
+  cursor:pointer;
+  transition:0.2s;
+}
+
+.line:hover{
+  background:#4c6fff;
+  box-shadow:0 0 10px #4c6fff;
+}
+
+.h{ width:60px; height:6px; }
+.v{ width:6px; height:60px; }
+
+/* BOX */
+.box{
+  width:60px;
+  height:60px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:22px;
+  font-weight:bold;
+}
+
+.box.blue{
+  background:rgba(76,108,255,0.25);
+  border:1px solid #4c6fff;
+  box-shadow:0 0 15px rgba(76,108,255,0.5);
+  color:#4c6fff;
+}
+
+.box.purple{
+  background:rgba(160,70,255,0.25);
+  border:1px solid #a046ff;
+  box-shadow:0 0 15px rgba(160,70,255,0.5);
+  color:#a046ff;
+}
+
+/* SCORE */
+#score{
+  margin-top:10px;
+  font-weight:bold;
+}
+</style>
+</head>
+
+<body>
+
+<!-- MENU -->
+<div id="menu">
+  <div class="menuBox">
+    <h1>🟦🟪 Rift Dots & Boxes</h1>
+    <p>Select Mode</p>
+    <button onclick="startGame(1)">1 Player</button>
+    <button onclick="startGame(2)">2 Player</button>
+  </div>
+</div>
+
+<!-- GAME -->
+<div id="gameArea">
+
+<header>
+  <h1>Rift Dots & Boxes</h1>
+  <p>Blue vs Purple</p>
+</header>
+
+<button onclick="resetGame()">Restart</button>
+<button onclick="location.reload()">Menu</button>
+
+<div id="score">Blue: 0 | Purple: 0 | Turn: Blue</div>
+
+<div id="game"></div>
+
+</div>
+
+<script>
+
+const size = 4;
+
+let mode = 2;
+let current = "blue";
+let blueScore = 0;
+let purpleScore = 0;
+
+let hLines = [];
+let vLines = [];
+let boxes = [];
+
+function startGame(m){
+  mode = m;
+  document.getElementById("menu").style.display="none";
+  document.getElementById("gameArea").style.display="block";
+  buildGrid();
+}
+
+/* ---------------- GRID ---------------- */
+function buildGrid(){
+
+  const game = document.getElementById("game");
+  game.innerHTML="";
+
+  current="blue";
+  blueScore=0;
+  purpleScore=0;
+
+  hLines=[];
+  vLines=[];
+  boxes=[];
+
+  updateScore();
+
+  const gridSize = size*2+1;
+  game.style.gridTemplateColumns = `repeat(${gridSize}, 60px)`;
+
+  for(let y=0;y<gridSize;y++){
+    for(let x=0;x<gridSize;x++){
+
+      const cell=document.createElement("div");
+
+      if(x%2===0 && y%2===0){
+        cell.className="dot";
+      }
+
+      else if(y%2===0){
+        cell.className="line h";
+        cell.dataset.x=x;
+        cell.dataset.y=y;
+        cell.onclick=()=>claim(cell);
+        hLines.push(cell);
+      }
+
+      else if(x%2===0){
+        cell.className="line v";
+        cell.dataset.x=x;
+        cell.dataset.y=y;
+        cell.onclick=()=>claim(cell);
+        vLines.push(cell);
+      }
+
+      else{
+        cell.className="box";
+        cell.dataset.x=x;
+        cell.dataset.y=y;
+        boxes.push(cell);
+      }
+
+      game.appendChild(cell);
+    }
+  }
+}
+
+/* ---------------- CLAIM LINE ---------------- */
+function claim(line){
+
+  if(line.classList.contains("claimed")) return;
+
+  line.classList.add("claimed");
+  line.style.background = current==="blue" ? "#4c6fff" : "#a046ff";
+
+  let scored = checkBoxes();
+
+  if(!scored){
+    current = current==="blue" ? "purple" : "blue";
+  }
+
+  updateScore();
+
+  if(mode===1 && current==="purple"){
+    setTimeout(aiMove,300);
+  }
+}
+
+/* ---------------- AI ---------------- */
+function aiMove(){
+
+  let lines=[...hLines,...vLines].filter(l=>!l.classList.contains("claimed"));
+
+  if(lines.length===0) return;
+
+  let pick = lines[Math.floor(Math.random()*lines.length)];
+  claim(pick);
+}
+
+/* ---------------- BOX CHECK ---------------- */
+function checkBoxes(){
+
+  let scored=false;
+
+  boxes.forEach(box=>{
+
+    if(box.classList.contains("filled")) return;
+
+    const x=parseInt(box.dataset.x);
+    const y=parseInt(box.dataset.y);
+
+    const top=document.querySelector(`[data-x="${x}"][data-y="${y-1}"]`);
+    const bottom=document.querySelector(`[data-x="${x}"][data-y="${y+1}"]`);
+    const left=document.querySelector(`[data-x="${x-1}"][data-y="${y}"]`);
+    const right=document.querySelector(`[data-x="${x+1}"][data-y="${y}"]`);
+
+    if(top?.classList.contains("claimed") &&
+       bottom?.classList.contains("claimed") &&
+       left?.classList.contains("claimed") &&
+       right?.classList.contains("claimed")){
+
+      box.classList.add("filled");
+
+      if(current==="blue"){
+        box.classList.add("blue");
+        box.textContent="B";
+        blueScore++;
+      }else{
+        box.classList.add("purple");
+        box.textContent="P";
+        purpleScore++;
+      }
+
+      scored=true;
+    }
+  });
+
+  return scored;
+}
+
+/* ---------------- SCORE ---------------- */
+function updateScore(){
+  document.getElementById("score").textContent =
+  `Blue: ${blueScore} | Purple: ${purpleScore} | Turn: ${current.toUpperCase()}`;
+}
+
+/* ---------------- RESET ---------------- */
+function resetGame(){
+  buildGrid();
+}
+
+</script>
+
+</body>
+</html>
