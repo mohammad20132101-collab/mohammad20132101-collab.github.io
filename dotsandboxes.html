@@ -231,6 +231,7 @@ var MOUSE_DISTANCE = 15;
 let dotArray = [];
 let squaresArray = [];
 let linksArray = [];
+let lastLink = null;
 let origin = null;
 let dotCount = 0;
 let colours = { p1: null, p2: null };
@@ -304,14 +305,14 @@ function Link(start, end) {
 		}
 	}
 
-  this.draw = function() {
+this.draw = function() {
     c.beginPath();
     c.lineWidth = 5;
     c.moveTo(this.start.x, this.start.y);
     c.lineTo(this.end.x, this.end.y);
-    c.strokeStyle = '#aaa';
+    c.strokeStyle = (this === lastLink) ? colours[this.owner] : '#aaa';
     c.stroke();
-  }
+}
 }
 
 function Square(startX, startY, endX, endY, colour) {
@@ -360,10 +361,12 @@ function checkValidMove(target) {
 }
 
 function createLink(target) {
-
-    var newLink = new Link(origin, target);
-    linksArray.push(newLink);
-
+	
+var newLink = new Link(origin, target);
+newLink.owner = turn;
+linksArray.push(newLink);
+lastLink = newLink;
+	
     let squareCount = squaresArray.length;
     checkForSquare(newLink);
     origin = null;
