@@ -459,26 +459,28 @@ function checkForSquare(link, player) {
 		}
 
 		// check for square to right
-		if (link.start.gx !== dotCount - 1)
-			const rightTop = linksArray.find(l => l.start.gx === link.start.gx && l.end.gx === link.start.gx + 1 && l.start.gy === link.start.gy);
-			const rightRight = linksArray.find(l => l.start.gy === link.start.gy && l.end.gy === link.end.gy && l.start.gx === link.start.gx + 1);
-			const rightBottom = linksArray.find(l => l.start.gx === link.end.gx && l.end.gx === link.end.gx + 1 && l.start.gy === link.end.gy);
+if (link.start.gx !== dotCount - 1) {
 
-			if (rightTop && rightRight && rightBottom) {
-		
-			squaresArray.push(
-  new Square(
-    rightTop.start.x,
-    rightTop.start.y,
-    DOT_SPACING,
-    DOT_SPACING,
-    colours[player]
-  )
-);
+    const rightTop = linksArray.find(l => l.start.gx === link.start.gx && l.end.gx === link.start.gx + 1 && l.start.gy === link.start.gy);
+    const rightRight = linksArray.find(l => l.start.gy === link.start.gy && l.end.gy === link.end.gy && l.start.gx === link.start.gx + 1);
+    const rightBottom = linksArray.find(l => l.start.gx === link.end.gx && l.end.gx === link.end.gx + 1 && l.start.gy === link.end.gy);
 
-				scores[player]++;
-				document.querySelector(`#${player}Score`).innerHTML = scores[player];
-			}
+    if (rightTop && rightRight && rightBottom) {
+
+        squaresArray.push(
+            new Square(
+                rightTop.start.x,
+                rightTop.start.y,
+                DOT_SPACING,
+                DOT_SPACING,
+                colours[player]
+            )
+        );
+
+        scores[player]++;
+        document.querySelector(`#${player}Score`).innerHTML = scores[player];
+    }
+}
 		}
 	}
 }
