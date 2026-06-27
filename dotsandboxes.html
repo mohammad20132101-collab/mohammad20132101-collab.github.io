@@ -8,10 +8,21 @@
 <style>
 body{
   margin:0;
-  font-family:Arial,sans-serif;
+  font-family:Arial;
   background:#0f0f1a;
   color:white;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+
+/* HEADER */
+header{
+  width:100%;
   text-align:center;
+  padding:15px;
+  background:#1a1a2e;
+  border-bottom:2px solid #4c6fff;
 }
 
 /* MENU */
@@ -19,8 +30,8 @@ body{
   position:fixed;
   inset:0;
   display:flex;
-  align-items:center;
   justify-content:center;
+  align-items:center;
   background:#0f0f1a;
 }
 
@@ -30,6 +41,7 @@ body{
   border-radius:15px;
   border:3px solid #4c6fff;
   box-shadow:0 0 25px #4c6fff55;
+  text-align:center;
 }
 
 .menuBox h1{
@@ -40,118 +52,36 @@ body{
   margin:10px;
   padding:10px 20px;
   border:none;
-  border-radius:8px;
-  cursor:pointer;
   background:#4c6fff;
   color:white;
+  border-radius:8px;
+  cursor:pointer;
 }
 
-/* GAME AREA */
+/* GAME */
 #gameArea{ display:none; }
 
-header{
-  background:#1a1a2e;
-  padding:15px;
-  border-bottom:2px solid #4c6fff;
-}
-
-/* SCORE */
 #score{
+  font-size:18px;
   margin:10px;
-  font-weight:bold;
 }
 
-/* =========================
-   🔥 SOLID GRID ENGINE
-   ========================= */
-
-#game{
-  display:grid;
-  justify-content:center;
-  margin:20px auto;
-
-  /* FIXED BOARD SIZE */
-  grid-template-columns:repeat(7, 60px);
-  grid-template-rows:repeat(7, 60px);
-
-  gap:0;
-}
-
-/* EVERY CELL IS EXACT UNIT */
-.cell{
-  width:60px;
-  height:60px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  box-sizing:border-box;
-}
-
-/* DOTS */
-.dot{
-  width:10px;
-  height:10px;
-  border-radius:50%;
-  background:white;
-  box-shadow:0 0 10px white;
-  margin:auto;
-}
-
-/* HORIZONTAL LINE */
-.hLine{
-  height:6px;
-  width:60px;
-  background:#2a2a40;
-  cursor:pointer;
-  transition:0.15s;
-}
-
-.hLine:hover{
-  background:#4c6fff;
-  box-shadow:0 0 10px #4c6fff;
-}
-
-/* VERTICAL LINE */
-.vLine{
-  width:6px;
-  height:60px;
-  background:#2a2a40;
-  cursor:pointer;
-  transition:0.15s;
-}
-
-.vLine:hover{
-  background:#4c6fff;
-  box-shadow:0 0 10px #4c6fff;
-}
-
-/* BOX */
-.box{
-  background:transparent;
-  font-weight:bold;
-  font-size:20px;
-}
-
-.box.blue{
-  background:rgba(76,108,255,0.25);
-  box-shadow:0 0 15px rgba(76,108,255,0.4);
-  color:#4c6fff;
-}
-
-.box.purple{
-  background:rgba(160,70,255,0.25);
-  box-shadow:0 0 15px rgba(160,70,255,0.4);
-  color:#a046ff;
+/* CANVAS STYLE BOARD */
+canvas{
+  background:#050814;
+  border:3px solid #4c6fff;
+  border-radius:12px;
+  margin-top:10px;
 }
 
 /* BUTTONS */
 button{
   margin:5px;
-  padding:8px 15px;
+  padding:10px 15px;
   border:none;
   background:#4c6fff;
   color:white;
-  border-radius:6px;
+  border-radius:8px;
   cursor:pointer;
 }
 </style>
@@ -176,168 +106,243 @@ button{
   <h1>Rift Dots & Boxes</h1>
 </header>
 
-<div id="score"></div>
+<div id="score">Blue: 0 | Purple: 0 | Turn: Blue</div>
 
-<div id="game"></div>
+<canvas id="board" width="420" height="420"></canvas>
 
-<button onclick="reset()">Restart</button>
- <button onclick="window.location.href='index.html'">Back</button>
-<button onclick="location.reload()">Menu</button>
+<div>
+  <button onclick="reset()">Restart</button>
+  <button onclick="location.reload()">Menu</button>
+</div>
 
 </div>
 
 <script>
 
+/* =========================
+   GRID ENGINE (Snake-style)
+   ========================= */
+
+const canvas = document.getElementById("board");
+const ctx = canvas.getContext("2d");
+
+const GRID = 7;          // FIXED GRID SIZE
+const CELL = 60;
+
 let mode = 2;
-let current = "blue";
+let current = 0; // 0 blue, 1 purple
 let blue = 0;
 let purple = 0;
 
-const size = 3; // 3x3 boxes
+let h = []; // horizontal lines
+let v = []; // vertical lines
+let box = [];
 
 function startGame(m){
   mode = m;
   document.getElementById("menu").style.display="none";
   document.getElementById("gameArea").style.display="block";
-  build();
+
+  init();
+  draw();
 }
 
 /* =========================
-   BUILD SOLID GRID
+   INIT GRID (fixed system)
    ========================= */
 
-function build(){
+function init(){
 
-  const g = document.getElementById("game");
-  g.innerHTML="";
+  h = Array(GRID).fill().map(()=>Array(GRID).fill(false));
+  v = Array(GRID).fill().map(()=>Array(GRID).fill(false));
+  box = Array(GRID).fill().map(()=>Array(GRID).fill(-1));
 
-  current="blue";
-  blue=0;
-  purple=0;
+  current = 0;
+  blue = 0;
+  purple = 0;
 
-  update();
+  updateScore();
+}
 
-  // 7x7 for 3x3 boxes:
-  // D L D L D L D
-  // L B L B L B L
-  // D L D L D L D
-  // ...
+/* =========================
+   INPUT (CLICK GRID)
+   ========================= */
 
-  for(let y=0;y<7;y++){
-    for(let x=0;x<7;x++){
+canvas.addEventListener("click", e=>{
 
-      const cell=document.createElement("div");
-      cell.classList.add("cell");
+  const rect = canvas.getBoundingClientRect();
 
-      const isDot = x%2===0 && y%2===0;
-      const isBox = x%2===1 && y%2===1;
-      const isH = y%2===0 && x%2===1;
-      const isV = x%2===1 && y%2===0;
+  const x = Math.floor((e.clientX - rect.left) / CELL);
+  const y = Math.floor((e.clientY - rect.top) / CELL);
 
-      if(isDot){
-        const d=document.createElement("div");
-        d.className="dot";
-        cell.appendChild(d);
-      }
+  // detect closest line type
+  handleClick(x,y);
 
-      if(isH){
-        cell.classList.add("hLine");
-        cell.onclick=()=>claim(cell);
-      }
+});
 
-      if(isV){
-        cell.classList.add("vLine");
-        cell.onclick=()=>claim(cell);
-      }
+/* =========================
+   GAME LOGIC
+   ========================= */
 
-      if(isBox){
-        cell.classList.add("box");
-        cell.dataset.x=x;
-        cell.dataset.y=y;
-      }
+function handleClick(x,y){
 
-      g.appendChild(cell);
+  if(x<0||y<0||x>=GRID||y>=GRID) return;
+
+  let scored = false;
+
+  // horizontal line (top edge of cell)
+  if(y < GRID-1 && !h[y][x]){
+    h[y][x] = true;
+    scored = checkBoxes();
+  }
+
+  // vertical line
+  else if(x < GRID-1 && !v[y][x]){
+    v[y][x] = true;
+    scored = checkBoxes();
+  }
+
+  if(!scored){
+    current = 1 - current;
+  }
+
+  if(mode===1 && current===1){
+    setTimeout(aiMove,200);
+  }
+
+  updateScore();
+  draw();
+}
+
+/* =========================
+   AI (basic random)
+   ========================= */
+
+function aiMove(){
+
+  let moves=[];
+
+  for(let y=0;y<GRID;y++){
+    for(let x=0;x<GRID;x++){
+      if(y<GRID-1 && !h[y][x]) moves.push(["h",x,y]);
+      if(x<GRID-1 && !v[y][x]) moves.push(["v",x,y]);
     }
   }
-}
 
-/* =========================
-   CLAIM LINE
-   ========================= */
+  if(moves.length===0) return;
 
-function claim(el){
-  if(el.classList.contains("claimed")) return;
+  let m = moves[Math.floor(Math.random()*moves.length)];
 
-  el.classList.add("claimed");
-  el.style.background = current==="blue" ? "#4c6fff" : "#a046ff";
+  if(m[0]==="h") h[m[2]][m[1]]=true;
+  else v[m[2]][m[1]]=true;
 
   checkBoxes();
 
-  current = current==="blue" ? "purple" : "blue";
-  update();
+  current=0;
+  updateScore();
+  draw();
 }
 
 /* =========================
-   BOX CHECK (clean)
+   BOX CHECK
    ========================= */
 
 function checkBoxes(){
 
-  const boxes = document.querySelectorAll(".box");
+  let scored=false;
 
-  boxes.forEach(b=>{
+  for(let y=0;y<GRID-1;y++){
+    for(let x=0;x<GRID-1;x++){
 
-    if(b.classList.contains("done")) return;
+      if(box[y][x]!==-1) continue;
 
-    const x = parseInt(b.dataset.x);
-    const y = parseInt(b.dataset.y);
+      if(h[y][x] && h[y+1][x] && v[y][x] && v[y][x+1]){
 
-    const top = document.querySelector(`[style*="grid-area"]`);
-    const cells = document.querySelectorAll(".cell");
+        box[y][x] = current;
 
-    const index = Array.from(cells).indexOf(b);
+        if(current===0) blue++;
+        else purple++;
 
-    const gridX = x;
-    const gridY = y;
-
-    const get = (dx,dy)=>{
-      return document.querySelector(
-        `.cell:nth-child(${(y+dy)*7 + (x+dx) + 1})`
-      );
-    };
-
-    const up = cells[index-7];
-    const down = cells[index+7];
-    const left = cells[index-1];
-    const right = cells[index+1];
-
-    if(up?.classList.contains("claimed") &&
-       down?.classList.contains("claimed") &&
-       left?.classList.contains("claimed") &&
-       right?.classList.contains("claimed")){
-
-      b.classList.add("done");
-
-      if(current==="blue"){
-        b.classList.add("blue");
-        b.textContent="B";
-        blue++;
-      }else{
-        b.classList.add("purple");
-        b.textContent="P";
-        purple++;
+        scored=true;
       }
     }
-  });
+  }
+
+  return scored;
+}
+
+/* =========================
+   DRAW (CLEAN GRID ENGINE)
+   ========================= */
+
+function draw(){
+
+  ctx.fillStyle="#050814";
+  ctx.fillRect(0,0,420,420);
+
+  // GRID DOTS
+  for(let y=0;y<GRID;y++){
+    for(let x=0;x<GRID;x++){
+
+      ctx.fillStyle="white";
+      ctx.beginPath();
+      ctx.arc(x*CELL,y*CELL,4,0,Math.PI*2);
+      ctx.fill();
+    }
+  }
+
+  // H LINES
+  for(let y=0;y<GRID;y++){
+    for(let x=0;x<GRID;x++){
+
+      if(h[y][x]){
+        ctx.strokeStyle="#4c6fff";
+        ctx.beginPath();
+        ctx.moveTo(x*CELL,y*CELL);
+        ctx.lineTo((x+1)*CELL,y*CELL);
+        ctx.stroke();
+      }
+    }
+  }
+
+  // V LINES
+  for(let y=0;y<GRID;y++){
+    for(let x=0;x<GRID;x++){
+
+      if(v[y][x]){
+        ctx.strokeStyle="#a046ff";
+        ctx.beginPath();
+        ctx.moveTo(x*CELL,y*CELL);
+        ctx.lineTo(x*CELL,(y+1)*CELL);
+        ctx.stroke();
+      }
+    }
+  }
+
+  // BOXES
+  for(let y=0;y<GRID-1;y++){
+    for(let x=0;x<GRID-1;x++){
+
+      if(box[y][x]===0){
+        ctx.fillStyle="rgba(76,108,255,0.25)";
+        ctx.fillRect(x*CELL,y*CELL,CELL,CELL);
+      }
+
+      if(box[y][x]===1){
+        ctx.fillStyle="rgba(160,70,255,0.25)";
+        ctx.fillRect(x*CELL,y*CELL,CELL,CELL);
+      }
+    }
+  }
 }
 
 /* =========================
    SCORE
    ========================= */
 
-function update(){
+function updateScore(){
   document.getElementById("score").textContent =
-  `Blue: ${blue} | Purple: ${purple} | Turn: ${current.toUpperCase()}`;
+  `Blue: ${blue} | Purple: ${purple} | Turn: ${current===0?"Blue":"Purple"}`;
 }
 
 /* =========================
@@ -345,7 +350,8 @@ function update(){
    ========================= */
 
 function reset(){
-  build();
+  init();
+  draw();
 }
 
 </script>
