@@ -8,7 +8,7 @@
 <style>
 body{
   margin:0;
-  font-family:Arial,sans-serif;
+  font-family:Arial;
   background:#0f0f1a;
   color:white;
   text-align:center;
@@ -29,7 +29,6 @@ body{
   padding:30px;
   border-radius:15px;
   border:3px solid #4c6fff;
-  box-shadow:0 0 25px #4c6fff55;
 }
 
 .menuBox h1{ color:#4c6fff; }
@@ -39,7 +38,6 @@ body{
   padding:10px 20px;
   border:none;
   border-radius:8px;
-  cursor:pointer;
   background:#4c6fff;
   color:white;
 }
@@ -47,43 +45,33 @@ body{
 /* GAME */
 #gameArea{ display:none; }
 
-h1{
-  color:#4c6fff;
-  text-shadow:0 0 10px rgba(76,108,255,0.6);
-}
+h1{ color:#4c6fff; }
 
-/* SCORE */
-#score{
-  margin:10px;
-  font-weight:bold;
-}
+#score{ margin:10px; }
 
-/* CANVAS FULL WIDTH */
+/* CANVAS */
 canvas{
   background:#050814;
   border:3px solid #4c6fff;
   border-radius:12px;
   width:95vw;
   height:95vw;
-  max-width:700px;
-  max-height:700px;
+  max-width:650px;
+  max-height:650px;
 }
 </style>
 </head>
 
 <body>
 
-<!-- MENU -->
 <div id="menu">
   <div class="menuBox">
     <h1>🟦🟪 Rift Dots & Boxes</h1>
-    <p>Select Mode</p>
     <button onclick="startGame(1)">1 Player</button>
     <button onclick="startGame(2)">2 Player</button>
   </div>
 </div>
 
-<!-- GAME -->
 <div id="gameArea">
 
 <h1>Rift Dots & Boxes</h1>
@@ -100,17 +88,12 @@ canvas{
 
 <script>
 
-/* ======================
-   CORE CONFIG (SMALLER GRID)
-   ====================== */
+const c = document.getElementById("c");
+const ctx = c.getContext("2d");
 
-const canvas = document.getElementById("c");
-const ctx = canvas.getContext("2d");
+const GRID = 5;
 
-const GRID = 5; // smaller squares than before
-
-let size;
-let pad;
+let size, pad, cell;
 
 let mode = 2;
 let turn = 0; // 0 blue, 1 purple
@@ -119,23 +102,20 @@ let purple = 0;
 
 let h, v, b;
 
-/* ======================
-   RESPONSIVE FIX
-   ====================== */
+/* ---------------- RESIZE ---------------- */
 
 function resize(){
-  size = Math.min(window.innerWidth * 0.9, 650);
-  canvas.width = size;
-  canvas.height = size;
+  size = Math.min(window.innerWidth*0.9, 650);
+  c.width = size;
+  c.height = size;
 
-  pad = size * 0.12; // keeps dots INSIDE border properly
+  pad = size * 0.12;
+  cell = (size - pad*2) / GRID;
 }
 window.addEventListener("resize", resize);
 resize();
 
-/* ======================
-   START
-   ====================== */
+/* ---------------- START ---------------- */
 
 function startGame(m){
   mode = m;
@@ -146,9 +126,7 @@ function startGame(m){
   draw();
 }
 
-/* ======================
-   INIT GRID
-   ====================== */
+/* ---------------- INIT ---------------- */
 
 function init(){
   h = Array(GRID+1).fill().map(()=>Array(GRID).fill(false));
@@ -162,22 +140,11 @@ function init(){
   update();
 }
 
-/* ======================
-   GRID MATH (FIXED SNAP)
-   ====================== */
+/* ---------------- CLICK FIX (REAL SNAP SYSTEM) ---------------- */
 
-function getCell(){
-  return (size - pad*2) / GRID;
-}
+c.addEventListener("click", e=>{
 
-/* ======================
-   INPUT (FIXED + CLEAN SNAP)
-   ====================== */
-
-canvas.addEventListener("click", e=>{
-
-  const cell = getCell();
-  const rect = canvas.getBoundingClientRect();
+  const rect = c.getBoundingClientRect();
 
   let x = (e.clientX - rect.left - pad) / cell;
   let y = (e.clientY - rect.top - pad) / cell;
@@ -188,38 +155,34 @@ canvas.addEventListener("click", e=>{
   let dx = Math.abs(x - gx);
   let dy = Math.abs(y - gy);
 
-  // must be CLOSE to line intersection
-  if(Math.max(dx,dy) > 0.35) return;
+  // must be close to a grid line
+  if(Math.max(dx,dy) > 0.4) return;
 
-  let placed = false;
+  let moved = false;
 
-  // horizontal
-  if(dy < dx && gy <= GRID && gx < GRID){
-    if(!h[gy][gx]){
+  /* PRIORITY FIX:
+     choose closest valid edge, not guess */
+
+  if(dy < dx){
+    if(gy >= 0 && gy <= GRID && gx < GRID && !h[gy][gx]){
       h[gy][gx] = true;
-      placed = true;
+      moved = true;
     }
-  }
-
-  // vertical
-  else if(dx <= dy && gx <= GRID && gy < GRID){
-    if(!v[gy][gx]){
+  } else {
+    if(gx >= 0 && gx <= GRID && gy < GRID && !v[gy][gx]){
       v[gy][gx] = true;
-      placed = true;
+      moved = true;
     }
   }
 
-  if(placed){
-    move();
+  if(moved){
+    handleMove();
   }
-
 });
 
-/* ======================
-   MOVE FLOW (NO BUG SWAP)
-   ====================== */
+/* ---------------- MOVE FLOW (ONLY PLACE WHERE TURN CHANGES) ---------------- */
 
-function move(){
+function handleMove(){
 
   let scored = checkBoxes();
 
@@ -235,9 +198,7 @@ function move(){
   }
 }
 
-/* ======================
-   AI (ALWAYS PURPLE FIXED)
-   ====================== */
+/* ---------------- AI (NO TURN BUGS) ---------------- */
 
 function ai(){
 
@@ -260,12 +221,10 @@ function ai(){
   if(m[0]==="h") h[m[2]][m[1]]=true;
   else v[m[2]][m[1]]=true;
 
-  move();
+  handleMove(); // IMPORTANT: same pipeline, no extra turn flips
 }
 
-/* ======================
-   BOX CHECK
-   ====================== */
+/* ---------------- BOX CHECK ---------------- */
 
 function checkBoxes(){
 
@@ -295,13 +254,9 @@ function checkBoxes(){
   return scored;
 }
 
-/* ======================
-   DRAW (RIFT CLEAN STYLE)
-   ====================== */
+/* ---------------- DRAW ---------------- */
 
 function draw(){
-
-  const cell = getCell();
 
   ctx.fillStyle="#050814";
   ctx.fillRect(0,0,size,size);
@@ -325,12 +280,12 @@ function draw(){
     for(let x=0;x<=GRID;x++){
       ctx.fillStyle="white";
       ctx.beginPath();
-      ctx.arc(pad + x*cell, pad + y*cell, 3.5, 0, Math.PI*2);
+      ctx.arc(pad + x*cell, pad + y*cell, 3.5,0,Math.PI*2);
       ctx.fill();
     }
   }
 
-  /* lines */
+  /* h lines */
   for(let y=0;y<=GRID;y++){
     for(let x=0;x<GRID;x++){
       if(h[y][x]){
@@ -344,6 +299,7 @@ function draw(){
     }
   }
 
+  /* v lines */
   for(let y=0;y<GRID;y++){
     for(let x=0;x<=GRID;x++){
       if(v[y][x]){
@@ -374,9 +330,7 @@ function draw(){
   }
 }
 
-/* ======================
-   UI
-   ====================== */
+/* ---------------- UI ---------------- */
 
 function update(){
   document.getElementById("score").textContent =
