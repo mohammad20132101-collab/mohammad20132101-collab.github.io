@@ -463,7 +463,13 @@ document.querySelector('#p1Colour').addEventListener('change', function(e) {
 document.querySelector('#p2Colour').addEventListener('change', function(e) {
 	changeSquareColour(e, 2);
 });
-
+function resetGame(){
+    current="player1";
+    gameOver=false;
+    winningCells=[];
+    updateStatus();
+    init();
+}
 </script>
 
 
