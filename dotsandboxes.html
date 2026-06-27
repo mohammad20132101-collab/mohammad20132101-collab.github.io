@@ -312,16 +312,19 @@ function Link(start, end) {
   }
 }
 
-function Square(startX, startY, colour) {
+function Square(startX, startY, endX, endY, colour) {
 	this.sX = startX;
 	this.sY = startY;
-	this.size = DOT_SPACING;
+	this.eX = endX;
+	this.eY = endY;
 	this.colour = colour;
 
+	updateScores();
+
 	this.draw = function() {
-	c.fillStyle = this.colour;
-	c.fillRect(this.sX, this.sY, this.size, this.size);
-}
+		c.fillStyle = this.colour;
+		c.fillRect(this.sX, this.sY, this.eX, this.eY);
+	}
 }
 
 // LINK HANDLING
@@ -359,32 +362,35 @@ function createLink(target) {
     var newLink = new Link(origin, target);
     linksArray.push(newLink);
 
-    let playerJustMoved = turn;   // 🔥 FREEZE TURN HERE
-
     let squareCount = squaresArray.length;
-    checkForSquare(newLink, playerJustMoved);
-
+    checkForSquare(newLink);
     origin = null;
 
     if (squareCount === squaresArray.length) {
+
+        // No box made → switch turns
         turn = turn === 'p1' ? 'p2' : 'p1';
         document.querySelector('#turn').classList.toggle('p2-turn');
 
+        // AI's turn?
         if (mode === 1 && turn === "p2") {
             setTimeout(aiMove, 250);
         }
 
     } else {
 
+        // Box made → same player goes again
         if (mode === 1 && turn === "p2") {
             setTimeout(aiMove, 250);
         }
+
     }
+
 }
 
 // SQUARE HANDLING
 
-function checkForSquare(link, player) {
+function checkForSquare(link) {
 	// horizontal move
 	if (link.start.gy === link.end.gy) {
 		// check for square above
@@ -394,18 +400,7 @@ function checkForSquare(link, player) {
 			const upperRight = linksArray.find(l => l.start.gy === link.start.gy - 1 && l.end.gy === link.start.gy && l.start.gx === link.end.gx);
 
 			if (upperLeft && upperTop && upperRight) {
-
-		squaresArray.push(
-  new Square(
-    upperTop.start.x,
-    upperTop.start.y,
-    DOT_SPACING,
-    DOT_SPACING,
-    colours[player]
-  )
-);
-				scores[player]++;
-				document.querySelector(`#${player}Score`).innerHTML = scores[player];
+				squaresArray.push(new Square(upperTop.start.x, upperTop.start.y, DOT_SPACING, DOT_SPACING, colours[turn]));
 			}
 		}
 
@@ -416,20 +411,7 @@ function checkForSquare(link, player) {
 			const lowerRight = linksArray.find(l => l.start.gy === link.end.gy && l.end.gy === link.end.gy + 1 && l.start.gx === link.end.gx);
 
 			if (lowerLeft && lowerBottom && lowerRight) {
-		
-
-			squaresArray.push(
-  new Square(
-    lowerLeft.start.x,
-    lowerLeft.start.y,
-    DOT_SPACING,
-    DOT_SPACING,
-    colours[player]
-  )
-);
-
-				scores[player]++;
-				document.querySelector(`#${player}Score`).innerHTML = scores[player];
+				squaresArray.push(new Square(lowerLeft.start.x, lowerLeft.start.y, DOT_SPACING, DOT_SPACING, colours[turn]));
 			}
 		}
 	}
@@ -442,55 +424,19 @@ function checkForSquare(link, player) {
 			const leftBottom = linksArray.find(l => l.start.gx === link.end.gx - 1 && l.end.gx === link.end.gx && l.start.gy === link.end.gy);
 
 			if (leftTop && leftLeft && leftBottom) {
-			
-			squaresArray.push(
-  new Square(
-    leftTop.start.x,
-    leftTop.start.y,
-    DOT_SPACING,
-    DOT_SPACING,
-    colours[player]
-  )
-);
-
-			scores[player]++;
-			document.querySelector(`#${player}Score`).innerHTML = scores[player];
+				squaresArray.push(new Square(leftTop.start.x, leftTop.start.y, DOT_SPACING, DOT_SPACING, colours[turn]));
 			}
 		}
-// check for square to right
-if (link.start.gx !== dotCount - 1) {
 
-    const rightTop = linksArray.find(l =>
-        l.start.gx === link.start.gx &&
-        l.end.gx === link.start.gx + 1 &&
-        l.start.gy === link.start.gy
-    );
+		// check for square to right
+		if (link.start.gx !== 0) {
+			const rightTop = linksArray.find(l => l.start.gx === link.start.gx && l.end.gx === link.start.gx + 1 && l.start.gy === link.start.gy);
+			const rightRight = linksArray.find(l => l.start.gy === link.start.gy && l.end.gy === link.end.gy && l.start.gx === link.start.gx + 1);
+			const rightBottom = linksArray.find(l => l.start.gx === link.end.gx && l.end.gx === link.end.gx + 1 && l.start.gy === link.end.gy);
 
-    const rightRight = linksArray.find(l =>
-        l.start.gy === link.start.gy &&
-        l.end.gy === link.end.gy &&
-        l.start.gx === link.start.gx + 1
-    );
-
-    const rightBottom = linksArray.find(l =>
-        l.start.gx === link.end.gx &&
-        l.end.gx === link.end.gx + 1 &&
-        l.start.gy === link.end.gy
-    );
-
-    if (rightTop && rightRight && rightBottom) {
-        squaresArray.push(
-            new Square(
-                rightTop.start.x,
-                rightTop.start.y,
-                colours[player]
-            )
-        );
-
-        scores[player]++;
-        document.querySelector(`#${player}Score`).innerHTML = scores[player];
-    }
-}
+			if (rightTop && rightRight && rightBottom) {
+				squaresArray.push(new Square(rightTop.start.x, rightTop.start.y, DOT_SPACING, DOT_SPACING, colours[turn]));
+			}
 		}
 	}
 }
