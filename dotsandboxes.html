@@ -8,12 +8,10 @@
 <style>
 body{
   margin:0;
-  font-family:Arial;
+  font-family:Arial,sans-serif;
   background:#0f0f1a;
   color:white;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
+  text-align:center;
 }
 
 /* MENU */
@@ -21,8 +19,8 @@ body{
   position:fixed;
   inset:0;
   display:flex;
-  justify-content:center;
   align-items:center;
+  justify-content:center;
   background:#0f0f1a;
 }
 
@@ -31,7 +29,6 @@ body{
   padding:30px;
   border-radius:15px;
   border:3px solid #4c6fff;
-  text-align:center;
   box-shadow:0 0 25px #4c6fff55;
 }
 
@@ -41,33 +38,41 @@ body{
   margin:10px;
   padding:10px 20px;
   border:none;
-  background:#4c6fff;
-  color:white;
   border-radius:8px;
   cursor:pointer;
+  background:#4c6fff;
+  color:white;
 }
 
 /* GAME */
 #gameArea{ display:none; }
 
-header{
-  width:100%;
-  text-align:center;
-  padding:15px;
-  background:#1a1a2e;
-  border-bottom:2px solid #4c6fff;
-}
+h1{ color:#4c6fff; }
 
 #score{
   margin:10px;
-  font-size:18px;
+  font-weight:bold;
 }
 
-/* CANVAS */
-canvas{
+/* BUTTON STYLE (MATCH TIC TAC TOE) */
+button{
+  margin:5px;
+  padding:8px 15px;
+  border:none;
+  background:#4c6fff;
+  color:white;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+/* BOARD */
+#board{
+  display:block;
+  margin:20px auto;
   background:#050814;
   border:3px solid #4c6fff;
   border-radius:12px;
+  touch-action:manipulation;
 }
 </style>
 </head>
@@ -78,7 +83,6 @@ canvas{
 <div id="menu">
   <div class="menuBox">
     <h1>🟦🟪 Rift Dots & Boxes</h1>
-    <p>Select Mode</p>
     <button onclick="startGame(1)">1 Player</button>
     <button onclick="startGame(2)">2 Player</button>
   </div>
@@ -87,279 +91,40 @@ canvas{
 <!-- GAME -->
 <div id="gameArea">
 
-<header>
-  <h1>Rift Dots & Boxes</h1>
-</header>
+<h1>Rift Dots & Boxes</h1>
 
 <div id="score"></div>
 
-<canvas id="c" width="420" height="420"></canvas>
+<canvas id="board"></canvas>
 
 <div>
   <button onclick="reset()">Restart</button>
   <button onclick="location.reload()">Menu</button>
-   <button onclick="window.location.href='index.html'">Back</button>
 </div>
 
 </div>
 
 <script>
 
-/* ======================
-   CONFIG (clean grid)
-   ====================== */
+/* =========================
+   CONFIG (responsive board)
+   ========================= */
 
-const canvas = document.getElementById("c");
+const canvas = document.getElementById("board");
 const ctx = canvas.getContext("2d");
 
-const GRID = 4;           // boxes per row
-const GAP = 80;           // spacing
-const PAD = 40;           // FIX: keeps dots inside border
+const GRID = 5;              // boxes per row
+const SIZE = 70;             // cell spacing
 
+let W, H;
 let mode = 2;
 let turn = 0; // 0 blue, 1 purple
-let blue = 0;
-let purple = 0;
 
-/* GRID STORAGE */
 let h, v, b;
 
-/* ======================
+/* =========================
    START
-   ====================== */
+   ========================= */
 
 function startGame(m){
-  mode = m;
-  document.getElementById("menu").style.display="none";
-  document.getElementById("gameArea").style.display="block";
-  init();
-  draw();
-}
-
-/* ======================
-   INIT GRID
-   ====================== */
-
-function init(){
-
-  h = Array(GRID+1).fill().map(()=>Array(GRID).fill(false));
-  v = Array(GRID).fill().map(()=>Array(GRID+1).fill(false));
-  b = Array(GRID).fill().map(()=>Array(GRID).fill(-1));
-
-  turn = 0;
-  blue = 0;
-  purple = 0;
-
-  update();
-}
-
-/* ======================
-   INPUT (FIXED HIT ZONES)
-   ====================== */
-
-canvas.addEventListener("click", e=>{
-
-  const rect = canvas.getBoundingClientRect();
-
-  let x = (e.clientX - rect.left - PAD) / GAP;
-  let y = (e.clientY - rect.top - PAD) / GAP;
-
-  const fx = Math.round(x);
-  const fy = Math.round(y);
-
-  const dx = Math.abs(x - fx);
-  const dy = Math.abs(y - fy);
-
-  // 🔥 decide if horizontal or vertical line
-
-  if(dy < dx){
-    // horizontal
-    if(fy >= 0 && fy <= GRID && fx >= 0 && fx < GRID){
-      if(!h[fy][fx]){
-        h[fy][fx] = true;
-        afterMove();
-      }
-    }
-  } else {
-    // vertical
-    if(fx >= 0 && fx <= GRID && fy >= 0 && fy < GRID){
-      if(!v[fy][fx]){
-        v[fy][fx] = true;
-        afterMove();
-      }
-    }
-  }
-
-});
-
-/* ======================
-   MOVE FLOW
-   ====================== */
-
-function afterMove(){
-
-  let scored = checkBoxes();
-
-  if(!scored){
-    turn = 1 - turn;
-  }
-
-  update();
-  draw();
-
-  if(mode===1 && turn===1){
-    setTimeout(ai,200);
-  }
-}
-
-/* ======================
-   AI (ALWAYS PURPLE)
-   ====================== */
-
-function ai(){
-
-  let moves=[];
-
-  for(let y=0;y<=GRID;y++){
-    for(let x=0;x<GRID;x++){
-      if(!h[y]?.[x]) moves.push(["h",x,y]);
-    }
-  }
-
-  for(let y=0;y<GRID;y++){
-    for(let x=0;x<=GRID;x++){
-      if(!v[y]?.[x]) moves.push(["v",x,y]);
-    }
-  }
-
-  let m = moves[Math.floor(Math.random()*moves.length)];
-
-  if(m[0]==="h") h[m[2]][m[1]]=true;
-  else v[m[2]][m[1]]=true;
-
-  afterMove();
-}
-
-/* ======================
-   BOX CHECK
-   ====================== */
-
-function checkBoxes(){
-
-  let scored=false;
-
-  for(let y=0;y<GRID;y++){
-    for(let x=0;x<GRID;x++){
-
-      if(b[y][x]!==-1) continue;
-
-      if(
-        h[y][x] &&
-        h[y+1][x] &&
-        v[y][x] &&
-        v[y][x+1]
-      ){
-        b[y][x]=turn;
-
-        if(turn===0) blue++;
-        else purple++;
-
-        scored=true;
-      }
-    }
-  }
-
-  return scored;
-}
-
-/* ======================
-   DRAW (FIXED GRID)
-   ====================== */
-
-function draw(){
-
-  ctx.fillStyle="#050814";
-  ctx.fillRect(0,0,420,420);
-
-  /* DOTS */
-  for(let y=0;y<=GRID;y++){
-    for(let x=0;x<=GRID;x++){
-
-      ctx.fillStyle="white";
-      ctx.beginPath();
-      ctx.arc(PAD + x*GAP, PAD + y*GAP, 4,0,Math.PI*2);
-      ctx.fill();
-    }
-  }
-
-  /* H LINES */
-  for(let y=0;y<=GRID;y++){
-    for(let x=0;x<GRID;x++){
-
-      if(h[y][x]){
-        ctx.strokeStyle = "#4c6fff";
-        ctx.lineWidth = 4;
-
-        ctx.beginPath();
-        ctx.moveTo(PAD + x*GAP, PAD + y*GAP);
-        ctx.lineTo(PAD + (x+1)*GAP, PAD + y*GAP);
-        ctx.stroke();
-      }
-    }
-  }
-
-  /* V LINES */
-  for(let y=0;y<GRID;y++){
-    for(let x=0;x<=GRID;x++){
-
-      if(v[y][x]){
-        ctx.strokeStyle = "#a046ff";
-        ctx.lineWidth = 4;
-
-        ctx.beginPath();
-        ctx.moveTo(PAD + x*GAP, PAD + y*GAP);
-        ctx.lineTo(PAD + x*GAP, PAD + (y+1)*GAP);
-        ctx.stroke();
-      }
-    }
-  }
-
-  /* BOXES */
-  for(let y=0;y<GRID;y++){
-    for(let x=0;x<GRID;x++){
-
-      if(b[y][x]===0){
-        ctx.fillStyle="rgba(76,108,255,0.25)";
-        ctx.fillRect(PAD + x*GAP, PAD + y*GAP, GAP, GAP);
-      }
-
-      if(b[y][x]===1){
-        ctx.fillStyle="rgba(160,70,255,0.25)";
-        ctx.fillRect(PAD + x*GAP, PAD + y*GAP, GAP, GAP);
-      }
-    }
-  }
-}
-
-/* ======================
-   SCORE
-   ====================== */
-
-function update(){
-  document.getElementById("score").textContent =
-  `Blue: ${blue} | Purple: ${purple} | Turn: ${turn===0?"Blue":"Purple"}`;
-}
-
-/* ======================
-   RESET
-   ====================== */
-
-function reset(){
-  init();
-  draw();
-}
-
-</script>
-
-</body>
-</html>
+ 
