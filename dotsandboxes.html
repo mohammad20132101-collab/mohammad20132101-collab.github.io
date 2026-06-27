@@ -113,8 +113,6 @@ h1 {
   margin: 10px 0;
 }
 button {
-  display: block;
-  margin: 10px auto;
   background: linear-gradient(135deg, #4c6fff, #2f3cff);
   color: white;
   border: 1px solid rgba(76, 111, 255, 0.5);
@@ -124,6 +122,14 @@ button {
   font-weight: bold;
   transition: 0.2s;
   box-shadow: 0 0 10px rgba(76, 111, 255, 0.25);
+}
+
+/* 🔥 THIS is the important part */
+.btn-row {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 10px;
 }
 
 button:hover {
@@ -136,9 +142,12 @@ button:hover {
 
 <body>
 
-<h1 align=center>Dots & Boxes</h1>
-<button onclick="reset()">Reset</button>
+<h1 align=center>Rift Dots & Boxes</h1>
+
+<div class="btn-row">
+  <button onclick="reset()">Reset</button>
   <button onclick="window.location.href='index.html'">Back</button>
+</div>
 
 <div class="controls">
   <label>Grid Size
