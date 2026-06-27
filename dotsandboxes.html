@@ -136,12 +136,55 @@ button:hover {
   transform: scale(1.05);
   box-shadow: 0 0 18px rgba(76, 111, 255, 0.45);
 }
+#menu{
+  position:fixed;
+  inset:0;
+  background:#0f0f1a;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  z-index:999;
+}
+
+.menuBox{
+  background:#141428;
+  padding:30px;
+  border-radius:15px;
+  border:3px solid #4c6fff;
+  box-shadow:0 0 25px rgba(76,108,255,0.35);
+  text-align:center;
+}
+
+.menuBox h1{
+  color:#4c6fff;
+  margin-bottom:10px;
+}
+
+.menuBox button{
+  margin:10px;
+  padding:10px 20px;
+  border:none;
+  border-radius:8px;
+  background:#4c6fff;
+  color:white;
+  cursor:pointer;
+  font-weight:bold;
+}
 </style>
 
 </head>
 
 <body>
+<!-- MENU -->
+<div id="menu">
+  <div class="menuBox">
+    <h1>🟦 Rift Dots & Boxes</h1>
+    <p>Select Mode</p>
 
+    <button onclick="startGame(1)">1 Player</button>
+    <button onclick="startGame(2)">2 Player</button>
+  </div>
+</div>
 <h1 align=center>Rift Dots & Boxes</h1>
 
 <div class="btn-row">
@@ -323,9 +366,14 @@ function createLink(target) {
 
 	// only change player turn if new square wasn't added
 	if (squareCount === squaresArray.length) {
-		turn = turn === 'p1' ? 'p2' : 'p1';
-		document.querySelector('#turn').classList.toggle('p2-turn');
-	}
+  turn = turn === 'p1' ? 'p2' : 'p1';
+  document.querySelector('#turn').classList.toggle('p2-turn');
+
+  // 👉 AI TURN (only in 1 player mode)
+  if(mode === 1 && turn === 'p2'){
+    setTimeout(aiMove, 250);
+  }
+}
 }
 
 // SQUARE HANDLING
@@ -413,7 +461,8 @@ window.addEventListener('mousedown', function(e) {
 
 var canvas = document.querySelector('canvas');
 var c = canvas.getContext('2d');
-init();
+let mode = 2; // default multiplayer
+
 
 function init() {
   dotCount = document.querySelector('#gridSize').value;
@@ -528,6 +577,53 @@ function reset() {
   canvas.height = size;
 
   drawDots(dotCount);
+}
+function startGame(m){
+  mode = m;
+
+  document.getElementById("menu").style.display = "none";
+
+  init();
+}
+function aiMove(){
+
+  // collect all valid moves
+  let moves = [];
+
+  for(let y=0;y<dotCount;y++){
+    for(let x=0;x<dotCount;x++){
+
+      let dot = dotArray.find(d => d.gx === x && d.gy === y);
+      if(!dot) continue;
+
+      // check neighbors
+      let dirs = [
+        {dx:1,dy:0},
+        {dx:-1,dy:0},
+        {dx:0,dy:1},
+        {dx:0,dy:-1}
+      ];
+
+      for(let d of dirs){
+        let nx = x + d.dx;
+        let ny = y + d.dy;
+
+        let target = dotArray.find(p => p.gx === nx && p.gy === ny);
+        if(!target) continue;
+
+        if(checkValidMove(target)){
+          moves.push(target);
+        }
+      }
+    }
+  }
+
+  if(moves.length === 0) return;
+
+  let choice = moves[Math.floor(Math.random() * moves.length)];
+
+  origin = dotArray.find(d => d.gx === choice.gx && d.gy === choice.gy);
+  createLink(choice);
 }
 </script>
 
