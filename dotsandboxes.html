@@ -602,10 +602,11 @@ document.body.style.background = colours.p1;
 }
 function startGame(m){
   mode = m;
+  document.getElementById("menu").style.display = "none";
   if (m === 1) document.getElementById('p2Name').textContent = 'AI';
   else document.getElementById('p2Name').textContent = 'Player 2';
   init();
-  document.body.style.background = colours.p1; // add this
+  document.body.style.background = colours.p1;
 }
 function aiMove(){
 
