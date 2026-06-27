@@ -20,12 +20,12 @@ body, label, div, span {
 body {
   margin: 0;
   font-family: Arial, sans-serif;
-  background: #0f0f1a;
+  background: #4c6fff;
   color: white;
-
   display: flex;
   flex-direction: column;
-  align-items: center;   /* centers everything horizontally */
+  align-items: center;
+  transition: background 0.4s ease;
 }
 /* CONTROL PANEL */
 
@@ -104,12 +104,14 @@ label input {
 canvas {
   background-color: #0f0f1a;
   border-radius: 5px;
+  position: relative;
+  z-index: 1;
 }
 h1 {
   width: 100%;
   text-align: center;
-  color: #4c6fff;
-  text-shadow: 0 0 10px rgba(76, 111, 255, 0.6);
+  color: white;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
   margin: 10px 0;
 }
 button {
@@ -369,8 +371,9 @@ function createLink(target) {
     if (squareCount === squaresArray.length) {
 
         // No box made → switch turns
-        turn = turn === 'p1' ? 'p2' : 'p1';
-        document.querySelector('#turn').classList.toggle('p2-turn');
+       turn = turn === 'p1' ? 'p2' : 'p1';
+document.querySelector('#turn').classList.toggle('p2-turn');
+document.body.style.background = colours[turn];
 
         // AI's turn?
         if (mode === 1 && turn === "p2") {
@@ -556,10 +559,12 @@ document.querySelector('#gridSize').addEventListener('change', function() {
 
 document.querySelector('#p1Colour').addEventListener('change', function(e) {
 	changeSquareColour(e, 1);
+	if (turn === 'p1') document.body.style.background = colours.p1;
 });
 
 document.querySelector('#p2Colour').addEventListener('change', function(e) {
 	changeSquareColour(e, 2);
+	if (turn === 'p2') document.body.style.background = colours.p2;
 });
 function reset() {
   // clear game state
@@ -590,13 +595,13 @@ function reset() {
   canvas.height = size;
 
   drawDots(dotCount);
+document.body.style.background = colours.p1;
 }
 function startGame(m){
   mode = m;
-
   document.getElementById("menu").style.display = "none";
-
   init();
+  document.body.style.background = colours.p1; // add this
 }
 function aiMove(){
 
