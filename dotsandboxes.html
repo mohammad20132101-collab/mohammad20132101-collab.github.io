@@ -613,8 +613,13 @@ document.body.style.background = colours.p1;
 function startGame(m){
   mode = m;
   document.getElementById("menu").style.display = "none";
-  if (m === 1) document.getElementById('p2Name').textContent = 'AI';
-  else document.getElementById('p2Name').textContent = 'Player 2';
+  if (m === 1) {
+  document.getElementById('p2Name').textContent = 'AI';
+  document.getElementById('p2Name').contentEditable = 'false';
+} else {
+  document.getElementById('p2Name').textContent = 'Player 2';
+  document.getElementById('p2Name').contentEditable = 'true';
+}
   init();
   document.body.style.background = colours.p1;
 }
