@@ -173,7 +173,7 @@ canvas {
 <div id="towersShop" class="shop-menu">
   <h3>Towers Terminal</h3>
   <div class="shop-grid">
-    <button onclick="buyDefenseTower()"><span>Buy Defense Tower</span> <strong>40 c</strong></button>
+    <button onclick="buyDefenseTower()"><span>Buy Defense Tower</span> <strong>20 c</strong></button>
   </div>
   <button class="close-btn" onclick="toggleShop('towersShop')">Close Terminal</button>
 </div>
@@ -212,7 +212,7 @@ function resetState(){
   base = 0;
 
   // Increased starting damage to 3.8 so 2 shots can clear Wave 1 cubes (7.5 HP)
-  damage = 3.8; 
+  damage = 4.0; 
   fireRate = 600;
   ramp = 1;
   range = 8; 
@@ -340,8 +340,8 @@ function upgradeRange(){
 }
 
 function buyDefenseTower() {
-  if (coins >= 40) {
-    coins -= 40;
+  if (coins >= 20) {
+    coins -= 20;
     placementMode = true;
     document.getElementById("towerShopBtn").classList.add("active-mode");
     toggleShop("towersShop");
