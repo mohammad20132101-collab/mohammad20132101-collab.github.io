@@ -145,7 +145,7 @@ canvas {
 <div id="dashboard">
   <div class="stat-box">💰 Coins: <span id="coins">0</span></div>
   <div class="stat-box">🌊 Wave: <span id="wave">1</span></div>
-  <div class="stat-box">🔥 Damage: <span id="damage">1</span></div>
+  <div class="stat-box">🔥 Damage: <span id="damage">0</span></div>
   <div class="stat-box">📏 Range: <span id="range">5</span></div>
   <div class="stat-box">❤️ Rift Core: <span id="base">0</span>/100</div>
 </div>
@@ -193,7 +193,7 @@ let costDmg = 10, costFire = 15, costRamp = 25, costRange = 20;
 let turretRow;
 let enemies = [];
 let particles = [];
-let towers = []; // Array to store placed towers
+let towers = []; 
 
 let beamTimer = 0;
 let spawnTimer = 0;
@@ -201,7 +201,7 @@ let waveTimer = 0;
 
 let currentTarget = null;
 let beamCharge = 1;
-let placementMode = false; // Mode tracking tower placement
+let placementMode = false; 
 
 const GRID = 20;
 
@@ -211,7 +211,8 @@ function resetState(){
   wave = 1;
   base = 0;
 
-  damage = 1.5; 
+  // Increased starting damage to 3.8 so 2 shots can clear Wave 1 cubes (7.5 HP)
+  damage = 3.8; 
   fireRate = 600;
   ramp = 1;
   range = 8; 
@@ -280,9 +281,8 @@ canvas.addEventListener("click", (e) => {
   const gridY = Math.floor(mouseY / GRID) * GRID;
   const row = Math.floor(mouseY / GRID);
 
-  // Prevent duplicate placement on exact same spot
   const existing = towers.find(t => t.x === gridX && t.y === gridY);
-  if (!existing && gridX >= 60) { // Don't allow placing over the core lane
+  if (!existing && gridX >= 60) { 
     towers.push({
       x: gridX,
       y: gridY,
@@ -312,7 +312,6 @@ function toggleShop(menuId){
   let s = document.getElementById(menuId);
   const isOpen = s.style.display === "block";
   
-  // Close all shops first
   document.getElementById("upgradesShop").style.display = "none";
   document.getElementById("towersShop").style.display = "none";
   
@@ -321,7 +320,7 @@ function toggleShop(menuId){
 
 function upgradeDamage(){ 
   if(coins>=costDmg){
-    coins-=costDmg; damage += 0.8; costDmg = Math.floor(costDmg * 1.5); updateUI();
+    coins-=costDmg; damage += 1.0; costDmg = Math.floor(costDmg * 1.5); updateUI();
   }
 }
 function upgradeFire(){ 
@@ -350,9 +349,8 @@ function buyDefenseTower() {
   }
 }
 
-// ================= ENEMY SYSTEM (HARDER SCALING) =================
+// ================= ENEMY SYSTEM =================
 function spawnEnemy(){
-  // HARDER: Base HP scales dynamically up by 4.5 points per wave instead of 2
   let hpScaling = 3 + (wave * 4.5); 
   enemies.push({
     x: 900,
@@ -484,7 +482,6 @@ function fireTowerBeams(delta) {
 function executeDamage(target, calculatedDmg, startX, startY, isTower = false) {
   target.hp -= calculatedDmg;
 
-  // Render Laser Visuals
   ctx.strokeStyle = isTower ? "rgba(0, 255, 136, 0.7)" : "rgba(0, 210, 255, 0.7)";
   ctx.shadowColor = isTower ? "#00FF88" : "#00d2ff";
   ctx.shadowBlur = 8;
@@ -509,7 +506,6 @@ function executeDamage(target, calculatedDmg, startX, startY, isTower = false) {
 function drawEnemies(delta){
   for(let i=enemies.length-1;i>=0;i--){
     let e=enemies[i];
-    // HARDER: Base velocity increase factor raised from 0.05 to 0.12 per wave level
     e.x -= 1.1 + (wave * 0.12); 
     e.y = e.row*GRID;
 
@@ -552,7 +548,6 @@ function loop(t){
   drawTurret();
   drawTowers();
 
-  // HARDER Spawn Cycle: Enemies swarm faster down the lanes
   spawnTimer += delta;
   let dynamicRate = Math.max(350, 1300 - (wave * 95));
 
