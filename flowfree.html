@@ -1,1 +1,567 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rift Flow</title>
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #0f0f1a;
+    color: white;
+    text-align: center;
+    user-select: none;
+    -webkit-user-select: none;
+}
+h1 { color: #4c6fff; margin-bottom: 5px; }
 
+#gameContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-top: 15px;
+}
+
+#gameBoard {
+    background: #141428;
+    padding: 15px;
+    border-radius: 15px;
+    border: 3px solid #4c6fff;
+    box-shadow: 0 0 20px #4c6fff55;
+    position: relative;
+    cursor: pointer;
+}
+
+canvas {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.grid {
+    display: grid;
+    position: relative;
+    z-index: 1;
+}
+
+.cell {
+    background: #1a1a2e;
+    border: 1px solid #252545;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-sizing: border-box;
+}
+
+.dot {
+    width: 65%;
+    height: 65%;
+    border-radius: 50%;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: transform 0.15s ease;
+}
+
+.dot.pop {
+    animation: pop 0.2s ease-out;
+}
+
+@keyframes pop {
+    0% { transform: scale(0.5); }
+    70% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+/* CONTROL PANEL */
+.controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin: 15px auto;
+}
+
+label {
+    color: #ffc;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+input[type="range"] {
+    cursor: pointer;
+    accent-color: #4c6fff;
+    width: 150px;
+}
+
+button {
+    padding: 10px 18px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    background: #4c6fff;
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+    transition: 0.2s;
+    margin: 2px;
+}
+button:hover { 
+    background: #9b5cff; 
+    transform: scale(1.05);
+}
+
+.btn-active {
+    background: #23cc71 !important;
+}
+
+#statusBox {
+    display: inline-block;
+    background: #141428;
+    border: 2px solid #4c6fff;
+    padding: 8px 20px;
+    border-radius: 10px;
+    font-size: 16px;
+    min-width: 150px;
+}
+
+.win-text {
+    color: #6bff6b;
+    font-weight: bold;
+    animation: pulse 1s infinite alternate;
+}
+
+@keyframes pulse {
+    0% { text-shadow: 0 0 5px #6bff6b33; }
+    100% { text-shadow: 0 0 15px #6bff6b88; }
+}
+</style>
+</head>
+<body>
+
+<h1>🌀 Rift Flow</h1>
+
+<div class="controls">
+    <label>Grid Size: <span id="sizeDisplay" style="color:#4c6fff; font-weight:bold;">5x5</span>
+        <input type="range" min="4" max="10" value="5" id="gridSlider" />
+    </label>
+    
+    <div>
+        <button onclick="generateNewPuzzle()">New Board</button>
+        <button id="solutionBtn" onclick="toggleSolution()">Show Solution</button>
+        <button onclick="window.location.href='index.html'">Back</button>
+    </div>
+    
+    <div id="statusBox"><span id="status">Flow: 0%</span></div>
+</div>
+
+<div id="gameContainer">
+    <div id="gameBoard">
+        <canvas id="lineCanvas"></canvas>
+        <div id="gridContainer" class="grid"></div>
+    </div>
+</div>
+
+<script>
+const COLOR_CONFIGS = [
+    { hex: '#ff2a2a', glyph: '🔴' }, 
+    { hex: '#2a66ff', glyph: '🔵' }, 
+    { hex: '#2aff2a', glyph: '🟢' }, 
+    { hex: '#ffd000', glyph: '🟡' }, 
+    { hex: '#b02aff', glyph: '🟣' }, 
+    { hex: '#ff6fa2', glyph: '🌸' }, 
+    { hex: '#00ffff', glyph: '💎' }, 
+    { hex: '#ff7700', glyph: '🍊' }, 
+    { hex: '#ffffff', glyph: '⚪' }, 
+    { hex: '#a16223', glyph: '🪵' }, 
+    { hex: '#44ffaa', glyph: '🍀' }, 
+    { hex: '#ff00d0', glyph: '🔮' }, 
+    { hex: '#99b3ff', glyph: '❄️' }, 
+    { hex: '#ffe699', glyph: '🌟' }, 
+    { hex: '#29ff00', glyph: '🔋' }, 
+    { hex: '#e6005c', glyph: '🎈' }  
+];
+
+let gridSize = 5;
+let cellSize = 70; 
+let boardWidth = 0;
+
+let dots = [];        
+let paths = {};       
+let solutionPaths = {}; 
+let showSolutionActive = false;
+
+let activeColor = null;
+let lastCell = null;
+let isDrawing = false;
+let solved = false;
+
+const gridContainer = document.getElementById('gridContainer');
+const canvas = document.getElementById('lineCanvas');
+const ctx = canvas.getContext('2d');
+
+document.getElementById('gridSlider').addEventListener('input', function() {
+    gridSize = parseInt(this.value);
+    document.getElementById('sizeDisplay').textContent = `${gridSize}x${gridSize}`;
+    generateNewPuzzle();
+});
+
+function generateNewPuzzle() {
+    solved = false;
+    paths = {};
+    solutionPaths = {};
+    showSolutionActive = false;
+    document.getElementById('solutionBtn').classList.remove('btn-active');
+    document.getElementById('solutionBtn').textContent = "Show Solution";
+    activeColor = null;
+    lastCell = null;
+    isDrawing = false;
+    
+    if (gridSize <= 5) cellSize = 70;
+    else if (gridSize <= 7) cellSize = 56;
+    else if (gridSize <= 9) cellSize = 46;
+    else cellSize = 40;
+
+    boardWidth = gridSize * cellSize;
+    gridContainer.style.gridTemplateColumns = `repeat(${gridSize}, ${cellSize}px)`;
+    gridContainer.style.gridTemplateRows = `repeat(${gridSize}, ${cellSize}px)`;
+    
+    canvas.width = boardWidth;
+    canvas.height = boardWidth;
+    
+    let targetMinColors = Math.floor(gridSize * 1.3); 
+    let puzzleGenerated = false;
+    let attempts = 0;
+    
+    while (!puzzleGenerated && attempts < 4000) {
+        let matrix = Array(gridSize).fill(null).map(() => Array(gridSize).fill(0));
+        let flowId = 1;
+        let internalPaths = {}; 
+        
+        for (let r = 0; r < gridSize; r++) {
+            for (let c = 0; c < gridSize; c++) {
+                if (matrix[r][c] === 0) {
+                    let path = [];
+                    let currR = r, currC = c;
+                    
+                    while (true) {
+                        matrix[currR][currC] = flowId;
+                        path.push({r: currR, c: currC});
+                        
+                        let neighbors = [];
+                        let dirs = [[-1,0], [1,0], [0,-1], [0,1]];
+                        for (let d of dirs) {
+                            let nr = currR + d[0], nc = currC + d[1];
+                            if (nr >= 0 && nr < gridSize && nc >= 0 && nc < gridSize && matrix[nr][nc] === 0) {
+                                neighbors.push({r: nr, c: nc});
+                            }
+                        }
+                        
+                        let lengthMax = gridSize > 7 ? 4 : 3;
+                        if (neighbors.length === 0 || (path.length >= lengthMax && Math.random() < 0.45)) {
+                            break;
+                        }
+                        let next = neighbors[Math.floor(Math.random() * neighbors.length)];
+                        currR = next.r;
+                        currC = next.c;
+                    }
+                    
+                    if (path.length >= 2) {
+                        internalPaths[flowId] = path;
+                        flowId++;
+                    } else {
+                        matrix[path[0].r][path[0].c] = 0; 
+                    }
+                }
+            }
+        }
+        
+        let totalAssignedTiles = matrix.flat().filter(v => v > 0).length;
+        let expectedTotalTiles = gridSize * gridSize;
+        let foundColorsCount = Object.keys(internalPaths).length;
+
+        if (totalAssignedTiles === expectedTotalTiles && foundColorsCount >= targetMinColors) {
+            dots = [];
+            let colorCounter = 0;
+            
+            for (let id in internalPaths) {
+                let coords = internalPaths[id];
+                if(colorCounter < COLOR_CONFIGS.length) {
+                    let cfg = COLOR_CONFIGS[colorCounter++];
+                    let start = coords[0];
+                    let end = coords[coords.length - 1];
+                    
+                    dots.push({r: start.r, c: start.c, color: cfg.hex, glyph: cfg.glyph});
+                    dots.push({r: end.r, c: end.c, color: cfg.hex, glyph: cfg.glyph});
+                    
+                    solutionPaths[cfg.hex] = coords;
+                }
+            }
+            
+            if (dots.length > 0) {
+                puzzleGenerated = true;
+            }
+        }
+        attempts++;
+    }
+    
+    if (!puzzleGenerated) {
+        gridSize = 4;
+        document.getElementById('gridSlider').value = 4;
+        document.getElementById('sizeDisplay').textContent = "4x4";
+        generateNewPuzzle();
+        return;
+    }
+    
+    buildGridUI();
+    redrawCanvas();
+    updateStatus();
+}
+
+function toggleSolution() {
+    if(solved) return;
+    showSolutionActive = !showSolutionActive;
+    
+    const btn = document.getElementById('solutionBtn');
+    if(showSolutionActive) {
+        btn.classList.add('btn-active');
+        btn.textContent = "Hide Solution";
+    } else {
+        btn.classList.remove('btn-active');
+        btn.textContent = "Show Solution";
+    }
+    redrawCanvas();
+}
+
+function buildGridUI() {
+    gridContainer.innerHTML = '';
+    for (let r = 0; r < gridSize; r++) {
+        for (let c = 0; c < gridSize; c++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.style.width = `${cellSize}px`;
+            cell.style.height = `${cellSize}px`;
+            cell.dataset.row = r;
+            cell.dataset.col = c;
+            
+            const dotData = dots.find(d => d.r === r && d.c === c);
+            if (dotData) {
+                const dot = document.createElement('div');
+                dot.className = 'dot pop';
+                dot.style.backgroundColor = dotData.color;
+                dot.style.boxShadow = `0 0 15px ${dotData.color}`;
+                dot.textContent = dotData.glyph;
+                dot.style.fontSize = gridSize > 7 ? '11px' : '15px';
+                cell.appendChild(dot);
+            }
+            
+            cell.addEventListener('mousedown', (e) => startDraw(r, c));
+            cell.addEventListener('mouseenter', (e) => continueDraw(r, c));
+            
+            cell.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                startDraw(r, c);
+            }, {passive: false});
+            
+            gridContainer.appendChild(cell);
+        }
+    }
+}
+
+window.addEventListener('mouseup', endDraw);
+window.addEventListener('touchend', endDraw);
+
+gridContainer.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    if (!isDrawing) return;
+    const touch = e.touches[0];
+    const elem = document.elementFromPoint(touch.clientX, touch.clientY);
+    const cell = elem ? elem.closest('.cell') : null;
+    if (cell && cell.parentElement === gridContainer) {
+        let r = parseInt(cell.dataset.row);
+        let c = parseInt(cell.dataset.col);
+        continueDraw(r, c);
+    }
+}, {passive: false});
+
+function startDraw(r, c) {
+    if (solved) return;
+    const dot = dots.find(d => d.r === r && d.c === c);
+    
+    if (dot) {
+        activeColor = dot.color;
+        paths[activeColor] = [{r, c}];
+        isDrawing = true;
+        lastCell = {r, c};
+    } else {
+        for (let col in paths) {
+            let idx = paths[col].findIndex(p => p.r === r && p.c === c);
+            if (idx !== -1) {
+                paths[col] = paths[col].slice(0, idx + 1);
+                activeColor = col;
+                isDrawing = true;
+                lastCell = {r, c};
+                break;
+            }
+        }
+    }
+    redrawCanvas();
+    updateStatus();
+}
+
+function continueDraw(r, c) {
+    if (!isDrawing || (lastCell.r === r && lastCell.c === c)) return;
+    
+    const dr = Math.abs(r - lastCell.r);
+    const dc = Math.abs(c - lastCell.c);
+    if ((dr === 1 && dc === 0) || (dr === 0 && dc === 1)) {
+        
+        for (let col in paths) {
+            if (col !== activeColor) {
+                let idx = paths[col].findIndex(p => p.r === r && p.c === c);
+                if (idx !== -1) paths[col] = paths[col].slice(0, idx);
+            }
+        }
+        
+        let currentIdx = paths[activeColor].findIndex(p => p.r === r && p.c === c);
+        if (currentIdx !== -1) {
+            paths[activeColor] = paths[activeColor].slice(0, currentIdx + 1);
+        } else {
+            const targetDot = dots.find(d => d.r === r && d.c === c);
+            if (targetDot && targetDot.color !== activeColor) return;
+            
+            paths[activeColor].push({r, c});
+            if (targetDot && targetDot.color === activeColor) isDrawing = false;
+        }
+        
+        lastCell = {r, c};
+        redrawCanvas();
+        updateStatus();
+        checkVictoryCondition();
+    }
+}
+
+function endDraw() {
+    isDrawing = false;
+}
+
+function resetLevel() {
+    paths = {};
+    solved = false;
+    redrawCanvas();
+    updateStatus();
+}
+
+function redrawCanvas() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    if (showSolutionActive) {
+        ctx.globalAlpha = 0.20; 
+        for (let color in solutionPaths) {
+            const path = solutionPaths[color];
+            drawSinglePath(path, color, true);
+        }
+        ctx.globalAlpha = 1.0; 
+    }
+    
+    for (let color in paths) {
+        const path = paths[color];
+        drawSinglePath(path, color, false);
+    }
+}
+
+function drawSinglePath(path, color, isSolutionGhost) {
+    if (path.length < 2) return;
+    
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = cellSize * 0.28;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    
+    if(!isSolutionGhost) {
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 8;
+    } else {
+        ctx.shadowBlur = 0;
+    }
+    
+    let startX = path[0].c * cellSize + cellSize / 2;
+    let startY = path[0].r * cellSize + cellSize / 2;
+    ctx.moveTo(startX, startY);
+    
+    for (let i = 1; i < path.length; i++) {
+        let nextX = path[i].c * cellSize + cellSize / 2;
+        let nextY = path[i].r * cellSize + cellSize / 2;
+        ctx.lineTo(nextX, nextY);
+    }
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+}
+
+function updateStatus() {
+    if (solved) {
+        document.getElementById('status').innerHTML = '<span class="win-text">Level Clear! 🎉</span>';
+        return;
+    }
+    
+    let totalCells = gridSize * gridSize;
+    let filledCells = new Set();
+    
+    for (let col in paths) {
+        paths[col].forEach(p => filledCells.add(`${p.r},${p.c}`));
+    }
+    
+    let pct = Math.floor((filledCells.size / totalCells) * 100);
+    document.getElementById('status').textContent = `Flow: ${pct}%`;
+}
+
+function checkVictoryCondition() {
+    let uniqueColors = new Set(dots.map(d => d.color));
+    
+    // Check that every color pair present on the board has been properly hooked up
+    for (let color of uniqueColors) {
+        let path = paths[color];
+        
+        if (!path || path.length < 2) return;
+        
+        let levelDots = dots.filter(d => d.color === color);
+        if (levelDots.length !== 2) return;
+        
+        let d1 = levelDots[0];
+        let d2 = levelDots[1];
+        
+        let head = path[0];
+        let tail = path[path.length - 1];
+        
+        let validConnection = 
+            ((head.r === d1.r && head.c === d1.c) && (tail.r === d2.r && tail.c === d2.c)) ||
+            ((head.r === d2.r && head.c === d2.c) && (tail.r === d2.r && tail.c === d2.c)) || // checking alternative head/tail matching
+            ((head.r === d2.r && head.c === d2.c) && (tail.r === d1.r && tail.c === d1.c));
+            
+        if (!validConnection) return;
+    }
+    
+    // The requirement to check filledCells.size against the grid area has been entirely removed here.
+    solved = true;
+    showSolutionActive = false;
+    document.getElementById('solutionBtn').classList.remove('btn-active');
+    document.getElementById('solutionBtn').textContent = "Show Solution";
+    updateStatus();
+}
+
+generateNewPuzzle();
+</script>
+
+</body>
+</html>
