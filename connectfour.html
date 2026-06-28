@@ -6,118 +6,206 @@
 <title>Rift Connect 4</title>
 
 <style>
-body{
-    margin:0;
-    font-family:Arial,sans-serif;
-    background:#0f0f1a;
-    color:white;
-    text-align:center;
+@import url("https://fonts.googleapis.com/css?family=Lato:400,400i,700");
+
+body, label, div, span {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #4c6fff;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: background 0.8s ease;
+  min-height: 100vh;
+}
+
+h1 {
+  width: 100%;
+  text-align: center;
+  color: white;
+  text-shadow: 0 0 10px rgba(255,255,255,0.4);
+  margin: 10px 0;
 }
 
 /* MENU */
-#menu{
-    position:absolute;
-    width:100%;
-    height:100%;
-    background:#0f0f1a;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    z-index:10;
+#menu {
+  position: fixed;
+  inset: 0;
+  background: #0f0f1a;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
 }
 
-.menuBox{
-    background:#141428;
-    padding:30px;
-    border-radius:15px;
-    border:3px solid #4c6fff;
-    box-shadow:0 0 25px #4c6fff55;
+.menuBox {
+  background: #141428;
+  padding: 30px;
+  border-radius: 15px;
+  border: 3px solid #4c6fff;
+  box-shadow: 0 0 25px rgba(76,108,255,0.35);
+  text-align: center;
+  flex-direction: column;
 }
 
-.menuBox h1{
-    color:#4c6fff;
+.menuBox h1 { color: #4c6fff; }
+
+.menuBox button {
+  margin: 10px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  background: #4c6fff;
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
 }
 
-.menuBox button{
-    margin:10px;
-    padding:10px 20px;
-    border:none;
-    border-radius:8px;
-    cursor:pointer;
-    background:#4c6fff;
-    color:white;
-    box-shadow:0 0 15px #4c6fff55;
+/* BUTTONS */
+button {
+  background: linear-gradient(135deg, #4c6fff, #2f3cff);
+  color: white;
+  border: 1px solid rgba(76,111,255,0.5);
+  padding: 10px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.2s;
+  box-shadow: 0 0 10px rgba(76,111,255,0.25);
 }
 
-.menuBox button:hover{
-    background:#9b5cff;
+button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 18px rgba(76,111,255,0.45);
 }
 
-/* GAME */
-#gameArea{
-    display:none;
+.btn-row {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 10px;
 }
 
-h1{
-    color:#4c6fff;
+/* CONTROLS */
+.controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 10px 0;
 }
 
-/* CONTROLS ABOVE */
-#controls{
-    display:flex;
-    justify-content:center;
-    gap:10px;
-    margin-top:10px;
+.player {
+  position: relative;
+  justify-content: space-between;
+  width: 220px;
+  height: 30px;
+  margin-bottom: 20px;
 }
 
-button{
-    background:#4c6fff;
-    border:none;
-    padding:10px 15px;
-    border-radius:8px;
-    color:white;
-    cursor:pointer;
+.player span {
+  color: #ffc;
+  font: 18px Lato;
+}
+
+.player-num {
+  width: 100px;
+  justify-content: flex-start;
+  outline: none;
+  cursor: text;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.player-num:focus {
+  border-bottom: 1px solid #ffc;
+}
+
+.score {
+  justify-content: flex-end;
+  width: 20px;
+  color: #ffc;
+  font: 18px Lato;
+}
+
+.player input {
+  border: 0;
+}
+
+/* TURN INDICATOR */
+.turn-dot {
+  position: absolute;
+  right: -40px;
+  font-size: 24px;
+  color: #ffc;
+}
+
+.turn-dot.spinning {
+  animation: spin 0.4s ease;
+}
+
+@keyframes spin {
+  0%   { transform: rotate(0deg) scale(1); }
+  50%  { transform: rotate(180deg) scale(1.3); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+/* STATUS */
+#status {
+  font-size: 22px;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 0 8px rgba(255,255,255,0.4);
+  margin: 8px 0;
+  min-height: 30px;
 }
 
 /* BOARD */
-#board{
-    display:grid;
-    grid-template-columns:repeat(7,80px);
-    gap:8px;
-    justify-content:center;
-    margin-top:15px;
-    background:#141428;
-    padding:15px;
-    border-radius:15px;
-    border:3px solid #4c6fff;
+#board {
+  display: grid;
+  grid-template-columns: repeat(7, 70px);
+  gap: 8px;
+  justify-content: center;
+  margin-top: 15px;
+  background: rgba(0,0,0,0.25);
+  padding: 15px;
+  border-radius: 15px;
+  border: 3px solid rgba(255,255,255,0.2);
 }
 
-.cell{
-    width:80px;
-    height:80px;
-    border-radius:50%;
-    background:#0f0f1a;
-    cursor:pointer;
+.cell {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  border: 2px solid rgba(255,255,255,0.15);
 }
 
-/* PIECES */
-.player1{
-    background:#4c6fff;   /* BLUE */
-    box-shadow:0 0 15px #4c6fff;
+.cell:hover {
+  background: rgba(255,255,255,0.2);
 }
 
-.player2{
-    background:#9b5cff;   /* PURPLE */
-    box-shadow:0 0 15px #9b5cff;
+.player1 {
+  background: var(--p1colour, #4c6fff) !important;
+  box-shadow: 0 0 15px var(--p1colour, #4c6fff);
 }
 
-/* WIN ONLY 4 */
-.win-blue{
-    box-shadow:0 0 25px #9b5cff, 0 0 40px #9b5cff;
+.player2 {
+  background: var(--p2colour, #9b5cff) !important;
+  box-shadow: 0 0 15px var(--p2colour, #9b5cff);
 }
 
-.win-purple{
-    box-shadow:0 0 25px #4c6fff, 0 0 40px #4c6fff;
+.win-cell {
+  box-shadow: 0 0 25px white, 0 0 40px white !important;
+  transform: scale(1.08);
 }
 </style>
 </head>
@@ -126,277 +214,244 @@ button{
 
 <!-- MENU -->
 <div id="menu">
-    <div class="menuBox">
-        <h1>🌀 Rift Connect 4</h1>
-        <p>Select Mode</p>
-        <button onclick="startGame(1)">1 Player</button>
-        <button onclick="startGame(2)">2 Player</button>
-    </div>
+  <div class="menuBox">
+    <h1>🌀 Rift Connect 4</h1>
+    <p style="color:#aaa;flex-direction:column;">Select Mode</p>
+    <button onclick="startGame(1)">1 Player</button>
+    <button onclick="startGame(2)">2 Player</button>
+  </div>
 </div>
-
-<!-- GAME -->
-<div id="gameArea">
 
 <h1>Rift Connect 4</h1>
 
-<div id="controls">
-    <button onclick="resetGame()">Reset</button>
-    <button onclick="location.reload()">Menu</button>
-    <button onclick="window.location.href='index.html'">Back</button>
+<div class="btn-row">
+  <button onclick="resetGame()">Reset</button>
+  <button onclick="location.reload()">Menu</button>
+  <button onclick="window.location.href='index.html'">Back</button>
+</div>
+<br>
+
+<div class="controls">
+  <div class="player">
+    <span class="player-num" contenteditable="true" id="p1Name"
+      onkeydown="if(event.key==='Enter')event.preventDefault(); if(this.textContent.length>=12 && event.key.length===1)event.preventDefault()">Player 1</span>
+    <input type="color" value="#4c6fff" id="p1Colour" oninput="onColourChange(1)" />
+    <span class="score" id="p1Score">0</span>
+    <div class="turn-dot" id="turnDot">●</div>
+  </div>
+  <div class="player">
+    <span class="player-num" contenteditable="true" id="p2Name"
+      onkeydown="if(event.key==='Enter')event.preventDefault(); if(this.textContent.length>=12 && event.key.length===1)event.preventDefault()">Player 2</span>
+    <input type="color" value="#9b5cff" id="p2Colour" oninput="onColourChange(2)" />
+    <span class="score" id="p2Score">0</span>
+  </div>
 </div>
 
+<div id="status">Player 1's turn</div>
 <div id="board"></div>
 
-<h2 id="status">Blue's turn</h2>
-
-</div>
-
 <script>
-
 const ROWS = 6;
 const COLS = 7;
 
 let board = [];
-let current = "player1";   // ALWAYS BLUE START
+let current = "player1";
 let gameOver = false;
 let mode = 2;
 let winningCells = [];
+let scores = { player1: 0, player2: 0 };
 
-/* MENU */
-function startGame(m){
-    mode = m;
-    document.getElementById("menu").style.display="none";
-    document.getElementById("gameArea").style.display="block";
-    init();
+function getColour(player) {
+  return document.getElementById(player === 'player1' ? 'p1Colour' : 'p2Colour').value;
 }
 
-/* INIT */
-function init(){
-    board = Array.from({length:ROWS}, ()=>Array(COLS).fill(null));
-    createBoard();
+function getName(player) {
+  return document.getElementById(player === 'player1' ? 'p1Name' : 'p2Name').textContent.trim();
 }
 
-/* BOARD */
-function createBoard(){
-    const boardEl = document.getElementById("board");
-    boardEl.innerHTML="";
+function setBackground(player) {
+  document.body.style.background = getColour(player);
+  // update CSS vars for piece colours
+  document.documentElement.style.setProperty('--p1colour', getColour('player1'));
+  document.documentElement.style.setProperty('--p2colour', getColour('player2'));
+}
 
-    for(let r=0;r<ROWS;r++){
-        for(let c=0;c<COLS;c++){
-            const cell = document.createElement("div");
-            cell.classList.add("cell");
-            cell.onclick = () => drop(c);
-            boardEl.appendChild(cell);
+function onColourChange(num) {
+  const player = num === 1 ? 'player1' : 'player2';
+  document.documentElement.style.setProperty(`--p${num}colour`, getColour(player));
+  if (current === player) setBackground(player);
+  render();
+}
+
+function updateTurnDot() {
+  const dot = document.getElementById('turnDot');
+  dot.style.marginTop = current === 'player2' ? '50px' : '0px';
+  dot.style.transition = 'margin-top 0.3s ease';
+  dot.classList.remove('spinning');
+  void dot.offsetWidth;
+  dot.classList.add('spinning');
+}
+
+function updateStatus() {
+  if (gameOver) return;
+  document.getElementById("status").textContent = `${getName(current)}'s turn`;
+}
+
+function startGame(m) {
+  mode = m;
+  document.getElementById("menu").style.display = "none";
+  if (m === 1) {
+    document.getElementById('p2Name').textContent = 'AI';
+    document.getElementById('p2Name').contentEditable = 'false';
+  } else {
+    document.getElementById('p2Name').textContent = 'Player 2';
+    document.getElementById('p2Name').contentEditable = 'true';
+  }
+  setBackground('player1');
+  updateTurnDot();
+  init();
+}
+
+function init() {
+  board = Array.from({length: ROWS}, () => Array(COLS).fill(null));
+  winningCells = [];
+  gameOver = false;
+  current = 'player1';
+  setBackground('player1');
+  updateStatus();
+  updateTurnDot();
+  createBoard();
+}
+
+function createBoard() {
+  const boardEl = document.getElementById("board");
+  boardEl.innerHTML = "";
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const cell = document.createElement("div");
+      cell.classList.add("cell");
+      cell.onclick = () => drop(c);
+      boardEl.appendChild(cell);
+    }
+  }
+}
+
+function drop(col) {
+  if (gameOver) return;
+  for (let r = ROWS - 1; r >= 0; r--) {
+    if (!board[r][col]) {
+      board[r][col] = current;
+      render();
+      if (checkWin(r, col)) {
+        endWin(current);
+      } else {
+        current = current === "player1" ? "player2" : "player1";
+        setBackground(current);
+        updateStatus();
+        updateTurnDot();
+        if (mode === 1 && current === "player2") {
+          setTimeout(aiMove, 500);
         }
+      }
+      return;
     }
+  }
 }
 
-/* DROP */
-function drop(col){
-    if(gameOver) return;
-
-    for(let r=ROWS-1;r>=0;r--){
-        if(!board[r][col]){
-            board[r][col] = current;
-
-            if(checkWin(r,col)){
-                win(current);
-            } else {
-                current = current==="player1" ? "player2" : "player1";
-                updateStatus();
-
-                // 1 PLAYER = HUMAN ALWAYS BLUE
-                if(mode===1 && current==="player2"){
-                    setTimeout(aiMove,300);
-                }
-            }
-
-            render();
-            return;
-        }
-    }
+function getRow(col) {
+  for (let r = ROWS - 1; r >= 0; r--) {
+    if (!board[r][col]) return r;
+  }
+  return -1;
 }
 
-/* SIMPLE AI (PURPLE ONLY) */
-function aiMove(){
-    if(gameOver) return;
+function aiMove() {
+  if (gameOver) return;
+  let valid = [];
+  for (let c = 0; c < COLS; c++) {
+    if (board[0][c] === null) valid.push(c);
+  }
 
-    let valid = [];
-    for(let c=0;c<COLS;c++){
-        if(board[0][c]===null) valid.push(c);
-    }
-
-    // helper: simulate move safely
-   function testMove(col, player){
+  function testMove(col, player) {
     let r = getRow(col);
-    if(r === -1) return false;
-
+    if (r === -1) return false;
     board[r][col] = player;
-
-    // check win WITHOUT affecting winningCells
+    const dirs = [[[1,0],[-1,0]],[[0,1],[0,-1]],[[1,1],[-1,-1]],[[1,-1],[-1,1]]];
     let win = false;
-
-    const dirs = [
-        [[1,0],[-1,0]],
-        [[0,1],[0,-1]],
-        [[1,1],[-1,-1]],
-        [[1,-1],[-1,1]]
-    ];
-
-    for(let d of dirs){
-        let line = [{r,c:col}];
-
-        for(let [dr,dc] of d){
-            let rr=r+dr, cc=col+dc;
-
-            while(rr>=0 && rr<ROWS && cc>=0 && cc<COLS && board[rr][cc]===player){
-                line.push({r:rr,c:cc});
-                rr+=dr;
-                cc+=dc;
-            }
+    for (let d of dirs) {
+      let line = [{r, c: col}];
+      for (let [dr, dc] of d) {
+        let rr = r + dr, cc = col + dc;
+        while (rr >= 0 && rr < ROWS && cc >= 0 && cc < COLS && board[rr][cc] === player) {
+          line.push({r: rr, c: cc});
+          rr += dr; cc += dc;
         }
-
-        if(line.length >= 4){
-            win = true;
-            break;
-        }
+      }
+      if (line.length >= 4) { win = true; break; }
     }
-
     board[r][col] = null;
     return win;
+  }
+
+  for (let c of valid) { if (testMove(c, "player2")) { drop(c); return; } }
+  for (let c of valid) { if (testMove(c, "player1")) { drop(c); return; } }
+
+  let priority = [3, 2, 4, 1, 5, 0, 6];
+  for (let c of priority) {
+    if (valid.includes(c)) { drop(c); return; }
+  }
+  drop(valid[Math.floor(Math.random() * valid.length)]);
 }
 
-    // 1️⃣ WIN if possible
-    for(let c of valid){
-        if(testMove(c, "player2")){
-            drop(c);
-            return;
-        }
-    }
-
-    // 2️⃣ BLOCK player
-    for(let c of valid){
-        if(testMove(c, "player1")){
-            drop(c);
-            return;
-        }
-    }
-
-    // 3️⃣ center priority
-    let priority = [3,2,4,1,5,0,6];
-    for(let c of priority){
-        if(valid.includes(c)){
-            drop(c);
-            return;
-        }
-    }
-
-    // fallback
-    drop(valid[Math.floor(Math.random()*valid.length)]);
+function checkDir(r, c, dr, dc) {
+  let coords = [];
+  let player = board[r][c];
+  let rr = r + dr, cc = c + dc;
+  while (rr >= 0 && rr < ROWS && cc >= 0 && cc < COLS && board[rr][cc] === player) {
+    coords.push({r: rr, c: cc});
+    rr += dr; cc += dc;
+  }
+  return coords;
 }
 
-// helper: find row for column
-function getRow(col){
-    for(let r=ROWS-1;r>=0;r--){
-        if(!board[r][col]) return r;
+function checkWin(r, c) {
+  let start = {r, c};
+  const dirs = [[[1,0],[-1,0]],[[0,1],[0,-1]],[[1,1],[-1,-1]],[[1,-1],[-1,1]]];
+  for (let d of dirs) {
+    let line = [start];
+    for (let [dr, dc] of d) line = line.concat(checkDir(r, c, dr, dc));
+    if (line.length >= 4) { winningCells = line.slice(0, 4); return true; }
+  }
+  return false;
+}
+
+function render() {
+  const cells = document.querySelectorAll(".cell");
+  for (let i = 0; i < cells.length; i++) cells[i].className = "cell";
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (board[r][c]) cells[r * COLS + c].classList.add(board[r][c]);
     }
-    return -1;
-}
-/* RENDER */
-function render(){
-    const cells = document.querySelectorAll(".cell");
-
-    for(let i=0;i<cells.length;i++){
-        cells[i].className="cell";
-    }
-
-    for(let r=0;r<ROWS;r++){
-        for(let c=0;c<COLS;c++){
-            let val=board[r][c];
-            if(val){
-                let idx=r*COLS+c;
-                cells[idx].classList.add(val);
-            }
-        }
-    }
-
-    for(let cell of winningCells){
-        let idx=cell.r*COLS+cell.c;
-        let el=cells[idx];
-
-        if(board[cell.r][cell.c]==="player1"){
-            el.classList.add("win-purple");
-        } else {
-            el.classList.add("win-blue");
-        }
-    }
+  }
+  for (let cell of winningCells) {
+    cells[cell.r * COLS + cell.c].classList.add("win-cell");
+  }
 }
 
-/* WIN CHECK */
-function checkDir(r,c,dr,dc){
-    let coords=[];
-    let player=board[r][c];
-
-    let rr=r+dr, cc=c+dc;
-
-    while(rr>=0 && rr<ROWS && cc>=0 && cc<COLS && board[rr][cc]===player){
-        coords.push({r:rr,c:cc});
-        rr+=dr;
-        cc+=dc;
-    }
-
-    return coords;
+function endWin(player) {
+  gameOver = true;
+  scores[player]++;
+  document.getElementById(player === 'player1' ? 'p1Score' : 'p2Score').textContent = scores[player];
+  document.getElementById("status").textContent = `${getName(player)} wins! 🎉`;
+  render();
 }
 
-function checkWin(r,c){
-    let start={r,c};
-
-    let dirs=[
-        [[1,0],[-1,0]],
-        [[0,1],[0,-1]],
-        [[1,1],[-1,-1]],
-        [[1,-1],[-1,1]]
-    ];
-
-    for(let d of dirs){
-        let line=[start];
-
-        for(let [dr,dc] of d){
-            line=line.concat(checkDir(r,c,dr,dc));
-        }
-
-        if(line.length>=4){
-            winningCells=line.slice(0,4);
-            return true;
-        }
-    }
-
-    return false;
+function resetGame() {
+  scores = { player1: 0, player2: 0 };
+  document.getElementById('p1Score').textContent = 0;
+  document.getElementById('p2Score').textContent = 0;
+  init();
 }
-
-/* WIN */
-function win(player){
-    gameOver=true;
-
-    document.getElementById("status").textContent =
-        player==="player1" ? "Blue wins" : "Purple wins";
-}
-
-/* STATUS */
-function updateStatus(){
-    document.getElementById("status").textContent =
-        current==="player1" ? "Blue's turn" : "Purple's turn";
-}
-
-/* RESET */
-function resetGame(){
-    current="player1";
-    gameOver=false;
-    winningCells=[];
-    updateStatus();
-    init();
-}
-
 </script>
 
 </body>
