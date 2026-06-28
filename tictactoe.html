@@ -141,7 +141,7 @@ button:hover {
   right: -40px;
   font-size: 24px;
   color: #ffc;
-  transition: transform 0.4s ease, opacity 0.3s;
+  transition: margin-top 0.3s ease;
 }
 
 .turn-dot.spinning {
@@ -345,7 +345,6 @@ function updateTurnDot() {
   } else {
     dot.style.marginTop = '0px';
   }
-  dot.style.transition = 'margin-top 0.3s ease';
 
   // spin it
   dot.classList.remove('spinning');
