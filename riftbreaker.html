@@ -287,7 +287,6 @@ function update() {
 
     if (warpState.timer >= warpState.duration) {
       warpState.active = false;
-      // Fixed: Offset ball Y below the portal radius to prevent immediate re-entry loop
       ball.x = warpState.endX;
       ball.y = warpState.endY + PORTAL_RADIUS + ball.radius + 2;
       ball.dy = 4; 
@@ -308,7 +307,6 @@ function update() {
   if (ball.x - ball.radius < 0) { ball.x = ball.radius; ball.dx = -ball.dx; }
   if (ball.y - ball.radius < 0) { ball.y = ball.radius; ball.dy = -ball.dy; }
 
-  // Check portal entry conditions
   for (let p of portals) {
     let distX = ball.x - p.x;
     let distY = ball.y - p.y;
@@ -380,14 +378,17 @@ function update() {
     }
   }
 
+  // FIXED: Draw first to clear the brick array graphically before firing the alert box interrupt!
+  draw();
+
   if (bricks.every(b => !b.alive)) {
     score += 100;
-    alert("🏆 VICTORY! Grid Cleaned!");
-    generateCustomPattern();
-    resetBall();
+    setTimeout(() => {
+      alert("🏆 VICTORY! Grid Cleaned!");
+      generateCustomPattern();
+      resetBall();
+    }, 10); // Tiny delay allows the canvas to swap states perfectly
   }
-
-  draw();
 }
 
 function draw() {
