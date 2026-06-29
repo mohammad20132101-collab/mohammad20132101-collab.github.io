@@ -216,7 +216,7 @@ input[type="color"] {
     padding: 10px 20px;
     border-radius: 10px;
     font-size: 18px;
-    min-width: 200px;
+    min-width: 250px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 .dice-container {
@@ -338,6 +338,10 @@ let mode = 2;
 let gameOver = false;
 let isRolling = false;
 
+// Stacking game turn tracking variables
+let runningRollSum = 0;
+let consecutiveSixes = 0;
+
 function showMenu() {
     document.getElementById("menu").style.display = "flex";
 }
@@ -360,19 +364,16 @@ function startGame(selectedMode) {
     initGame();
 }
 
-// Generate an algorithmic, safe randomized matrix of map hazards
 function randomizeMapLayout() {
     LADDERS = {};
     SNAKES = {};
-    const occupiedTiles = new Set([1, 100]); // Never spawn directly on start or finish
+    const occupiedTiles = new Set([1, 100]);
 
-    // Generate 6 random rifts (Ladders)
     while (Object.keys(LADDERS).length < 6) {
-        let start = Math.floor(Math.random() * 85) + 2; // Range: 2 to 86
+        let start = Math.floor(Math.random() * 85) + 2; 
         let rowStart = Math.floor((start - 1) / 10);
         
         if (!occupiedTiles.has(start)) {
-            // Target must always land higher up on the board than the start tile
             let minTarget = (rowStart + 1) * 10 + 1;
             if (minTarget < 99) {
                 let end = Math.floor(Math.random() * (99 - minTarget + 1)) + minTarget;
@@ -385,13 +386,11 @@ function randomizeMapLayout() {
         }
     }
 
-    // Generate 6 random void holes (Snakes)
     while (Object.keys(SNAKES).length < 6) {
-        let start = Math.floor(Math.random() * 85) + 15; // Range: 15 to 99
+        let start = Math.floor(Math.random() * 85) + 15; 
         let rowStart = Math.floor((start - 1) / 10);
         
         if (!occupiedTiles.has(start) && rowStart > 0) {
-            // Target must drop down at least 1 full row row baseline lower
             let maxTarget = rowStart * 10;
             let end = Math.floor(Math.random() * (maxTarget - 2 + 1)) + 2;
             if (!occupiedTiles.has(end)) {
@@ -409,6 +408,8 @@ function initGame() {
     turn = 'P1';
     gameOver = false;
     isRolling = false;
+    runningRollSum = 0;
+    consecutiveSixes = 0;
     setDiceFace(1);
     
     randomizeMapLayout();
@@ -530,12 +531,52 @@ function processDiceRoll() {
             const absoluteRollResult = Math.floor(Math.random() * 6) + 1;
             setDiceFace(absoluteRollResult);
             
-            setTimeout(() => {
-                animateActiveMovement(absoluteRollResult);
-            }, 450); 
+            handleRollEvaluation(absoluteRollResult);
         }
     }
     performRollLoop();
+}
+
+// Intercept final numbers to evaluate combos before moving
+function handleRollEvaluation(roll) {
+    const currentName = turn === 'P1' ? document.getElementById('p1Name').textContent.trim() : document.getElementById('p2Name').textContent.trim();
+
+    if (roll === 6) {
+        consecutiveSixes++;
+        if (consecutiveSixes === 3) {
+            // Triple 6 penalty: instantly trash the stacked turn values and skip
+            document.getElementById('status').innerHTML = `<span style="color:#ff4c4c; font-weight:bold;">⚠️ 3 Sixes rolled! Turn skipped!</span>`;
+            runningRollSum = 0;
+            consecutiveSixes = 0;
+            isRolling = false;
+            
+            setTimeout(finalizeTurnChange, 2000);
+            return;
+        }
+        
+        runningRollSum += 6;
+        document.getElementById('status').innerHTML = `🔥 <b>${currentName}</b> rolled a 6! Total: <b>${runningRollSum}</b>. Roll again!`;
+        isRolling = false;
+        
+        // If system mode is AI, automatically cycle the stacked combo roll
+        if (mode === 1 && turn === 'P2') {
+            setTimeout(processDiceRoll, 1200);
+        } else {
+            document.getElementById('diceBtn').disabled = false;
+        }
+    } else {
+        // Safe standard terminal roll hit: combine with any previous stack
+        runningRollSum += roll;
+        const totalMovement = runningRollSum;
+        
+        // Reset turn loop matrices
+        runningRollSum = 0;
+        consecutiveSixes = 0;
+        
+        setTimeout(() => {
+            animateActiveMovement(totalMovement);
+        }, 450);
+    }
 }
 
 function animateActiveMovement(spaces) {
