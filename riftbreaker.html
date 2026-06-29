@@ -213,8 +213,8 @@ function resetBall() {
     x: canvas.width / 2,
     y: canvas.height - 70,
     radius: 7,
-    dx: 4 * (Math.random() > 0.5 ? 1 : -1),
-    dy: -4
+    dx: 3 * (Math.random() > 0.5 ? 1 : -1), // Slowed to magnitude 3
+    dy: -3                                  // Slowed to magnitude 3
   };
 }
 
@@ -289,7 +289,7 @@ function update() {
       warpState.active = false;
       ball.x = warpState.endX;
       ball.y = warpState.endY + PORTAL_RADIUS + ball.radius + 2;
-      ball.dy = 4; 
+      ball.dy = 3; // Exit tunnel at speed 3
       ball.dx = warpState.outboundDx;
       createBurst(ball.x, ball.y, currentMode === 'blue' ? BLUE_COLOR : PURPLE_COLOR);
     }
@@ -320,7 +320,7 @@ function update() {
       warpState.startY = p.y;
       warpState.endX = p.targetX;
       warpState.endY = p.targetY;
-      warpState.outboundDx = p.side === 'left' ? -3 : 3; 
+      warpState.outboundDx = p.side === 'left' ? -2 : 2; 
       break;
     }
   }
@@ -328,7 +328,7 @@ function update() {
   if (ball.y + ball.radius >= paddle.y && ball.y - ball.radius <= paddle.y + paddle.height) {
     if (ball.x >= paddle.x && ball.x <= paddle.x + paddle.width) {
       let hitPoint = (ball.x - (paddle.x + paddle.width / 2)) / (paddle.width / 2);
-      ball.dx = hitPoint * 5;
+      ball.dx = hitPoint * 4; // Adjusted to complement slower overall speed
       ball.dy = -Math.abs(ball.dy);
       ball.y = paddle.y - ball.radius; 
     }
@@ -378,7 +378,6 @@ function update() {
     }
   }
 
-  // FIXED: Draw first to clear the brick array graphically before firing the alert box interrupt!
   draw();
 
   if (bricks.every(b => !b.alive)) {
@@ -387,7 +386,7 @@ function update() {
       alert("🏆 VICTORY! Grid Cleaned!");
       generateCustomPattern();
       resetBall();
-    }, 10); // Tiny delay allows the canvas to swap states perfectly
+    }, 10); 
   }
 }
 
