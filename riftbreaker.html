@@ -1,1 +1,485 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rift Breaker</title>
+<style>
+@import url("https://fonts.googleapis.com/css?family=Lato:400,700");
 
+body {
+  margin: 0;
+  font-family: 'Lato', Arial, sans-serif;
+  background: #0f0f1a;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+header {
+  background: #1a1a2e;
+  padding: 15px;
+  text-align: center;
+  width: 100%;
+  border-bottom: 2px solid #4c6fff;
+}
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+}
+
+.panel {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  margin: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+canvas {
+  background: #050814;
+  border: 3px solid #4c6fff;
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(76, 108, 255, 0.15);
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+button {
+  background: linear-gradient(135deg, #141428, #222244);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  padding: 12px 24px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 16px;
+  transition: 0.2s;
+  margin: 5px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+button:hover {
+  transform: scale(1.05);
+  border-color: white;
+}
+
+.score-box {
+  background: #1a1a2e;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid #4c6fff;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: bold;
+}
+
+input[type="color"] {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  width: 40px;
+  height: 35px;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🌀 Rift Breaker</h1>
+  <p>← / → Arrows to move paddle. SPACEBAR to toggle shield sync colors!</p>
+</header>
+
+<div class="wrapper">
+  <div class="panel">
+    <div class="score-box">Score: <span id="score">0</span></div>
+    <div class="score-box">Lives: <span id="lives">3</span></div>
+    <button onclick="initGame()">Restart</button>
+    <button onclick="window.location.href='index.html'">🏠 Back</button>
+    <label>
+      Ball Color:
+      <input type="color" id="themeColor" value="#00ff88" onfocus="pauseGame(true)" onblur="pauseGame(false)">
+    </label>
+  </div>
+  
+  <canvas id="game" width="600" height="420"></canvas>
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+// Game States
+let paddle, ball, bricks, particles, portals;
+let score, lives, gameLoop, isPaused = false;
+let rightPressed = false;
+let leftPressed = false;
+let currentMode = 'blue'; 
+
+// Warp Tunnel Sequencer State
+let warpState = {
+  active: false,
+  timer: 0,
+  duration: 45, 
+  startX: 0,
+  startY: 0,
+  endX: 0,
+  endY: 0,
+  currentX: 0,
+  currentY: 0,
+  outboundDx: 0
+};
+
+const BLUE_COLOR = "#4c6fff";
+const PURPLE_COLOR = "#9b5cff";
+const PORTAL_RADIUS = 22;
+
+// Intercept control keys only so they don't scroll the container page up and down
+window.addEventListener("keydown", function(e) {
+  if(["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) {
+    e.preventDefault();
+  }
+}, {passive: false});
+
+document.addEventListener("keydown", keyDownHandler);
+document.addEventListener("keyup", keyUpHandler);
+
+function keyDownHandler(e) {
+  if (e.code === "ArrowRight") rightPressed = true;
+  if (e.code === "ArrowLeft") leftPressed = true;
+  if (e.code === "Space") toggleShieldMode();
+}
+
+function keyUpHandler(e) {
+  if (e.code === "ArrowRight") rightPressed = false;
+  if (e.code === "ArrowLeft") leftPressed = false;
+}
+
+function toggleShieldMode() {
+  if (warpState.active || isPaused) return;
+  currentMode = currentMode === 'blue' ? 'purple' : 'blue';
+  canvas.style.borderColor = currentMode === 'blue' ? BLUE_COLOR : PURPLE_COLOR;
+}
+
+function pauseGame(state) {
+  isPaused = state;
+}
+
+function initGame() {
+  score = 0;
+  lives = 3;
+  currentMode = 'blue';
+  canvas.style.borderColor = BLUE_COLOR;
+  document.getElementById("score").textContent = score;
+  document.getElementById("lives").textContent = lives;
+
+  warpState.active = false;
+
+  paddle = {
+    width: 100,
+    height: 12,
+    x: (canvas.width - 100) / 2,
+    y: canvas.height - 25,
+    speed: 7
+  };
+
+  resetBall();
+  generateCustomPattern();
+  particles = [];
+  
+  portals = [
+    { x: 50, y: 60, targetX: canvas.width - 50, targetY: 60, side: 'left' },
+    { x: canvas.width - 50, y: 60, targetX: 50, targetY: 60, side: 'right' }
+  ];
+
+  clearInterval(gameLoop);
+  gameLoop = setInterval(update, 1000 / 60);
+}
+
+function resetBall() {
+  ball = {
+    x: canvas.width / 2,
+    y: canvas.height - 70,
+    radius: 7,
+    dx: 4 * (Math.random() > 0.5 ? 1 : -1),
+    dy: -4
+  };
+}
+
+function generateCustomPattern() {
+  bricks = [];
+  
+  const pattern = [
+    [0, 1, 0, 0, 0, 0, 1, 0],
+    [0, 0, 1, 1, 1, 1, 0, 0],
+    [0, 1, 1, 0, 0, 1, 1, 0],
+    [1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 0, 1, 1, 1, 1, 0, 1],
+    [1, 0, 1, 0, 0, 1, 0, 1],
+    [0, 0, 0, 1, 1, 0, 0, 0]
+  ];
+
+  const width = 54;
+  const height = 16;
+  const padding = 6;
+  const offsetTop = 110;
+  const offsetLeft = (canvas.width - (8 * (width + padding) - padding)) / 2;
+
+  for (let r = 0; r < pattern.length; r++) {
+    for (let c = 0; c < pattern[r].length; c++) {
+      if (pattern[r][c] === 1) {
+        bricks.push({
+          x: offsetLeft + c * (width + padding),
+          y: offsetTop + r * (height + padding),
+          w: width,
+          h: height,
+          type: (r + c) % 2 === 0 ? 'blue' : 'purple', 
+          alive: true
+        });
+      }
+    }
+  }
+}
+
+function createBurst(x, y, color) {
+  for (let i = 0; i < 10; i++) {
+    particles.push({
+      x: x,
+      y: y,
+      dx: (Math.random() - 0.5) * 6,
+      dy: (Math.random() - 0.5) * 6,
+      radius: Math.random() * 3 + 1,
+      alpha: 1,
+      color: color
+    });
+  }
+}
+
+function update() {
+  if (isPaused) return;
+
+  for (let i = particles.length - 1; i >= 0; i--) {
+    let p = particles[i];
+    p.x += p.dx;
+    p.y += p.dy;
+    p.alpha -= 0.02;
+    if (p.alpha <= 0) particles.splice(i, 1);
+  }
+
+  if (warpState.active) {
+    warpState.timer++;
+    let progress = warpState.timer / warpState.duration;
+    
+    warpState.currentX = warpState.startX + (warpState.endX - warpState.startX) * progress;
+    warpState.currentY = warpState.startY + (warpState.endY - warpState.startY) * progress;
+
+    if (warpState.timer >= warpState.duration) {
+      warpState.active = false;
+      // Fixed: Offset ball Y below the portal radius to prevent immediate re-entry loop
+      ball.x = warpState.endX;
+      ball.y = warpState.endY + PORTAL_RADIUS + ball.radius + 2;
+      ball.dy = 4; 
+      ball.dx = warpState.outboundDx;
+      createBurst(ball.x, ball.y, currentMode === 'blue' ? BLUE_COLOR : PURPLE_COLOR);
+    }
+    draw();
+    return;
+  }
+
+  if (rightPressed && paddle.x < canvas.width - paddle.width) paddle.x += paddle.speed;
+  if (leftPressed && paddle.x > 0) paddle.x -= paddle.speed;
+
+  ball.x += ball.dx;
+  ball.y += ball.dy;
+
+  if (ball.x + ball.radius > canvas.width) { ball.x = canvas.width - ball.radius; ball.dx = -ball.dx; }
+  if (ball.x - ball.radius < 0) { ball.x = ball.radius; ball.dx = -ball.dx; }
+  if (ball.y - ball.radius < 0) { ball.y = ball.radius; ball.dy = -ball.dy; }
+
+  // Check portal entry conditions
+  for (let p of portals) {
+    let distX = ball.x - p.x;
+    let distY = ball.y - p.y;
+    let distance = Math.sqrt(distX * distX + distY * distY);
+
+    if (distance < PORTAL_RADIUS) {
+      createBurst(p.x, p.y, "#ffffff");
+      warpState.active = true;
+      warpState.timer = 0;
+      warpState.startX = p.x;
+      warpState.startY = p.y;
+      warpState.endX = p.targetX;
+      warpState.endY = p.targetY;
+      warpState.outboundDx = p.side === 'left' ? -3 : 3; 
+      break;
+    }
+  }
+
+  if (ball.y + ball.radius >= paddle.y && ball.y - ball.radius <= paddle.y + paddle.height) {
+    if (ball.x >= paddle.x && ball.x <= paddle.x + paddle.width) {
+      let hitPoint = (ball.x - (paddle.x + paddle.width / 2)) / (paddle.width / 2);
+      ball.dx = hitPoint * 5;
+      ball.dy = -Math.abs(ball.dy);
+      ball.y = paddle.y - ball.radius; 
+    }
+  }
+
+  if (ball.y > canvas.height) {
+    lives--;
+    document.getElementById("lives").textContent = lives;
+    if (lives <= 0) {
+      alert("💀 GAME OVER! Final Score: " + score);
+      initGame();
+      return;
+    } else {
+      resetBall();
+    }
+  }
+
+  for (let b of bricks) {
+    if (!b.alive) continue;
+
+    let closestX = Math.max(b.x, Math.min(ball.x, b.x + b.w));
+    let closestY = Math.max(b.y, Math.min(ball.y, b.y + b.h));
+
+    let distanceX = ball.x - closestX;
+    let distanceY = ball.y - closestY;
+    let distanceSquared = (distanceX * distanceX) + (distanceY * distanceY);
+
+    if (distanceSquared < (ball.radius * ball.radius)) {
+      if (currentMode === b.type) {
+        b.alive = false;
+        score += 10;
+        document.getElementById("score").textContent = score;
+        createBurst(b.x + b.w / 2, b.y + b.h / 2, b.type === 'blue' ? BLUE_COLOR : PURPLE_COLOR);
+      }
+
+      let overlapX = ball.radius - Math.abs(distanceX);
+      let overlapY = ball.radius - Math.abs(distanceY);
+
+      if (overlapX < overlapY) {
+        ball.dx = distanceX > 0 ? Math.abs(ball.dx) : -Math.abs(ball.dx);
+        ball.x += distanceX > 0 ? overlapX : -overlapX; 
+      } else {
+        ball.dy = distanceY > 0 ? Math.abs(ball.dy) : -Math.abs(ball.dy);
+        ball.y += distanceY > 0 ? overlapY : -overlapY; 
+      }
+      break;
+    }
+  }
+
+  if (bricks.every(b => !b.alive)) {
+    score += 100;
+    alert("🏆 VICTORY! Grid Cleaned!");
+    generateCustomPattern();
+    resetBall();
+  }
+
+  draw();
+}
+
+function draw() {
+  ctx.fillStyle = "#050814";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.strokeStyle = "rgba(255,255,255,0.03)";
+  ctx.lineWidth = 1;
+  for (let x = 0; x < canvas.width; x += 30) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+  }
+  for (let y = 0; y < canvas.height; y += 30) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+  }
+
+  if (warpState.active) {
+    ctx.save();
+    ctx.strokeStyle = "rgba(155, 92, 255, 0.25)";
+    ctx.lineWidth = 20;
+    ctx.lineCap = "round";
+    ctx.setLineDash([10, 15]); 
+    ctx.beginPath();
+    ctx.moveTo(warpState.startX, warpState.startY);
+    ctx.lineTo(warpState.endX, warpState.endY);
+    ctx.stroke();
+    ctx.restore();
+
+    if (Math.floor(warpState.timer / 6) % 2 === 0) {
+      ctx.fillStyle = "#9b5cff";
+      ctx.font = "bold 16px 'Lato', Arial";
+      ctx.textAlign = "center";
+      ctx.fillText("🌀 WARPING...", canvas.width / 2, 65);
+    }
+
+    ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+    ctx.beginPath();
+    ctx.arc(warpState.currentX, warpState.currentY, ball.radius - 1, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  for (let p of portals) {
+    let glowColor = p.side === 'left' ? BLUE_COLOR : PURPLE_COLOR;
+    ctx.strokeStyle = glowColor;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, PORTAL_RADIUS, 0, Math.PI * 2);
+    ctx.stroke();
+    
+    ctx.fillStyle = "#050814";
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, PORTAL_RADIUS - 2, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.fillStyle = glowColor;
+    ctx.font = "bold 11px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("🌀", p.x, p.y + 4);
+  }
+
+  let paddleColor = currentMode === 'blue' ? BLUE_COLOR : PURPLE_COLOR;
+  ctx.fillStyle = paddleColor;
+  ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+  ctx.strokeStyle = "#ffffff";
+  ctx.strokeRect(paddle.x, paddle.y, paddle.width, paddle.height);
+
+  if (!warpState.active) {
+    ctx.fillStyle = document.getElementById("themeColor").value;
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  for (let b of bricks) {
+    if (!b.alive) continue;
+    ctx.fillStyle = b.type === 'blue' ? BLUE_COLOR : PURPLE_COLOR;
+    ctx.fillRect(b.x, b.y, b.w, b.h);
+    ctx.strokeStyle = "rgba(0,0,0,0.5)";
+    ctx.strokeRect(b.x, b.y, b.w, b.h);
+  }
+
+  for (let p of particles) {
+    ctx.globalAlpha = p.alpha;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1.0;
+}
+
+initGame();
+</script>
+
+</body>
+</html>
