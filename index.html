@@ -48,11 +48,22 @@ header {
   border: none;
 }
 
+/* FLEXBOX GRID SYSTEM */
 .game-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
+  flex-wrap: wrap;
   gap: 15px;
   padding: 10px;
+  justify-content: space-between;
+}
+
+.game-card {
+  background: #1a1a2e;
+  border-radius: 12px;
+  text-align: center;
+  overflow: hidden;
+  width: calc(33.333% - 10px);
+  box-sizing: border-box;
 }
 
 .exclusives-list {
@@ -64,11 +75,9 @@ header {
   overflow-y: auto;
 }
 
-.game-card {
-  background: #1a1a2e;
-  border-radius: 12px;
-  text-align: center;
-  overflow: hidden;
+/* FIXED: This forces cards inside the exclusives list to take up 100% width */
+.exclusives-list .game-card {
+  width: 100%;
 }
 
 .game-card img {
@@ -93,21 +102,6 @@ a {
   margin: 0 10px;
   cursor: pointer;
 }
-.game-grid.one {
-  display: flex;
-  justify-content: center;
-}
-
-.game-grid.two {
-  display: flex;
-  justify-content: space-between;
-}
-
-.game-grid.three {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 15px;
-}
 </style>      
 </head>
 
@@ -117,7 +111,6 @@ a {
   <source src="magpiemusic-action-trailer-promo-rock-513687.mp3" type="audio/mpeg">
 </audio>
 
-<!-- LOGIN -->
 <div id="loginScreen">
   <input id="email" placeholder="Email"><br>
   <input id="password" type="password" placeholder="Password"><br>
@@ -126,7 +119,6 @@ a {
   <button onclick="signup()">Sign Up</button>
 </div>
 
-<!-- SITE -->
 <div id="site" style="display:none;">
 
 <header>
@@ -138,7 +130,7 @@ a {
 <section>
 <h2 align="center">Games</h2>
 
-<div class="game-grid">
+<div class="game-grid" id="mainGameGrid">
 
   <div class="game-card" data-name="snake">
     <div class="game-info">
@@ -188,7 +180,7 @@ a {
       <button onclick="openGame('pacman.html','Pac-Man')">Play</button>
     </div>
   </div>
-<div class="game-card" data-name="wordle">
+  <div class="game-card" data-name="wordle">
     <div class="game-info">
       <h3>Wordle</h3>
       <button onclick="openGame('wordle.html','Wordle')">Play</button>
@@ -286,7 +278,6 @@ a {
 </div>
 </footer>
 
-<!-- FIREBASE -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
 import {
@@ -334,6 +325,7 @@ function loadUser(email) {
   document.getElementById("username").textContent = email;
 
   document.getElementById("bgMusic").play().catch(() => {});
+  fixLayout();
 }
 
 onAuthStateChanged(auth, (user) => {
@@ -370,32 +362,54 @@ function renderHistory() {
 
 renderHistory();
 
-/* SEARCH */
+/* DYNAMIC LAST-ROW LAYOUT ENGINE */
+function fixLayout() {
+  const grid = document.getElementById("mainGameGrid");
+  
+  // Get only the game cards that are currently visible
+  const visibleCards = Array.from(grid.querySelectorAll(".game-card")).filter(card => {
+    return card.style.display !== "none";
+  });
+
+  // Reset custom positioning adjustments
+  visibleCards.forEach(card => {
+    card.style.marginLeft = "0";
+    card.style.marginRight = "0";
+  });
+
+  const count = visibleCards.length;
+
+  if (count % 3 === 1) {
+    // 1 leftover card -> Center it smoothly
+    const lastCard = visibleCards[count - 1];
+    lastCard.style.marginLeft = "auto";
+    lastCard.style.marginRight = "auto";
+  } 
+  else if (count % 3 === 2) {
+    // 2 leftover cards -> Push them to the absolute ends
+    const secondToLast = visibleCards[count - 2];
+    const lastCard = visibleCards[count - 1];
+    
+    secondToLast.style.marginRight = "auto";
+    lastCard.style.marginLeft = "auto";
+  }
+}
+
+/* SEARCH FIELD WATCHER */
 document.getElementById("search").addEventListener("input", function () {
   const val = this.value.toLowerCase();
 
-  document.querySelectorAll(".game-grid .game-card").forEach(card => {
+  document.querySelectorAll("#mainGameGrid .game-card").forEach(card => {
     const name = card.getAttribute("data-name");
     if (!name) return;
 
     card.style.display = name.toLowerCase().includes(val) ? "block" : "none";
   });
+
+  fixLayout();
 });
 
-/* MUSIC */
-const music = document.getElementById("bgMusic");
-music.volume = 0.05;
-  function fixLayout(){
-  const grid = document.querySelector(".game-grid");
-  const items = document.querySelectorAll(".game-card");
-
-  grid.classList.remove("one","two","three");
-
-  if(items.length === 1) grid.classList.add("one");
-  else if(items.length === 2) grid.classList.add("two");
-  else grid.classList.add("three");
-}
-
+// Run layout calculations on initialization
 fixLayout();
 </script>
 
