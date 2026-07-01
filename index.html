@@ -34,3 +34,461 @@ button {
   margin-top: 5px;
 }
 
+.guest-btn {
+  background: #4a5568;
+  margin-top: 10px;
+}
+
+header {
+  padding: 20px;
+  text-align: center;
+  background: #1a1a2e;
+}
+
+#search {
+  margin-top: 10px;
+  padding: 10px;
+  width: 60%;
+  border-radius: 8px;
+  border: none;
+}
+
+/* FLEXBOX GRID SYSTEM */
+.game-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  padding: 10px;
+  justify-content: space-between;
+}
+
+.game-card {
+  background: #1a1a2e;
+  border-radius: 12px;
+  text-align: center;
+  overflow: hidden;
+  width: calc(33.333% - 10px);
+  box-sizing: border-box;
+}
+
+.exclusives-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 10px;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+/* FIXED: This forces cards inside the exclusives list to take up 100% width */
+.exclusives-list .game-card {
+  width: 100%;
+}
+
+/* Visual layout for locked content */
+.game-card.locked-card {
+  background: #141424;
+  opacity: 0.6;
+  border: 1px dashed #e53e3e;
+}
+
+.game-card.locked-card button {
+  background: #2d3748;
+  cursor: not-allowed;
+}
+
+.game-card img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+}
+
+.game-info {
+  padding: 10px;
+}
+
+footer {
+  margin-top: 40px;
+  padding: 20px;
+  background: #1a1a2e;
+  text-align: center;
+}
+
+a {
+  color: #4c6fff;
+  margin: 0 10px;
+  cursor: pointer;
+}
+
+.guest-badge {
+  background: #e53e3e;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  margin-left: 10px;
+}
+</style>      
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7292845069394911"
+     crossorigin="anonymous"></script>
+</head>
+
+<body>
+
+<audio id="bgMusic" loop>
+  <source src="magpiemusic-action-trailer-promo-rock-513687.mp3" type="audio/mpeg">
+</audio>
+
+<div id="loginScreen">
+  <input id="email" placeholder="Email"><br>
+  <input id="password" type="password" placeholder="Password"><br>
+
+  <button onclick="login()">Login</button>
+  <button onclick="signup()">Sign Up</button><br>
+  <button class="guest-btn" onclick="loginAsGuest()">Play as Guest</button>
+</div>
+
+<div id="site" style="display:none;">
+
+<header>
+  <h1>🎮 Rift Hub 🎮</h1>
+  <p>Welcome, <span id="username"></span><span id="badgeArea"></span></p>
+  <input type="text" id="search" placeholder="Search games...">
+</header>
+
+<section>
+<h2 align="center">Games</h2>
+
+<div class="game-grid" id="mainGameGrid">
+
+  <div class="game-card" data-name="snake">
+    <div class="game-info">
+      <h3>Snake</h3>
+      <button onclick="openGame('snake.html','Snake')">Play</button>
+    </div>
+  </div>
+
+  <div class="game-card" data-name="tetris">
+    <div class="game-info">
+      <h3>Tetris</h3>
+      <button onclick="openGame('tetris.html','Tetris')">Play</button>
+    </div>
+  </div>
+
+  <div class="game-card" data-name="pong">
+    <div class="game-info">
+      <h3>Pong</h3>
+      <button onclick="openGame('pong.html','Pong')">Play</button>
+    </div>
+  </div>
+
+  <div class="game-card" data-name="flappyblock">
+    <div class="game-info">
+      <h3>Flappy Block</h3>
+      <button onclick="openGame('flappyblock.html','Flappy Block')">Play</button>
+    </div>
+  </div>
+
+  <div class="game-card" data-name="2048">
+    <div class="game-info">
+      <h3>2048</h3>
+      <button onclick="openGame('2048.html','2048')">Play</button>
+    </div>
+  </div>
+
+  <div class="game-card" data-name="memorymatch">
+    <div class="game-info">
+      <h3>Memory Match</h3>
+      <button onclick="openGame('memorymatch.html','Memory Match')">Play</button>
+    </div>
+  </div>
+   
+  <div class="game-card" data-name="pac-man">
+    <div class="game-info">
+      <h3>Pac-Man</h3>
+      <button onclick="openGame('pacman.html','Pac-Man')">Play</button>
+    </div>
+  </div>
+  <div class="game-card" data-name="wordle">
+    <div class="game-info">
+      <h3>Wordle</h3>
+      <button onclick="openGame('wordle.html','Wordle')">Play</button>
+    </div>
+  </div>
+  <div class="game-card" data-name="connectfour">
+    <div class="game-info">
+      <h3>Connect Four</h3>
+      <button onclick="openGame('connectfour.html','Connect Four')">Play</button>
+    </div>
+  </div>
+   <div class="game-card" data-name="tictactoe">
+    <div class="game-info">
+      <h3>Tic-Tac-Toe</h3>
+      <button onclick="openGame('tictactoe.html','Tic-Tac-Toe')">Play</button>
+    </div>
+  </div>
+   <div class="game-card" data-name="rockpaperscissors">
+    <div class="game-info">
+      <h3>Rock, Paper, Scissors</h3>
+      <button onclick="openGame('rockpaperscissors.html','Rock, Paper, Scissors')">Play</button>
+    </div>
+  </div>
+   <div class="game-card" data-name="dots&boxes">
+    <div class="game-info">
+      <h3>Dots & Boxes</h3>
+      <button onclick="openGame('dotsandboxes.html','Dots & Boxes')">Play</button>
+    </div>
+  </div>
+  <div class="game-card" data-name="flowfree">
+    <div class="game-info">
+      <h3>Flow Free</h3>
+      <button onclick="openGame('flowfree.html','Flow Free')">Play</button>
+    </div>
+  </div>
+   <div class="game-card" data-name="chess">
+    <div class="game-info">
+      <h3>Chess</h3>
+      <button onclick="openGame('chess.html','Chess')">Play</button>
+    </div>
+  </div>
+  <div class="game-card" data-name="snakesandladders">
+    <div class="game-info">
+      <h3>Portals and Rift Holes</h3>
+      <button onclick="openGame('snakesandladders.html','Portals and Rift Holes')">Play</button>
+    </div>
+  </div>
+  <div class="game-card" data-name="nonogram">
+    <div class="game-info">
+      <h3>Nonogram</h3>
+      <button onclick="openGame('nonogram.html','Nonogram')">Play</button>
+    </div>
+  </div>
+</div>
+</section>
+
+<section>
+<h2 align="center">🔥 Exclusives 🔥</h2>
+
+<div class="exclusives-list" id="exclusivesContainer">
+  <div class="game-card">
+    <div class="game-info">
+      <h3 class="ex-title">Rift Runner</h3>
+      <button class="ex-btn" onclick="openExclusive('riftrunner.html','Rift Runner')">Play</button>
+    </div>
+  </div>
+
+  <div class="game-card">
+    <div class="game-info">
+      <h3 class="ex-title">Rift Defense</h3>
+      <button class="ex-btn" onclick="openExclusive('riftdefense.html','Rift Defense')">Play</button>
+    </div>
+  </div>
+
+  <div class="game-card">
+    <div class="game-info">
+      <h3 class="ex-title">Rift Breaker</h3>
+      <button class="ex-btn" onclick="openExclusive('riftbreaker.html','Rift Breaker')">Play</button>
+    </div>
+  </div>
+</div>
+</section>
+
+<section id="historySection">
+<h2 align="center">🕘 Recently Played</h2>
+<div class="game-grid" id="historyGrid"></div>
+</section>
+
+</div>
+
+<footer>
+  <h3>Rift Hub</h3>
+  <p>Free browser game platform.</p>
+
+  <div>
+    <a href="about.html">About</a>
+    <a href="contact.html">Contact</a>
+    <a href="privacy.html">Privacy Policy</a>
+    <a href="creators.html">Creators</a>
+  </div>
+</footer>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyD2XQWUKM4SQO8azXkm2XwG_e9ZQWpYJi0",
+  authDomain: "rifthub-4275a.firebaseapp.com",
+  projectId: "rifthub-4275a",
+  storageBucket: "rifthub-4275a.firebasestorage.app",
+  messagingSenderId: "56609352786",
+  appId: "1:56609352786:web:55dc5d3b32412bf1e3838b"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+let isGuest = false;
+
+/* LOGIN */
+window.login = function () {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  signInWithEmailAndPassword(auth, email, password)
+    .then(u => loadUser(u.user.email, false))
+    .catch(err => alert(err.message));
+};
+
+/* SIGN UP */
+window.signup = function () {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  createUserWithEmailAndPassword(auth, email, password)
+    .then(u => loadUser(u.user.email, false))
+    .catch(err => alert(err.message));
+};
+
+/* GUEST ENTER ENGINE */
+window.loginAsGuest = function () {
+  loadUser("Guest Player", true);
+};
+
+function loadUser(email, guestModeStatus) {
+  isGuest = guestModeStatus;
+  
+  // Update visibility states immediately
+  document.getElementById("loginScreen").style.display = "none";
+  document.getElementById("site").style.display = "block";
+  document.getElementById("username").textContent = email;
+
+  const exclusivesContainer = document.getElementById("exclusivesContainer");
+  const cards = exclusivesContainer.querySelectorAll(".game-card");
+
+  if (isGuest) {
+    document.getElementById("badgeArea").innerHTML = `<span class="guest-badge">Guest Mode</span>`;
+    document.getElementById("historySection").style.display = "none"; 
+    
+    cards.forEach(card => {
+      card.classList.add("locked-card");
+      const title = card.querySelector(".ex-title");
+      if(!title.innerText.includes("🔒")) {
+         title.innerText = "🔒 " + title.innerText;
+      }
+      card.querySelector(".ex-btn").innerText = "Locked";
+    });
+  } else {
+    document.getElementById("badgeArea").innerHTML = "";
+    document.getElementById("historySection").style.display = "block";
+    
+    cards.forEach(card => {
+      card.classList.remove("locked-card");
+      const title = card.querySelector(".ex-title");
+      title.innerText = title.innerText.replace("🔒 ", "");
+      card.querySelector(".ex-btn").innerText = "Play";
+    });
+    renderHistory();
+  }
+
+  // Handle CSS Calculations
+  fixLayout();
+
+  // Handle background music play after rendering content
+  setTimeout(() => {
+    const music = document.getElementById("bgMusic");
+    if (music) {
+      music.play().catch(() => console.log("Autoplay context triggered."));
+    }
+  }, 100);
+}
+
+onAuthStateChanged(auth, (user) => {
+  if (user) loadUser(user.email, false);
+});
+
+/* STANDARD GAME OPEN ENGINE */
+window.openGame = function (page, name) {
+  if (!isGuest) {
+    let history = JSON.parse(localStorage.getItem("riftHistory")) || [];
+    history = history.filter(g => g.name !== name);
+    history.unshift({ name, page });
+    history = history.slice(0, 3);
+    localStorage.setItem("riftHistory", JSON.stringify(history));
+  }
+  window.location.href = page;
+};
+
+/* LOCKED EXCLUSIVES LAUNCH GUARD */
+window.openExclusive = function (page, name) {
+  if (isGuest) {
+    alert("This game is an Exclusive! Please sign up or login with a full account to play.");
+    return;
+  }
+  window.openGame(page, name);
+};
+
+function renderHistory() {
+  if (isGuest) return;
+  const grid = document.getElementById("historyGrid");
+  let history = JSON.parse(localStorage.getItem("riftHistory")) || [];
+
+  grid.innerHTML = history.map(g => `
+    <div class="game-card">
+      <div class="game-info">
+        <h3>${g.name}</h3>
+        <button onclick="openGame('${g.page}','${g.name}')">Play</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+/* DYNAMIC LAST-ROW LAYOUT ENGINE */
+function fixLayout() {
+  const grid = document.getElementById("mainGameGrid");
+  const visibleCards = Array.from(grid.querySelectorAll(".game-card")).filter(card => {
+    return card.style.display !== "none";
+  });
+
+  visibleCards.forEach(card => {
+    card.style.marginLeft = "0";
+    card.style.marginRight = "0";
+  });
+
+  const count = visibleCards.length;
+
+  if (count % 3 === 1) {
+    const lastCard = visibleCards[count - 1];
+    lastCard.style.marginLeft = "auto";
+    lastCard.style.marginRight = "auto";
+  } 
+  else if (count % 3 === 2) {
+    const secondToLast = visibleCards[count - 2];
+    const lastCard = visibleCards[count - 1];
+    secondToLast.style.marginRight = "auto";
+    lastCard.style.marginLeft = "auto";
+  }
+}
+
+/* SEARCH FIELD WATCHER */
+document.getElementById("search").addEventListener("input", function () {
+  const val = this.value.toLowerCase();
+
+  document.querySelectorAll("#mainGameGrid .game-card").forEach(card => {
+    const name = card.getAttribute("data-name");
+    if (!name) return;
+
+    card.style.display = name.toLowerCase().includes(val) ? "block" : "none";
+  });
+
+  fixLayout();
+});
+
+fixLayout();
+</script>
+
+</body>
+</html>
