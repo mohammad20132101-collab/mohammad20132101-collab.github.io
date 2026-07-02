@@ -19,15 +19,15 @@ body {
   color: white;
   user-select: none;
   -webkit-user-select: none;
-  touch-action: none; /* Prevents default browser panning/zooming on swipe */
+  /* Removed global touch-action: none to allow webpage scrolling */
 }
 
 .container {
   display: flex;
   flex-direction: row;
-  gap: 20px;
+  gap: 30px;
   max-width: 95vw;
-  padding: 10px;
+  padding: 20px;
   align-items: flex-start;
 }
 
@@ -42,23 +42,30 @@ canvas#game {
   border: 3px solid #2b3553;
   border-radius: 12px;
   box-shadow: 0 0 20px rgba(43, 53, 83, 0.3);
+  width: 300px; /* Safe fixed layout base width for laptops/desktops */
+  height: 600px;
   max-width: 100%;
   height: auto;
   aspect-ratio: 1 / 2;
+  touch-action: none; /* Block scrolling ONLY on the actual game canvas swipe engine */
 }
 
 .panel {
-  width: 200px;
+  width: 220px;
   background: #1b2238;
-  padding: 15px;
+  padding: 20px;
   border-radius: 12px;
   box-shadow: 0 4px 15px rgba(0,0,0,0.4);
 }
 
 h2 {
-  margin: 10px 0 5px 0;
+  margin: 15px 0 5px 0;
   font-size: 18px;
   color: #8fa0dd;
+}
+
+h2:first-of-type {
+  margin-top: 0;
 }
 
 .info {
@@ -72,10 +79,10 @@ h2 {
 }
 
 #score {
-  font-size: 26px;
+  font-size: 28px;
   font-weight: bold;
   color: #00f0f0;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
 }
 
 canvas#next {
@@ -83,6 +90,7 @@ canvas#next {
   border: 2px solid #2b3553;
   border-radius: 8px;
   margin-bottom: 15px;
+  display: block;
 }
 
 button {
@@ -90,7 +98,7 @@ button {
   background: linear-gradient(135deg, #1b2238, #2b3553);
   color: white;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 10px;
+  padding: 12px;
   border-radius: 8px;
   cursor: pointer;
   font-weight: bold;
@@ -106,11 +114,12 @@ button:hover {
 /* MOBILE D-PAD CONTROLS */
 .mobile-controls {
   display: grid;
-  grid-template-columns: repeat(3, 70px);
+  grid-template-columns: repeat(3, 75px);
   grid-template-rows: repeat(2, 60px);
   gap: 10px;
-  margin-top: 15px;
+  margin-top: 20px;
   justify-content: center;
+  touch-action: none; /* Block swipe interactions on the controller frame components */
 }
 
 .mobile-controls button {
@@ -135,23 +144,27 @@ button:hover {
 @media (max-width: 768px) {
   body {
     align-items: flex-start;
-    padding-top: 10px;
+    padding: 10px 0;
+    min-height: auto;
   }
   .container {
     flex-direction: column;
     align-items: center;
-    gap: 10px;
+    gap: 15px;
+    width: 100%;
+    padding: 10px 0;
   }
   canvas#game {
-    width: 75vw;
-    max-height: 55vh;
+    width: 70vw; /* Scales cleanly down on compact screens */
+    max-height: 50vh;
   }
   .panel {
-    width: 75vw;
+    width: 80vw;
+    box-sizing: border-box;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    padding: 10px;
+    gap: 15px;
+    padding: 15px;
   }
   .panel h2, .panel #score, .panel canvas, .panel .info, .panel button {
     margin: 0;
@@ -159,12 +172,13 @@ button:hover {
   .panel .info {
     grid-column: 1 / span 2;
     font-size: 12px;
-    padding: 6px;
+    padding: 8px;
+    margin-top: 5px;
   }
   .btn-group {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 6px;
   }
 }
 
@@ -207,7 +221,7 @@ button:hover {
     <div>
       <h2>Controls</h2>
       <div class="info">
-        Touch Controls Active:<br>
+        Touch Controls:<br>
         • Swipe Left/Right = Move<br>
         • Tap Canvas = Rotate<br>
         • Swipe Down = Hard Drop
