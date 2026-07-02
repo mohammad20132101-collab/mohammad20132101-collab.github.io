@@ -2,54 +2,177 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tetris Rift Hub</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Rift Tetris</title>
 
 <style>
-body{
-  margin:0;
-  background:#0b1020;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
-  font-family:Arial;
-  color:white;
+@import url("https://fonts.googleapis.com/css?family=Lato:400,700");
+
+body {
+  margin: 0;
+  background: #0b1020;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-family: 'Lato', Arial, sans-serif;
+  color: white;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none; /* Prevents default browser panning/zooming on swipe */
 }
 
-.container{
-  display:flex;
-  gap:20px;
+.container {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+  max-width: 95vw;
+  padding: 10px;
+  align-items: flex-start;
 }
 
-canvas{
-  background:#050814;
-  border:3px solid #2b3553;
+.game-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.panel{
-  width:220px;
-  background:#1b2238;
-  padding:15px;
-  border-radius:10px;
+canvas#game {
+  background: #050814;
+  border: 3px solid #2b3553;
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(43, 53, 83, 0.3);
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 2;
 }
 
-h2{
-  margin:10px 0;
+.panel {
+  width: 200px;
+  background: #1b2238;
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.4);
 }
 
-.info{
-  font-size:14px;
-  line-height:1.6;
-  opacity:0.9;
+h2 {
+  margin: 10px 0 5px 0;
+  font-size: 18px;
+  color: #8fa0dd;
 }
 
-#score{
-  font-size:22px;
+.info {
+  font-size: 13px;
+  line-height: 1.5;
+  opacity: 0.8;
+  background: #111625;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 15px;
 }
 
-small{
-  opacity:0.7;
+#score {
+  font-size: 26px;
+  font-weight: bold;
+  color: #00f0f0;
+  margin-bottom: 10px;
+}
+
+canvas#next {
+  background: #050814;
+  border: 2px solid #2b3553;
+  border-radius: 8px;
+  margin-bottom: 15px;
+}
+
+button {
+  width: 100%;
+  background: linear-gradient(135deg, #1b2238, #2b3553);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 14px;
+  transition: 0.2s;
+  margin-top: 8px;
+}
+
+button:hover {
+  background: #3a476e;
+}
+
+/* MOBILE D-PAD CONTROLS */
+.mobile-controls {
+  display: grid;
+  grid-template-columns: repeat(3, 70px);
+  grid-template-rows: repeat(2, 60px);
+  gap: 10px;
+  margin-top: 15px;
+  justify-content: center;
+}
+
+.mobile-controls button {
+  margin: 0;
+  padding: 0;
+  font-size: 22px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #161c2e, #252e48);
+  border-color: rgba(255,255,255,0.1);
+}
+
+#pad-left { grid-column: 1; grid-row: 1; }
+#pad-up { grid-column: 2; grid-row: 1; }
+#pad-right { grid-column: 3; grid-row: 1; }
+#pad-down { grid-column: 1 / span 2; grid-row: 2; width: 100%; }
+#pad-space { grid-column: 3; grid-row: 2; }
+
+/* RESPONSIVE LAYOUT FOR MOBILE SCREENS */
+@media (max-width: 768px) {
+  body {
+    align-items: flex-start;
+    padding-top: 10px;
+  }
+  .container {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  canvas#game {
+    width: 75vw;
+    max-height: 55vh;
+  }
+  .panel {
+    width: 75vw;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 10px;
+  }
+  .panel h2, .panel #score, .panel canvas, .panel .info, .panel button {
+    margin: 0;
+  }
+  .panel .info {
+    grid-column: 1 / span 2;
+    font-size: 12px;
+    padding: 6px;
+  }
+  .btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+}
+
+/* Hide desktop manual hints on layout if touch is default */
+@media (min-width: 769px) {
+  .mobile-controls {
+    display: none;
+  }
 }
 </style>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7292845069394911"
@@ -60,31 +183,43 @@ small{
 
 <div class="container">
 
-<canvas id="game" width="300" height="600"></canvas>
-
-<div class="panel">
-
-  <h2>Score</h2>
-  <div id="score">0</div>
-
-  <h2>Next</h2>
-  <canvas id="next" width="120" height="120"></canvas>
-
-  <h2>Controls</h2>
-  <div class="info">
-    ⬅️ ➡️ Move<br>
-    ⬇️ Soft drop<br>
-    ⬆️ Rotate<br>
-    SPACE = Hard drop<br>
-    P = Pause<br><br>
-
-    💡 Clear lines to score
+  <div class="game-area">
+    <canvas id="game" width="300" height="600"></canvas>
+    
+    <div class="mobile-controls">
+      <button id="pad-left" onclick="handleTouchAction('left')">◀️</button>
+      <button id="pad-up" onclick="handleTouchAction('up')">🔄</button>
+      <button id="pad-right" onclick="handleTouchAction('right')">▶️</button>
+      <button id="pad-down" onclick="handleTouchAction('down')">⬇️ Drop</button>
+      <button id="pad-space" onclick="handleTouchAction('space')">💥</button>
+    </div>
   </div>
 
-  <button onclick="restartGame()">Restart</button>
-  <button onclick="window.location.href='index.html'">Back</button>
+  <div class="panel">
+    <div>
+      <h2>Score</h2>
+      <div id="score">0</div>
+      
+      <h2>Next</h2>
+      <canvas id="next" width="120" height="120"></canvas>
+    </div>
 
-</div>
+    <div>
+      <h2>Controls</h2>
+      <div class="info">
+        Touch Controls Active:<br>
+        • Swipe Left/Right = Move<br>
+        • Tap Canvas = Rotate<br>
+        • Swipe Down = Hard Drop
+      </div>
+
+      <div class="btn-group">
+        <button onclick="togglePause()">Pause (P)</button>
+        <button onclick="restartGame()">Restart</button>
+        <button onclick="window.location.href='index.html'">Back</button>
+      </div>
+    </div>
+  </div>
 
 </div>
 
@@ -130,17 +265,20 @@ let dropInterval;
 let lastTime;
 let paused = false;
 
+// SWIPE INPUT CONTROLLER VARIETIES
+let touchStartX = 0;
+let touchStartY = 0;
+const SWIPE_THRESHOLD = 35; 
+
 function randomPiece(){
   return PIECES[Math.floor(Math.random()*PIECES.length)];
 }
 
 function resetPlayer(){
-
   player.shape = nextPiece;
   player.x = 3;
   player.y = 0;
 
-  // Game Over check
   if(collide()){
     alert("Game Over!\nScore: " + score);
     startGame();
@@ -150,10 +288,9 @@ function resetPlayer(){
   nextPiece = randomPiece();
   drawNext();
 }
+
 function startGame(){
-
   board = Array.from({length:ROWS},()=>Array(COLS).fill(0));
-
   score = 0;
   document.getElementById("score").innerText = score;
 
@@ -164,14 +301,12 @@ function startGame(){
   };
 
   nextPiece = randomPiece();
-
   dropCounter = 0;
   dropInterval = 600;
   lastTime = 0;
   paused = false;
 
   drawNext();
-
   update();
 }
 
@@ -220,12 +355,10 @@ function draw(){
 }
 
 function drawNext(){
-
   nctx.fillStyle="#050814";
   nctx.fillRect(0,0,120,120);
 
   const blockSize = 25;
-
   const pieceWidth = nextPiece[0].length * blockSize;
   const pieceHeight = nextPiece.length * blockSize;
 
@@ -235,7 +368,6 @@ function drawNext(){
   nextPiece.forEach((r,y)=>{
     r.forEach((v,x)=>{
       if(v){
-
         nctx.fillStyle = COLORS[v];
         nctx.fillRect(
           offsetX + x*blockSize,
@@ -243,8 +375,6 @@ function drawNext(){
           blockSize,
           blockSize
         );
-
-        // Same border style as main board
         nctx.strokeStyle = "#000";
         nctx.strokeRect(
           offsetX + x*blockSize,
@@ -252,7 +382,6 @@ function drawNext(){
           blockSize,
           blockSize
         );
-
       }
     });
   });
@@ -294,7 +423,6 @@ function rotate(){
   player.shape = player.shape[0].map((_,i)=>
     player.shape.map(r=>r[i]).reverse()
   );
-
   if(collide()) player.shape = old;
 }
 
@@ -335,24 +463,74 @@ function clearLines(){
   }
 }
 
-document.addEventListener("keydown",e=>{
+function togglePause() {
+  paused = !paused;
+}
 
-  if(e.key === "p" || e.key === "P"){
-    paused = !paused;
+// UNIFIED INPUT CAPTURE FOR ENGINE ACTIONS
+function handleTouchAction(action) {
+  if(paused) return;
+  if(action === 'left') move(-1);
+  if(action === 'right') move(1);
+  if(action === 'up') rotate();
+  if(action === 'down') drop();
+  if(action === 'space') hardDrop();
+}
+
+// KEYBOARD KEY LISTENERS (Stops desktop space/arrow scrolling defaults)
+document.addEventListener("keydown", e=>{
+  if(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " ", "Space"].includes(e.key)) {
+    e.preventDefault(); 
   }
 
+  if(e.key === "p" || e.key === "P"){
+    togglePause();
+  }
   if(paused) return;
 
   if(e.key === "ArrowLeft") move(-1);
   if(e.key === "ArrowRight") move(1);
   if(e.key === "ArrowDown") drop();
   if(e.key === "ArrowUp") rotate();
-
   if(e.key === " " || e.code === "Space") hardDrop();
 });
 
-function update(time=0){
+// INTERACTIVE CANVAS SWIPE ENGINE
+canvas.addEventListener('touchstart', function(e) {
+  touchStartX = e.changedTouches[0].screenX;
+  touchStartY = e.changedTouches[0].screenY;
+}, { passive: true });
 
+canvas.addEventListener('touchend', function(e) {
+  let diffX = e.changedTouches[0].screenX - touchStartX;
+  let diffY = e.changedTouches[0].screenY - touchStartY;
+
+  if (Math.abs(diffX) < 10 && Math.abs(diffY) < 10) {
+    handleTouchAction('up'); 
+    return;
+  }
+
+  if (Math.abs(diffX) > Math.abs(diffY)) {
+    if (Math.abs(diffX) > SWIPE_THRESHOLD) {
+      if (diffX > 0) handleTouchAction('right');
+      else handleTouchAction('left');
+    }
+  } else {
+    if (Math.abs(diffY) > SWIPE_THRESHOLD) {
+      if (diffY > 0) handleTouchAction('space'); 
+    }
+  }
+}, { passive: true });
+
+// Attaches action mappings cleanly onto physical mobile button clicks without screen-bouncing defaults
+document.querySelectorAll('.mobile-controls button').forEach(button => {
+    button.addEventListener('touchstart', function(e) {
+        e.preventDefault(); 
+        this.click();
+    }, { passive: false });
+});
+
+function update(time=0){
   if(paused){
     requestAnimationFrame(update);
     return;
