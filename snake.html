@@ -28,10 +28,11 @@ header{
 }
 
 /* MENU OVERLAY */
+/* MENU OVERLAY */
 #menu {
     position: fixed;
     inset: 0;
-    background: #0f0f1a;
+    background: rgba(15, 15, 26, 0.85); /* Made semi-transparent so you can see the game layout behind it */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -56,15 +57,16 @@ header{
     margin-bottom: 25px;
 }
 
-canvas{
-  background:#050814;
-  border:3px solid #4c6fff; /* Dynamic via JS */
-  border-radius:12px;
-  margin-top:15px;
+canvas {
+  background: #050814;
+  border: 3px solid #4c6fff; /* Dynamic via JS */
+  border-radius: 12px;
+  margin-top: 15px;
   box-shadow: 0 0 20px rgba(76, 108, 255, 0.2);
   transition: border-color 0.3s, box-shadow 0.3s;
-  max-width: 90vw;
-  max-height: 90vw;
+  display: block;
+  max-width: 100%;
+  height: auto;
 }
 
 .score-container {
