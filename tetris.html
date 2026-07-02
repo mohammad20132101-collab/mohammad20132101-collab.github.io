@@ -7,7 +7,6 @@
 
 <style>
 @import url("https://fonts.googleapis.com/css?family=Lato:400,700");
-
 body {
   margin: 0;
   background: #0b1020;
@@ -19,9 +18,8 @@ body {
   color: white;
   user-select: none;
   -webkit-user-select: none;
-  touch-action: none; /* Prevents default browser panning/zooming on swipe */
-  overflow-y: auto !important; /* Forces the browser to allow scrolling down to the buttons on mobile */
-
+  overflow-y: auto !important; /* Forces browser scrolling */
+  touch-action: pan-y;         /* Allows page scrolling alongside swipe gestures */
 }
 
 .container {
@@ -31,6 +29,7 @@ body {
   max-width: 95vw;
   padding: 10px;
   align-items: flex-start;
+  flex-wrap: wrap; /* <--- ADD THIS HERE */
 }
 
 .game-area {
