@@ -28,11 +28,10 @@ header{
 }
 
 /* MENU OVERLAY */
-/* MENU OVERLAY */
 #menu {
     position: fixed;
     inset: 0;
-    background: rgba(15, 15, 26, 0.85); /* Made semi-transparent so you can see the game layout behind it */
+    background: rgba(15, 15, 26, 0.85);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -42,13 +41,13 @@ header{
     background: #141428;
     padding: 40px;
     border-radius: 15px;
-    border: 3px solid #4c6fff; /* Dynamic via JS */
+    border: 3px solid #4c6fff;
     box-shadow: 0 0 25px rgba(76,108,255,0.35);
     text-align: center;
     transition: border-color 0.3s, box-shadow 0.3s;
 }
 .menuBox h1 {
-    color: #4c6fff; /* Dynamic via JS */
+    color: #4c6fff;
     margin-bottom: 5px;
     transition: color 0.3s;
 }
@@ -59,7 +58,7 @@ header{
 
 canvas {
   background: #050814;
-  border: 3px solid #4c6fff; /* Dynamic via JS */
+  border: 3px solid #4c6fff;
   border-radius: 12px;
   margin-top: 15px;
   box-shadow: 0 0 20px rgba(76, 108, 255, 0.2);
@@ -76,7 +75,7 @@ canvas {
   margin:10px;
 }
 .mode-tag {
-  color: #4c6fff; /* Dynamic via JS */
+  color: #4c6fff;
   font-weight: bold;
   transition: color 0.3s;
 }
@@ -107,39 +106,6 @@ button:hover {
     gap: 12px;
     margin: 15px 0;
 }
-
-/* MOBILE CONTROLS D-PAD */
-.mobile-controls {
-    display: grid;
-    grid-template-columns: repeat(3, 70px);
-    grid-template-rows: repeat(3, 70px);
-    gap: 10px;
-    margin: 15px auto;
-}
-
-.mobile-controls button {
-    margin: 0;
-    padding: 0;
-    font-size: 24px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border-radius: 15px;
-    touch-action: manipulation;
-}
-
-#pad-up { grid-column: 2; grid-row: 1; }
-#pad-left { grid-column: 1; grid-row: 2; }
-#pad-center { grid-column: 2; grid-row: 2; font-size: 18px; border-color: #4c6fff;}
-#pad-right { grid-column: 3; grid-row: 2; }
-#pad-down { grid-column: 2; grid-row: 3; }
-
-/* Hide mobile layout on desktops */
-@media (min-width: 768px) {
-    .mobile-controls {
-        display: none;
-    }
-}
 </style>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7292845069394911"
      crossorigin="anonymous"></script>
@@ -166,14 +132,6 @@ button:hover {
 </div>
 
 <canvas id="game" width="400" height="400"></canvas>
-
-<div class="mobile-controls">
-  <button id="pad-up" onclick="handleDirection('up')">🔼</button>
-  <button id="pad-left" onclick="handleDirection('left')">◀️</button>
-  <button id="pad-center" onclick="showMenu()">⚙️</button>
-  <button id="pad-right" onclick="handleDirection('right')">▶️</button>
-  <button id="pad-down" onclick="handleDirection('down')">🔽</button>
-</div>
 
 <div class="btn-row">
   <button onclick="window.location.href='index.html'" id="backBtn">🏠 Back</button>
@@ -202,17 +160,14 @@ function selectMode(mode) {
     currentMode = mode;
     document.getElementById("menu").style.display = "none";
     
-    // UI Elements to color shift dynamically
     const displayTag = document.getElementById("modeDisplay");
     const menuBox = document.getElementById("menuBox");
     const menuTitle = document.getElementById("menuTitle");
-    const centerPad = document.getElementById("pad-center");
     
     const classicColor = "#4c6fff";
     const portalColor = "#9b5cff";
     
     if(mode === 'portal') {
-        // Portal Mode UI is all Purple
         displayTag.textContent = "Portal 🌀";
         displayTag.style.color = portalColor;
         canvas.style.borderColor = portalColor;
@@ -221,9 +176,7 @@ function selectMode(mode) {
         menuBox.style.borderColor = portalColor;
         menuBox.style.boxShadow = "0 0 25px rgba(155,92,255,0.35)";
         menuTitle.style.color = portalColor;
-        centerPad.style.borderColor = portalColor;
     } else {
-        // Classic Mode UI is all Blue
         displayTag.textContent = "Classic";
         displayTag.style.color = classicColor;
         canvas.style.borderColor = classicColor;
@@ -232,7 +185,6 @@ function selectMode(mode) {
         menuBox.style.borderColor = classicColor;
         menuBox.style.boxShadow = "0 0 25px rgba(76,108,255,0.35)";
         menuTitle.style.color = classicColor;
-        centerPad.style.borderColor = classicColor;
     }
     
     startGame();
@@ -276,7 +228,6 @@ function randomFood(){
   return newFood;
 }
 
-// DIRECTION LOGIC ENGINES (Combined Keyboard + Touch)
 function handleDirection(dir) {
   if(dir === "up" && dy === 0){
     dx = 0; dy = -1;
@@ -340,7 +291,6 @@ function update(){
     document.getElementById("score").textContent = score;
     food = randomFood();
 
-    // Speed difficulty curve
     speed = Math.max(60, 150 - score*4);
     clearInterval(game);
     game = setInterval(update, speed);
@@ -372,17 +322,13 @@ function draw(){
     ctx.stroke();
   }
 
-  // FOOD COLOR SCHEME (Inverted logic)
   ctx.fillStyle = currentMode === 'portal' ? "#9b5cff" : "#4c6fff";
   ctx.fillRect(food.x*SIZE, food.y*SIZE, SIZE, SIZE);
 
-  // SNAKE DRAW ENGINE (Fully inverted color palette sets)
   for(let i=0;i<snake.length;i++){
     if (currentMode === 'portal') {
-        // Portal Mode has a Blue Snake inside its Purple universe
         ctx.fillStyle = i===0 ? "#4c6fff" : "#3554cc";
     } else {
-        // Classic Mode has a Purple Snake inside its Blue universe
         ctx.fillStyle = i===0 ? "#9b5cff" : "#7936dd";
     }
     ctx.fillRect(snake[i].x*SIZE, snake[i].y*SIZE, SIZE, SIZE);
@@ -395,7 +341,7 @@ function gameOver(){
   showMenu();
 }
 
-// Prevents scrolling and double-tap zoom gestures on mobile UI elements
+// Prevents arrow key page scrolling
 document.addEventListener("keydown", function(e) {
   if (
     ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(e.key)
@@ -404,14 +350,6 @@ document.addEventListener("keydown", function(e) {
   }
 });
 
-document.querySelectorAll('.mobile-controls button').forEach(button => {
-    button.addEventListener('touchstart', function(e) {
-        e.preventDefault(); 
-        this.click();
-    }, { passive: false });
-});
-
-// Start cleanly on overlay load initialization
 showMenu();
 
 </script>
