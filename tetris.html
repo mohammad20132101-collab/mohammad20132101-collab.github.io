@@ -18,8 +18,6 @@ body {
   color: white;
   user-select: none;
   -webkit-user-select: none;
-  overflow-y: auto !important; /* Forces browser scrolling */
-  touch-action: pan-y;         /* Allows page scrolling alongside swipe gestures */
 }
 
 .container {
@@ -29,7 +27,6 @@ body {
   max-width: 95vw;
   padding: 10px;
   align-items: flex-start;
-  flex-wrap: wrap; /* <--- ADD THIS HERE */
 }
 
 .game-area {
@@ -44,7 +41,7 @@ canvas#game {
   border-radius: 12px;
   box-shadow: 0 0 20px rgba(43, 53, 83, 0.3);
   
-  /* THE FIX: Lock the native size on desktop, scale fluidly on small screens */
+  /* Locks the native size on desktop, scales fluidly if bounds shrink */
   width: 300px !important;
   height: 600px !important;
   max-width: 85vw !important;
@@ -106,78 +103,6 @@ button {
 button:hover {
   background: #3a476e;
 }
-
-/* MOBILE D-PAD CONTROLS */
-.mobile-controls {
-  display: grid;
-  grid-template-columns: repeat(3, 70px);
-  grid-template-rows: repeat(2, 60px);
-  gap: 10px;
-  margin-top: 15px;
-  justify-content: center;
-}
-
-.mobile-controls button {
-  margin: 0;
-  padding: 0;
-  font-size: 22px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #161c2e, #252e48);
-  border-color: rgba(255,255,255,0.1);
-}
-
-#pad-left { grid-column: 1; grid-row: 1; }
-#pad-up { grid-column: 2; grid-row: 1; }
-#pad-right { grid-column: 3; grid-row: 1; }
-#pad-down { grid-column: 1 / span 2; grid-row: 2; width: 100%; }
-#pad-space { grid-column: 3; grid-row: 2; }
-
-/* RESPONSIVE LAYOUT FOR MOBILE SCREENS */
-@media (max-width: 768px) {
-  body {
-    align-items: flex-start;
-    padding-top: 10px;
-  }
-  .container {
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-  }
-  canvas#game {
-    width: 75vw;
-    max-height: 55vh;
-  }
-  .panel {
-    width: 75vw;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    padding: 10px;
-  }
-  .panel h2, .panel #score, .panel canvas, .panel .info, .panel button {
-    margin: 0;
-  }
-  .panel .info {
-    grid-column: 1 / span 2;
-    font-size: 12px;
-    padding: 6px;
-  }
-  .btn-group {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-  }
-}
-
-/* Hide desktop manual hints on layout if touch is default */
-@media (min-width: 769px) {
-  .mobile-controls {
-    display: none;
-  }
-}
 </style>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7292845069394911"
      crossorigin="anonymous"></script>
@@ -189,14 +114,6 @@ button:hover {
 
   <div class="game-area">
     <canvas id="game" width="300" height="600"></canvas>
-    
-    <div class="mobile-controls">
-      <button id="pad-left" onclick="handleTouchAction('left')">◀️</button>
-      <button id="pad-up" onclick="handleTouchAction('up')">🔄</button>
-      <button id="pad-right" onclick="handleTouchAction('right')">▶️</button>
-      <button id="pad-down" onclick="handleTouchAction('down')">⬇️ Drop</button>
-      <button id="pad-space" onclick="handleTouchAction('space')">💥</button>
-    </div>
   </div>
 
   <div class="panel">
@@ -211,10 +128,9 @@ button:hover {
     <div>
       <h2>Controls</h2>
       <div class="info">
-        Touch Controls Active:<br>
-        • Swipe Left/Right = Move<br>
-        • Tap Canvas = Rotate<br>
-        • Swipe Down = Hard Drop
+        • Arrow Keys = Move / Rotate<br>
+        • Spacebar = Hard Drop<br>
+        • P Key = Pause Game
       </div>
 
       <div class="btn-group">
@@ -268,11 +184,6 @@ let dropCounter;
 let dropInterval;
 let lastTime;
 let paused = false;
-
-// SWIPE INPUT CONTROLLER VARIETIES
-let touchStartX = 0;
-let touchStartY = 0;
-const SWIPE_THRESHOLD = 35; 
 
 function randomPiece(){
   return PIECES[Math.floor(Math.random()*PIECES.length)];
@@ -471,16 +382,6 @@ function togglePause() {
   paused = !paused;
 }
 
-// UNIFIED INPUT CAPTURE FOR ENGINE ACTIONS
-function handleTouchAction(action) {
-  if(paused) return;
-  if(action === 'left') move(-1);
-  if(action === 'right') move(1);
-  if(action === 'up') rotate();
-  if(action === 'down') drop();
-  if(action === 'space') hardDrop();
-}
-
 // KEYBOARD KEY LISTENERS (Stops desktop space/arrow scrolling defaults)
 document.addEventListener("keydown", e=>{
   if(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " ", "Space"].includes(e.key)) {
@@ -497,41 +398,6 @@ document.addEventListener("keydown", e=>{
   if(e.key === "ArrowDown") drop();
   if(e.key === "ArrowUp") rotate();
   if(e.key === " " || e.code === "Space") hardDrop();
-});
-
-// INTERACTIVE CANVAS SWIPE ENGINE
-canvas.addEventListener('touchstart', function(e) {
-  touchStartX = e.changedTouches[0].screenX;
-  touchStartY = e.changedTouches[0].screenY;
-}, { passive: true });
-
-canvas.addEventListener('touchend', function(e) {
-  let diffX = e.changedTouches[0].screenX - touchStartX;
-  let diffY = e.changedTouches[0].screenY - touchStartY;
-
-  if (Math.abs(diffX) < 10 && Math.abs(diffY) < 10) {
-    handleTouchAction('up'); 
-    return;
-  }
-
-  if (Math.abs(diffX) > Math.abs(diffY)) {
-    if (Math.abs(diffX) > SWIPE_THRESHOLD) {
-      if (diffX > 0) handleTouchAction('right');
-      else handleTouchAction('left');
-    }
-  } else {
-    if (Math.abs(diffY) > SWIPE_THRESHOLD) {
-      if (diffY > 0) handleTouchAction('space'); 
-    }
-  }
-}, { passive: true });
-
-// Attaches action mappings cleanly onto physical mobile button clicks without screen-bouncing defaults
-document.querySelectorAll('.mobile-controls button').forEach(button => {
-    button.addEventListener('touchstart', function(e) {
-        e.preventDefault(); 
-        this.click();
-    }, { passive: false });
 });
 
 function update(time=0){
