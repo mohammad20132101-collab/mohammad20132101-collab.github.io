@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Rift Tetris</title>
+<title>Tetris Rift Hub</title>
 
 <style>
 @import url("https://fonts.googleapis.com/css?family=Lato:400,700");
@@ -19,15 +19,17 @@ body {
   color: white;
   user-select: none;
   -webkit-user-select: none;
-  /* Removed global touch-action: none to allow webpage scrolling */
+  touch-action: none; /* Prevents default browser panning/zooming on swipe */
+  overflow-y: auto !important; /* Forces the browser to allow scrolling down to the buttons on mobile */
+
 }
 
 .container {
   display: flex;
   flex-direction: row;
-  gap: 30px;
+  gap: 20px;
   max-width: 95vw;
-  padding: 20px;
+  padding: 10px;
   align-items: flex-start;
 }
 
@@ -42,30 +44,26 @@ canvas#game {
   border: 3px solid #2b3553;
   border-radius: 12px;
   box-shadow: 0 0 20px rgba(43, 53, 83, 0.3);
-  width: 300px; /* Safe fixed layout base width for laptops/desktops */
-  height: 600px;
-  max-width: 100%;
-  height: auto;
-  aspect-ratio: 1 / 2;
-  touch-action: none; /* Block scrolling ONLY on the actual game canvas swipe engine */
+  
+  /* THE FIX: Lock the native size on desktop, scale fluidly on small screens */
+  width: 300px !important;
+  height: 600px !important;
+  max-width: 85vw !important;
+  max-height: calc(85vw * 2) !important;
 }
 
 .panel {
-  width: 220px;
+  width: 200px;
   background: #1b2238;
-  padding: 20px;
+  padding: 15px;
   border-radius: 12px;
   box-shadow: 0 4px 15px rgba(0,0,0,0.4);
 }
 
 h2 {
-  margin: 15px 0 5px 0;
+  margin: 10px 0 5px 0;
   font-size: 18px;
   color: #8fa0dd;
-}
-
-h2:first-of-type {
-  margin-top: 0;
 }
 
 .info {
@@ -79,10 +77,10 @@ h2:first-of-type {
 }
 
 #score {
-  font-size: 28px;
+  font-size: 26px;
   font-weight: bold;
   color: #00f0f0;
-  margin-bottom: 15px;
+  margin-bottom: 10px;
 }
 
 canvas#next {
@@ -90,7 +88,6 @@ canvas#next {
   border: 2px solid #2b3553;
   border-radius: 8px;
   margin-bottom: 15px;
-  display: block;
 }
 
 button {
@@ -98,7 +95,7 @@ button {
   background: linear-gradient(135deg, #1b2238, #2b3553);
   color: white;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 12px;
+  padding: 10px;
   border-radius: 8px;
   cursor: pointer;
   font-weight: bold;
@@ -114,12 +111,11 @@ button:hover {
 /* MOBILE D-PAD CONTROLS */
 .mobile-controls {
   display: grid;
-  grid-template-columns: repeat(3, 75px);
+  grid-template-columns: repeat(3, 70px);
   grid-template-rows: repeat(2, 60px);
   gap: 10px;
-  margin-top: 20px;
+  margin-top: 15px;
   justify-content: center;
-  touch-action: none; /* Block swipe interactions on the controller frame components */
 }
 
 .mobile-controls button {
@@ -144,27 +140,23 @@ button:hover {
 @media (max-width: 768px) {
   body {
     align-items: flex-start;
-    padding: 10px 0;
-    min-height: auto;
+    padding-top: 10px;
   }
   .container {
     flex-direction: column;
     align-items: center;
-    gap: 15px;
-    width: 100%;
-    padding: 10px 0;
+    gap: 10px;
   }
   canvas#game {
-    width: 70vw; /* Scales cleanly down on compact screens */
-    max-height: 50vh;
+    width: 75vw;
+    max-height: 55vh;
   }
   .panel {
-    width: 80vw;
-    box-sizing: border-box;
+    width: 75vw;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 15px;
-    padding: 15px;
+    gap: 10px;
+    padding: 10px;
   }
   .panel h2, .panel #score, .panel canvas, .panel .info, .panel button {
     margin: 0;
@@ -172,13 +164,12 @@ button:hover {
   .panel .info {
     grid-column: 1 / span 2;
     font-size: 12px;
-    padding: 8px;
-    margin-top: 5px;
+    padding: 6px;
   }
   .btn-group {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 5px;
   }
 }
 
@@ -221,7 +212,7 @@ button:hover {
     <div>
       <h2>Controls</h2>
       <div class="info">
-        Touch Controls:<br>
+        Touch Controls Active:<br>
         • Swipe Left/Right = Move<br>
         • Tap Canvas = Rotate<br>
         • Swipe Down = Hard Drop
