@@ -1,1 +1,319 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rift Simon</title>
 
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0f0f1a;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+header {
+  padding: 20px;
+  text-align: center;
+  background: #1a1a2e;
+}
+
+.header-buttons {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.card {
+  background: #1a1a2e;
+  border-radius: 12px;
+  padding: 30px;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  max-width: 450px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.simon-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  margin: 25px auto;
+  max-width: 320px;
+  width: 100%;
+}
+
+.pad {
+  aspect-ratio: 1;
+  border-radius: 16px;
+  cursor: pointer;
+  opacity: 0.25;
+  transition: opacity 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+  border: 2px solid transparent;
+}
+
+.pad:active {
+  transform: scale(0.96);
+}
+
+#pad-0 { background: #4c6fff; } /* Blue */
+#pad-0.active { opacity: 1; box-shadow: 0 0 25px #4c6fff; }
+
+#pad-1 { background: #e53e3e; } /* Red */
+#pad-1.active { opacity: 1; box-shadow: 0 0 25px #e53e3e; }
+
+#pad-2 { background: #ecc94b; } /* Yellow */
+#pad-2.active { opacity: 1; box-shadow: 0 0 25px #ecc94b; }
+
+#pad-3 { background: #319795; } /* Green */
+#pad-3.active { opacity: 1; box-shadow: 0 0 25px #319795; }
+
+.score-board {
+  font-size: 20px;
+  margin: 15px 0;
+  font-weight: bold;
+}
+
+#score {
+  color: #4c6fff;
+}
+
+#statusMessage {
+  font-size: 16px;
+  min-height: 24px;
+  margin: 10px 0;
+  color: #a0aec0;
+}
+
+button {
+  padding: 10px 20px;
+  border: none;
+  background: #4c6fff;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  margin: 5px;
+  font-size: 16px;
+  font-weight: bold;
+  transition: opacity 0.2s;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+.back-btn {
+  background: #4a5568;
+}
+
+.restart-btn {
+  background: #e53e3e;
+}
+</style>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7292845069394911"
+     crossorigin="anonymous"></script>
+</head>
+<body>
+
+<header>
+  <h1>🌌 Rift Simon 🌌</h1>
+  <div class="header-buttons">
+    <button class="back-btn" onclick="window.location.href='index.html'">Back to Hub</button>
+    <button class="restart-btn" onclick="resetGame()">Restart Game</button>
+  </div>
+</header>
+
+<div class="container">
+  <div class="card">
+    <div class="score-board">Sequence Matrix: <span id="score">0</span></div>
+    <div id="statusMessage">Press Start Matrix to begin...</div>
+    
+    <div class="simon-grid">
+      <div class="pad" id="pad-0" onclick="handlePadClick(0)"></div>
+      <div class="pad" id="pad-1" onclick="handlePadClick(1)"></div>
+      <div class="pad" id="pad-2" onclick="handlePadClick(2)"></div>
+      <div class="pad" id="pad-3" onclick="handlePadClick(3)"></div>
+    </div>
+
+    <button id="startBtn" onclick="startGame()">Start Matrix</button>
+  </div>
+</div>
+
+<script>
+let gameSequence = [];
+let playerSequence = [];
+let score = 0;
+let isPlayingSequence = false;
+let gameActive = false;
+
+let audioCtx = null;
+const frequencies = [261.63, 329.63, 392.00, 523.25];
+
+function initAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+}
+
+function playSound(padIndex) {
+  if (!audioCtx) return;
+  
+  let osc = audioCtx.createOscillator();
+  let gainNode = audioCtx.createGain();
+  
+  osc.type = "sine";
+  osc.frequency.value = frequencies[padIndex];
+  
+  gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+  gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+  
+  osc.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+  
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.4);
+}
+
+function startGame() {
+  initAudio();
+  document.getElementById("startBtn").style.display = "none";
+  resetGameData();
+  gameActive = true;
+  nextRound();
+}
+
+function resetGame() {
+  document.getElementById("startBtn").style.display = "inline-block";
+  document.getElementById("startBtn").textContent = "Start Matrix";
+  document.getElementById("statusMessage").textContent = "Press Start Matrix to begin...";
+  document.getElementById("score").textContent = "0";
+  resetGameData();
+}
+
+function resetGameData() {
+  gameSequence = [];
+  playerSequence = [];
+  score = 0;
+  isPlayingSequence = false;
+  gameActive = false;
+}
+
+function nextRound() {
+  playerSequence = [];
+  score = gameSequence.length;
+  document.getElementById("score").textContent = score;
+  document.getElementById("statusMessage").textContent = "Watching AI Sequence...";
+  
+  let newRandomStep;
+  
+  while (true) {
+    // Break identical startup seeding using high-precision dynamic timestamps
+    const cryptoMultiplier = (Date.now() % 100) / 100;
+    const mixedRandom = (Math.random() + cryptoMultiplier) % 1;
+    
+    // Evaluates strictly to indexes 0, 1, 2, or 3
+    newRandomStep = Math.floor(mixedRandom * 4);
+    
+    // Lookback loop preventer: breaks up predictable (A -> B -> A) patterns
+    if (gameSequence.length >= 2) {
+      let twoStepsAgo = gameSequence[gameSequence.length - 2];
+      if (newRandomStep === twoStepsAgo) {
+        continue; 
+      }
+    }
+    break;
+  }
+  
+  gameSequence.push(newRandomStep);
+  playSequence();
+}
+
+async function playSequence() {
+  isPlayingSequence = true;
+  
+  await new Promise(resolve => setTimeout(resolve, 600));
+
+  for (let i = 0; i < gameSequence.length; i++) {
+    if (!gameActive) return;
+    let padIndex = gameSequence[i];
+    await flashPad(padIndex);
+    await new Promise(resolve => setTimeout(resolve, 200));
+  }
+
+  isPlayingSequence = false;
+  document.getElementById("statusMessage").textContent = "Your Turn! Replicate Sequence.";
+}
+
+function flashPad(index) {
+  return new Promise(resolve => {
+    let pad = document.getElementById(`pad-${index}`);
+    pad.classList.add("active");
+    playSound(index);
+    
+    setTimeout(() => {
+      pad.classList.remove("active");
+      resolve();
+    }, 400);
+  });
+}
+
+function handlePadClick(index) {
+  if (isPlayingSequence || !gameActive) return;
+
+  let pad = document.getElementById(`pad-${index}`);
+  pad.classList.add("active");
+  playSound(index);
+  setTimeout(() => pad.classList.remove("active"), 150);
+
+  playerSequence.push(index);
+  checkPlayerInput(playerSequence.length - 1);
+}
+
+function checkPlayerInput(currentStep) {
+  if (playerSequence[currentStep] !== gameSequence[currentStep]) {
+    triggerGameOver();
+    return;
+  }
+
+  if (playerSequence.length === gameSequence.length) {
+    document.getElementById("statusMessage").textContent = "🎯 Sequence Synchronized!";
+    setTimeout(nextRound, 800);
+  }
+}
+
+function triggerGameOver() {
+  gameActive = false;
+  document.getElementById("statusMessage").innerHTML = `❌ <span style='color: #e53e3e'>Matrix Failed!</span> Score: ${score}`;
+  document.getElementById("startBtn").style.display = "inline-block";
+  document.getElementById("startBtn").textContent = "Reboot Matrix";
+
+  if (audioCtx) {
+    let osc = audioCtx.createOscillator();
+    let gainNode = audioCtx.createGain();
+    osc.frequency.value = 110;
+    gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+    osc.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.6);
+  }
+}
+</script>
+
+</body>
+</html>
