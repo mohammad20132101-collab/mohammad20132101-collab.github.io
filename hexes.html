@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rift Hex</title>
+<style>
+@import url("https://fonts.googleapis.com/css?family=Lato:400,400i,700");
+
+body, label, div, span {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #4c6fff;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: background 0.8s ease;
+  min-height: 100vh;
+  padding: 20px 0;
+  box-sizing: border-box;
+}
+
+h1 {
+  width: 100%;
+  text-align: center;
+  color: white;
+  text-shadow: 0 0 10px rgba(255,255,255,0.4);
+  margin: 10px 0;
+}
+
+/* MENU */
+#menu {
+  position: fixed;
+  inset: 0;
+  background: #0f0f1a;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.menuBox {
+  background: #141428;
+  padding: 30px;
+  border-radius: 15px;
+  border: 3px solid #4c6fff;
+  box-shadow: 0 0 25px rgba(76,108,255,0.35);
+  text-align: center;
+  flex-direction: column;
+}
+
+.menuBox h1 { color: #4c6fff; margin-bottom: 10px; }
+
+.menuBox button {
+  margin: 10px;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  background: #4c6fff;
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+  min-width: 180px; 
+}
+
+/* BUTTONS */
+button {
+  background: linear-gradient(135deg, #4c6fff, #2f3cff);
+  color: white;
+  border: 1px solid rgba(76,111,255,0.5);
+  padding: 10px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.2s;
+  box-shadow: 0 0 10px rgba(76,111,255,0.25);
+}
+
+button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 18px rgba(76,111,255,0.45);
+}
+
+.btn-row {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+/* CONTROLS */
+.controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+label, .player {
+  height: 30px;
+  margin-bottom: 20px;
+}
+
+label {
+  color: #ffc;
+  font: 18px Lato;
+}
+
+label input {
+  margin-left: 10px;
+}
+
+.player {
+  position: relative;
+  justify-content: space-between;
+  width: 220px;
+}
+
+.player span {
+  color: #ffc;
+  font: 18px Lato;
+}
+
+.player-num {
+  width: 100px;
+  justify-content: flex-start;
+  outline: none;
+  cursor: text;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.score {
+  justify-content: flex-end;
+  width: 20px;
+}
+
+input[type="color"] {
+  border: 2px solid rgba(255,255,255,0.4);
+  border-radius: 6px;
+  background: #141428;
+  cursor: pointer;
+  width: 40px;
+  height: 30px;
+}
+
+/* TURN INDICATOR */
+.turn {
+  position: absolute;
+  color: #ffc;
+  right: -40px;
+  font-size: 24px;
+  transition: transform 0.3s ease;
+}
+
+.p2-turn {
+  transform: translateY(45px);
+}
+
+/* STATUS */
+#status {
+  font-size: 22px;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 0 8px rgba(255,255,255,0.4);
+  margin: 15px 0;
+  min-height: 30px;
+}
+
+/* GAMEPLAY FIELD */
+#boardContainer {
+  padding: 30px;
+  background: rgba(15, 15, 26, 0.7);
+  border-radius: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+  margin-top: 10px;
+}
+
+.hex-cell {
+  fill: rgba(255, 255, 255, 0.12);
+  stroke: rgba(255, 255, 255, 0.25);
+  stroke-width: 1.5;
+  cursor: pointer;
+  transition: fill 0.2s, stroke 0.2s, filter 0.2s;
+}
+
+.hex-cell:hover:not(.taken) {
+  fill: rgba(255, 255, 255, 0.35);
+  stroke: rgba(255, 255, 255, 0.6);
+}
+
+.hex-cell.taken {
+  cursor: default;
+}
+
+/* BORDER WALL CONTOURS */
+.contour-border {
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none; /* Prevents blocking clicks on edge hexes */
+}
+</style>
+</head>
+<body>
+
+<div id="menu">
+  <div class="menuBox">
+    <h1>🌀 Rift Hex</h1>
+    <p style="color:#aaa;">Select Mode</p>
+    <button onclick="enterGameMode(1)">1 Player (vs AI)</button>
+    <button onclick="enterGameMode(2)">2 Player</button>
+  </div>
+</div>
+
+<h1>Rift Hex</h1>
+
+<div class="btn-row">
+  <button onclick="resetGame()">Reset</button>
+  <button onclick="showMainMenu()">Menu</button>
+</div>
+<br>
+
+<div class="controls">
+  <label>Grid Size
+    <input type="range" min="3" max="7" value="5" id="gridSize" />
+  </label>
+
+  <div class="player">
+    <span class="player-num" contenteditable="true" id="p1Name" onkeydown="if(event.key==='Enter')event.preventDefault()">Player 1</span>
+    <input type="color" value="#4c6fff" id="p1Colour" />
+    <span class="score" id="p1Score">0</span>
+    <div class="turn" id="turn">●</div>
+  </div>
+
+  <div class="player">
+    <span class="player-num" contenteditable="true" id="p2Name" onkeydown="if(event.key==='Enter')event.preventDefault()">Player 2</span>
+    <input type="color" value="#9b5cff" id="p2Colour" />
+    <span class="score" id="p2Score">0</span>
+  </div>
+</div>
+
+<div id="status">Player 1's turn</div>
+
+<div id="boardContainer">
+  <svg id="hexSvg"></svg>
+</div>
+
+<script>
+let hexRadiusSize = 5; // Radius of the big hexagon shape (number of hexes from center to edge)
+let board = {}; // Keys will be 'q,r' strings
+let currentTurn = "p1"; 
+let gameOver = false;
+let mode = 2;
+let scores = { p1: 0, p2: 0 };
+let aiThinking = false;
+
+const hexRadius = 24;
+const hexWidth = Math.sqrt(3) * hexRadius;
+const hexHeight = 2 * hexRadius;
+
+function getColour(player) {
+  return document.getElementById(player === 'p1' ? 'p1Colour' : 'p2Colour').value;
+}
+
+function getName(player) {
+  return document.getElementById(player === 'p1' ? 'p1Name' : 'p2Name').textContent.trim();
+}
+
+function enterGameMode(selectedMode) {
+  mode = selectedMode;
+  document.getElementById("menu").style.display = "none";
+  if (mode === 1) {
+    document.getElementById('p2Name').textContent = 'Rift AI';
+    document.getElementById('p2Name').contentEditable = 'false';
+  } else {
+    document.getElementById('p2Name').textContent = 'Player 2';
+    document.getElementById('p2Name').contentEditable = 'true';
+  }
+  initBoard();
+}
+
+function initBoard() {
+  hexRadiusSize = parseInt(document.getElementById("gridSize").value);
+  board = {};
+  gameOver = false;
+  aiThinking = false;
+  currentTurn = "p1";
+  
+  document.body.style.background = getColour('p1');
+  document.getElementById("turn").classList.remove("p2-turn");
+  updateStatus();
+  renderSVG();
+}
+
+function getHexPoints(cx, cy) {
+  const points = [];
+  for (let i = 0; i < 6; i++) {
+    const angle = (Math.PI / 180) * (60 * i - 30);
+    points.push({ x: cx + hexRadius * Math.cos(angle), y: cy + hexRadius * Math.sin(angle) });
+  }
+  return points;
+}
+
+function renderSVG() {
+  const svg = document.getElementById("hexSvg");
+  svg.innerHTML = "";
+
+  const margin = 40;
+  // Dynamic dimensional setup to perfectly encapsulate a centered big hexagon grid shape
+  const maxCellsAcross = 2 * hexRadiusSize - 1;
+  const totalWidth = hexWidth * maxCellsAcross + (margin * 2);
+  const totalHeight = hexHeight * 0.75 * maxCellsAcross + (hexRadius * 0.5) + (margin * 2);
+
+  svg.setAttribute("width", totalWidth);
+  svg.setAttribute("height", totalHeight);
+
+  const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  group.setAttribute("transform", `translate(${totalWidth / 2}, ${totalHeight / 2})`);
+  svg.appendChild(group);
+
+  let cellCorners = {};
+
+  // Generate big hexagon grid using axial coordinate boundaries (q + r + s = 0)
+  for (let q = -(hexRadiusSize - 1); q <= (hexRadiusSize - 1); q++) {
+    let r1 = Math.max(-(hexRadiusSize - 1), -q - (hexRadiusSize - 1));
+    let r2 = Math.min((hexRadiusSize - 1), -q + (hexRadiusSize - 1));
+    for (let r = r1; r <= r2; r++) {
+      
+      board[`${q},${r}`] = "";
+
+      const cx = hexWidth * (q + r/2);
+      const cy = hexHeight * 0.75 * r;
+
+      const pts = getHexPoints(cx, cy);
+      cellCorners[`${q},${r}`] = pts;
+
+      const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+      polygon.setAttribute("points", pts.map(p => `${p.x},${p.y}`).join(" "));
+      polygon.setAttribute("class", "hex-cell");
+      polygon.setAttribute("id", `hex-${q}-${r}`);
+      polygon.addEventListener("click", () => handleHexClick(q, r));
+
+      group.appendChild(polygon);
+    }
+  }
+
+  // Draw perimeter contour frames over cells
+  drawBigHexBorders(group, cellCorners);
+}
+
+function drawBigHexBorders(parentGroup, cellCorners) {
+  const p1Col = getColour('p1');
+  const p2Col = getColour('p2');
+  const N = hexRadiusSize - 1;
+
+  let leftContour = [], rightContour = [], topContour = [], bottomContour = [];
+
+  // P1 Goal: Left sides to Right sides. P2 Goal: Top sides to Bottom sides.
+  // We trace along the perimeter vertices using the outer-edge hex paths.
+  
+  // 1. TOP-LEFT & BOTTOM-LEFT WALLS (Player 1 Left Territory)
+  for (let r = -N; r <= 0; r++) {
+    let h = cellCorners[`${-N-r},${r}`];
+    leftContour.push(`${h[4].x},${h[4].y}`, `${h[3].x},${h[3].y}`);
+  }
+  for (let r = 1; r <= N; r++) {
+    let h = cellCorners[`${-N},${r}`];
+    leftContour.push(`${h[4].x},${h[4].y}`, `${h[3].x},${h[3].y}`);
+  }
+  let bLeftCorner = cellCorners[`${-N},${N}`];
+  leftContour.push(`${bLeftCorner[2].x},${bLeftCorner[2].y}`);
+
+  // 2. TOP-RIGHT & BOTTOM-RIGHT WALLS (Player 1 Right Territory)
+  for (let r = -N; r <= 0; r++) {
+    let h = cellCorners[`${N},${r}`];
+    rightContour.push(`${h[0].x},${h[0].y}`, `${h[1].x},${h[1].y}`);
+  }
+  for (let r = 1; r <= N; r++) {
+    let h = cellCorners[`${N-r},${r}`];
+    rightContour.push(`${h[0].x},${h[0].y}`, `${h[1].x},${h[1].y}`);
+  }
+  let bRightCorner = cellCorners[`0,${N}`];
+  rightContour.push(`${bRightCorner[2].x},${bRightCorner[2].y}`);
+
+  // 3. NORTH CEILING WALLS (Player 2 Top Territory)
+  for (let q = -N; q <= 0; q++) {
+    let h = cellCorners[`${q},${-N}`];
+    topContour.push(`${h[4].x},${h[4].y}`, `${h[5].x},${h[5].y}`);
+  }
+  for (let q = 1; q <= N; q++) {
+    let h = cellCorners[`${q},${-N-q}`];
+    topContour.push(`${h[5].x},${h[5].y}`, `${h[0].x},${h[0].y}`);
+  }
+
+  // 4. SOUTH FLOOR WALLS (Player 2 Bottom Territory)
+  for (let q = -N; q <= 0; q++) {
+    let h = cellCorners[`${q},${N-q}`];
+    bottomContour.push(`${h[3].x},${h[3].y}`, `${h[2].x},${h[2].y}`);
+  }
+  for (let q = 1; q <= N; q++) {
+    let h = cellCorners[`${q},${N}`];
+    bottomContour.push(`${h[2].x},${h[2].y}`, `${h[1].x},${h[1].y}`);
+  }
+
+  const createContourLine = (pts, color) => {
+    const pl = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+    pl.setAttribute("points", pts.join(" "));
+    pl.setAttribute("class", "contour-border");
+    pl.setAttribute("style", `stroke: ${color}; fill: none;`);
+    parentGroup.appendChild(pl);
+  };
+
+  createContourLine(leftContour, p1Col);
+  createContourLine(rightContour, p1Col);
+  createContourLine(topContour, p2Col);
+  createContourLine(bottomContour, p2Col);
+}
+
+function handleHexClick(q, r) {
+  if (gameOver || aiThinking || board[`${q},${r}`] !== "") return;
+
+  claimCell(q, r, currentTurn);
+
+  if (checkWinCondition(currentTurn)) {
+    endGame(currentTurn);
+    return;
+  }
+
+  currentTurn = currentTurn === "p1" ? "p2" : "p1";
+  document.getElementById("turn").classList.toggle("p2-turn");
+  document.body.style.background = getColour(currentTurn);
+  updateStatus();
+
+  if (mode === 1 && currentTurn === "p2" && !gameOver) {
+    aiThinking = true;
+    setTimeout(executeSmartAIMove, 400);
+  }
+}
+
+function claimCell(q, r, player) {
+  board[`${q},${r}`] = player;
+  const cell = document.getElementById(`hex-${q}-${r}`);
+  if (cell) {
+    cell.classList.add("taken");
+    cell.style.fill = getColour(player);
+    cell.style.filter = `drop-shadow(0 0 6px ${getColour(player)})`;
+  }
+}
+
+function getNeighbors(q, r) {
+  const neighbors = [
+    {q: q+1, r: r}, {q: q+1, r: r-1}, {q: q, r: r-1},
+    {q: q-1, r: r}, {q: q-1, r: r+1}, {q: q, r: r+1}
+  ];
+  return neighbors.filter(n => board[`${n.q},${n.r}`] !== undefined);
+}
+
+function checkWinCondition(player) {
+  let visited = {};
+  let queue = [];
+  const N = hexRadiusSize - 1;
+
+  // Initialize nodes touching starting boundaries
+  for (let key in board) {
+    let [q, r] = key.split(',').map(Number);
+    if (player === "p1") {
+      // Starts if on left perimeter edges
+      if ((r <= 0 && q === -N-r) || (r > 0 && q === -N)) {
+        if (board[key] === "p1") { queue.push({q, r}); visited[key] = true; }
+      }
+    } else {
+      // Starts if on top perimeter edges
+      if ((q <= 0 && r === -N) || (q > 0 && r === -N-q)) {
+        if (board[key] === "p2") { queue.push({q, r}); visited[key] = true; }
+      }
+    }
+  }
+
+  while (queue.length > 0) {
+    let curr = queue.shift();
+    
+    // Check terminal winning condition paths reached
+    if (player === "p1") {
+      if ((curr.r <= 0 && curr.q === N) || (curr.r > 0 && curr.q === N-curr.r)) return true;
+    } else {
+      if ((curr.q <= 0 && curr.r === N-curr.q) || (curr.q > 0 && curr.r === N)) return true;
+    }
+
+    for (let n of getNeighbors(curr.q, curr.r)) {
+      let nKey = `${n.q},${n.r}`;
+      if (!visited[nKey] && board[nKey] === player) {
+        visited[nKey] = true;
+        queue.push(n);
+      }
+    }
+  }
+  return false;
+}
+
+function executeSmartAIMove() {
+  if (gameOver) return;
+
+  let bestMove = null;
+  let highestWeight = -Infinity;
+
+  for (let key in board) {
+    if (board[key] === "") {
+      let [q, r] = key.split(',').map(Number);
+      
+      let aiWinUrgency = evaluateCellValue(q, r, "p2");
+      let playerBlockUrgency = evaluateCellValue(q, r, "p1");
+
+      let totalWeight = (aiWinUrgency * 1.1) + playerBlockUrgency + (Math.random() * 0.2);
+
+      if (totalWeight > highestWeight) {
+        highestWeight = totalWeight;
+        bestMove = { q, r };
+      }
+    }
+  }
+
+  aiThinking = false;
+  if (bestMove) {
+    handleHexClick(bestMove.q, bestMove.r);
+  }
+}
+
+function evaluateCellValue(q, r, player) {
+  board[`${q},${r}`] = player;
+  let remainingDistance = computeShortestPathLength(player);
+  board[`${q},${r}`] = ""; 
+  
+  if (remainingDistance === 0) return 1000; 
+  return (hexRadiusSize * 4) - remainingDistance;
+}
+
+function computeShortestPathLength(player) {
+  let distance = {};
+  let queue = [];
+  const N = hexRadiusSize - 1;
+
+  for (let key in board) {
+    distance[key] = Infinity;
+    let [q, r] = key.split(',').map(Number);
+
+    if (player === "p1") {
+      if ((r <= 0 && q === -N-r) || (r > 0 && q === -N)) {
+        if (board[key] === "p1") { distance[key] = 0; queue.push({q, r}); }
+        else if (board[key] === "") { distance[key] = 1; queue.push({q, r}); }
+      }
+    } else {
+      if ((q <= 0 && r === -N) || (q > 0 && r === -N-q)) {
+        if (board[key] === "p2") { distance[key] = 0; queue.push({q, r}); }
+        else if (board[key] === "") { distance[key] = 1; queue.push({q, r}); }
+      }
+    }
+  }
+
+  while (queue.length > 0) {
+    let curr = queue.shift();
+    let currKey = `${curr.q},${curr.r}`;
+    let currentCost = distance[currKey];
+
+    if (player === "p1") {
+      if ((curr.r <= 0 && curr.q === N) || (curr.r > 0 && curr.q === N-curr.r)) return currentCost;
+    } else {
+      if ((curr.q <= 0 && curr.r === N-curr.q) || (curr.q > 0 && curr.r === N)) return currentCost;
+    }
+
+    for (let n of getNeighbors(curr.q, curr.r)) {
+      let nKey = `${n.q},${n.r}`;
+      if (board[nKey] === (player === "p1" ? "p2" : "p1")) continue; 
+
+      let weight = (board[nKey] === player) ? 0 : 1;
+      if (currentCost + weight < distance[nKey]) {
+        distance[nKey] = currentCost + weight;
+        queue.push(n);
+      }
+    }
+  }
+  return Infinity;
+}
+
+function endGame(winner) {
+  gameOver = true;
+  scores[winner]++;
+  document.getElementById(`${winner}Score`).textContent = scores[winner];
+  document.getElementById("status").textContent = `${getName(winner)} Wins the Match! 🎉`;
+}
+
+function updateStatus() {
+  if (gameOver) return;
+  document.getElementById("status").textContent = `${getName(currentTurn)}'s Turn`;
+}
+
+function showMainMenu() {
+  document.getElementById("menu").style.display = "flex";
+}
+
+function resetGame() {
+  initBoard();
+}
+
+document.getElementById("gridSize").addEventListener("input", initBoard);
+
+document.getElementById("p1Colour").addEventListener("change", () => {
+  if (currentTurn === "p1") document.body.style.background = getColour("p1");
+  renderSVG();
+  renderCellColorOverrides();
+});
+
+document.getElementById("p2Colour").addEventListener("change", () => {
+  if (currentTurn === "p2") document.body.style.background = getColour("p2");
+  renderSVG();
+  renderCellColorOverrides();
+});
+
+function renderCellColorOverrides() {
+  for (let key in board) {
+    if (board[key] !== "") {
+      let [q, r] = key.split('-');
+      const cell = document.getElementById(`hex-${q}-${r}`);
+      if (cell) {
+        cell.style.fill = getColour(board[key]);
+        cell.style.filter = `drop-shadow(0 0 6px ${getColour(board[key])})`;
+      }
+    }
+  }
+}
+</script>
+</body>
+</html>
