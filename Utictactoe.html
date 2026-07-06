@@ -1,1 +1,598 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rift Ultimate Tic Tac Toe</title>
+<style>
+@import url("https://fonts.googleapis.com/css?family=Lato:400,400i,700");
 
+body, label, div, span {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #4c6fff;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: background 0.8s ease;
+  min-height: 100vh;
+  padding: 10px 0;
+  box-sizing: border-box;
+}
+
+h1 {
+  width: 100%;
+  text-align: center;
+  color: white;
+  text-shadow: 0 0 10px rgba(255,255,255,0.4);
+  margin: 5px 0;
+}
+
+/* MENU */
+#menu {
+  position: fixed;
+  inset: 0;
+  background: #0f0f1a;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.menuBox {
+  background: #141428;
+  padding: 30px;
+  border-radius: 15px;
+  border: 3px solid #4c6fff;
+  box-shadow: 0 0 25px rgba(76,108,255,0.35);
+  text-align: center;
+  flex-direction: column;
+}
+
+.menuBox h1 { color: #4c6fff; }
+
+.menuBox button {
+  margin: 10px;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  background: #4c6fff;
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+  min-width: 180px; 
+  box-sizing: border-box;
+}
+
+/* BUTTONS */
+button {
+  background: linear-gradient(135deg, #4c6fff, #2f3cff);
+  color: white;
+  border: 1px solid rgba(76,111,255,0.5);
+  padding: 10px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.2s;
+  box-shadow: 0 0 10px rgba(76,111,255,0.25);
+}
+
+button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 18px rgba(76,111,255,0.45);
+}
+
+.btn-row {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 5px;
+}
+
+/* CONTROLS */
+.controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 5px 0;
+}
+
+.player {
+  position: relative;
+  justify-content: space-between;
+  width: 220px;
+  height: 30px;
+  margin-bottom: 15px;
+}
+
+.player span {
+  color: #ffc;
+  font: 18px Lato;
+}
+
+.player-num {
+  width: 100px;
+  justify-content: flex-start;
+  outline: none;
+  cursor: text;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.player-num:focus {
+  border-bottom: 1px solid #ffc;
+}
+
+.score {
+  justify-content: flex-end;
+  width: 20px;
+  color: #ffc;
+  font: 18px Lato;
+}
+
+input[type="color"] {
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 6px;
+  background: #141428;
+  cursor: pointer;
+  width: 40px;
+  height: 30px;
+  box-sizing: border-box;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.1);
+  transition: border-color 0.2s;
+}
+
+input[type="color"]:hover {
+  border-color: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.25);
+}
+
+/* TURN INDICATOR */
+.turn-dot {
+  position: absolute;
+  right: -40px;
+  font-size: 24px;
+  color: #ffc;
+  transition: margin-top 0.3s ease;
+}
+
+.turn-dot.spinning {
+  animation: spin 0.4s ease;
+}
+
+@keyframes spin {
+  0%   { transform: rotate(0deg) scale(1); }
+  50%  { transform: rotate(180deg) scale(1.3); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+/* ULTIMATE BOARD STRUCTURE */
+#ultimateBoard {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin: 15px 0;
+  background: rgba(15, 15, 26, 0.6);
+  padding: 14px;
+  border-radius: 16px;
+  border: 2px solid rgba(255,255,255,0.1);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.macro-board {
+  display: grid;
+  grid-template-columns: repeat(3, 34px);
+  grid-template-rows: repeat(3, 34px);
+  gap: 4px;
+  padding: 6px;
+  background: rgba(20, 20, 40, 0.75);
+  border-radius: 10px;
+  border: 2px solid rgba(255,255,255,0.15);
+  position: relative;
+  transition: border-color 0.25s linear, box-shadow 0.25s linear, background-color 0.25s linear;
+  will-change: border-color, box-shadow, background-color;
+}
+
+.macro-board.playable {
+  border-color: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 0 14px rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.cell {
+  width: 34px;
+  height: 34px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.2);
+  transition: background 0.2s, transform 0.15s;
+}
+
+.macro-board.playable .cell:hover {
+  background: rgba(255,255,255,0.25);
+  transform: scale(1.05);
+}
+
+.macro-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 15, 26, 0.85);
+  border-radius: 8px;
+  font-size: 52px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+  from { transform: scale(0.5); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.macro-board.win {
+  border-color: #6bff6b !important;
+  box-shadow: 0 0 20px rgba(107, 255, 107, 0.4) !important;
+}
+
+/* STATUS */
+#status {
+  font-size: 22px;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 0 8px rgba(255,255,255,0.4);
+  margin: 5px 0;
+  min-height: 30px;
+}
+
+@media (max-width: 450px) {
+  #ultimateBoard { gap: 8px; padding: 8px; }
+  .macro-board { grid-template-columns: repeat(3, 26px); grid-template-rows: repeat(3, 26px); gap: 3px; padding: 4px; }
+  .cell { width: 26px; height: 26px; font-size: 12px; }
+  .macro-overlay { font-size: 38px; }
+}
+</style>
+</head>
+<body>
+
+<div id="menu">
+  <div class="menuBox">
+    <h1>🌀 Rift Ultimate Toe</h1>
+    <p style="color:#aaa;flex-direction:column;">Select Mode</p>
+    <button onclick="startGame(1)">1 Player (vs AI)</button>
+    <button onclick="startGame(2)">2 Player</button>
+  </div>
+</div>
+
+<h1>Rift Ultimate Toe</h1>
+
+<div class="btn-row">
+  <button onclick="resetGame()">Reset</button>
+  <button onclick="showMainMenu()">Menu</button>
+  <button onclick="window.location.href='index.html'">Back</button>
+</div>
+<br>
+
+<div class="controls">
+  <div class="player">
+    <span class="player-num" contenteditable="true" id="p1Name" 
+    onkeydown="if(event.key==='Enter')event.preventDefault(); if(this.textContent.length>=9 && event.key.length===1)event.preventDefault()">Player 1</span>
+    <input type="color" value="#4c6fff" id="p1Colour" oninput="onColourChange(1)" />
+    <span class="score" id="p1Score">0</span>
+    <div class="turn-dot" id="turnDot">●</div>
+  </div>
+  <div class="player">
+    <span class="player-num" contenteditable="true" id="p2Name"  
+    onkeydown="if(event.key==='Enter')event.preventDefault(); if(this.textContent.length>=9 && event.key.length===1)event.preventDefault()">Player 2</span>
+    <input type="color" value="#9b5cff" id="p2Colour" oninput="onColourChange(2)" />
+    <span class="score" id="p2Score">0</span>
+  </div>
+</div>
+
+<div id="status">Player 1's turn</div>
+<div id="ultimateBoard"></div>
+
+<script>
+let macroBoard = ["","","","","","","","",""]; 
+let miniBoards = Array(9).fill(null).map(() => Array(9).fill("")); 
+let activeMacro = -1; 
+let current = "X"; 
+let gameOver = false;
+let mode = 2;
+let scores = { p1: 0, p2: 0 };
+let earnedBonusTurn = false; 
+let isFirstMove = true; 
+let aiIsThinking = false; 
+
+function getColour(player) {
+  return document.getElementById(player === 'p1' ? 'p1Colour' : 'p2Colour').value;
+}
+
+function getName(player) {
+  return document.getElementById(player === 'p1' ? 'p1Name' : 'p2Name').textContent.trim();
+}
+
+function currentPlayer() {
+  return current === 'X' ? 'p1' : 'p2';
+}
+
+function setBackground(player) {
+  document.body.style.background = getColour(player);
+}
+
+function onColourChange(num) {
+  const player = 'p' + num;
+  if (currentPlayer() === player) setBackground(player);
+}
+
+function startGame(m) {
+  mode = m;
+  document.getElementById("menu").style.display = "none";
+  if (m === 1) {
+    document.getElementById('p2Name').textContent = 'Rift AI';
+    document.getElementById('p2Name').contentEditable = 'false';
+  } else {
+    document.getElementById('p2Name').textContent = 'Player 2';
+    document.getElementById('p2Name').contentEditable = 'true';
+  }
+  setBackground('p1');
+  buildInitialDOM();
+  updatePlayableHighlights();
+  updateStatus();
+  updateTurnDot();
+}
+
+function buildInitialDOM() {
+  const container = document.getElementById("ultimateBoard");
+  container.innerHTML = "";
+
+  for (let b = 0; b < 9; b++) {
+    const mBoardEl = document.createElement("div");
+    mBoardEl.className = "macro-board";
+    mBoardEl.id = `macro-${b}`;
+
+    for (let c = 0; c < 9; c++) {
+      const cell = document.createElement("div");
+      cell.className = "cell";
+      cell.id = `cell-${b}-${c}`;
+      cell.onclick = () => handleMove(b, c);
+      mBoardEl.appendChild(cell);
+    }
+    container.appendChild(mBoardEl);
+  }
+}
+
+function renderStateUpdates() {
+  for (let b = 0; b < 9; b++) {
+    const mBoardEl = document.getElementById(`macro-${b}`);
+    const isSettled = macroBoard[b] !== "";
+    
+    for (let c = 0; c < 9; c++) {
+      const cell = document.getElementById(`cell-${b}-${c}`);
+      const val = miniBoards[b][c];
+      
+      if (val === "X") {
+        cell.textContent = "✕";
+        cell.style.color = "white";
+        cell.style.textShadow = `0 0 8px ${getColour('p1')}, 0 0 2px white`;
+      } else if (val === "O") {
+        cell.textContent = "○";
+        cell.style.color = "white";
+        cell.style.textShadow = `0 0 8px ${getColour('p2')}, 0 0 2px white`;
+      } else {
+        cell.textContent = "";
+        cell.style.textShadow = "none";
+      }
+    }
+
+    if (isSettled && !mBoardEl.querySelector('.macro-overlay')) {
+      const overlay = document.createElement("div");
+      overlay.className = "macro-overlay";
+      
+      if (macroBoard[b] === "DRAW") {
+        overlay.textContent = "—";
+        overlay.style.color = "rgba(255,255,255,0.4)";
+        overlay.style.textShadow = "none";
+      } else {
+        overlay.textContent = macroBoard[b] === "X" ? "✕" : "○";
+        overlay.style.color = "white";
+        overlay.style.textShadow = `0 0 20px ${macroBoard[b] === "X" ? getColour('p1') : getColour('p2')}`;
+      }
+      mBoardEl.appendChild(overlay);
+    }
+  }
+  updatePlayableHighlights();
+}
+
+function updatePlayableHighlights() {
+  for (let b = 0; b < 9; b++) {
+    const mBoardEl = document.getElementById(`macro-${b}`);
+    if (!mBoardEl) continue;
+
+    const isSettled = macroBoard[b] !== "";
+    const isPlayable = !gameOver && !isSettled && !aiIsThinking && (activeMacro === -1 || activeMacro === b);
+    
+    if (isPlayable) {
+      mBoardEl.classList.add("playable");
+    } else {
+      mBoardEl.classList.remove("playable");
+    }
+  }
+}
+
+function handleMove(macroIdx, miniIdx) {
+  if (gameOver || aiIsThinking) return;
+  if (activeMacro !== -1 && activeMacro !== macroIdx) return;
+  if (macroBoard[macroIdx] !== "" || miniBoards[macroIdx][miniIdx] !== "") return;
+
+  miniBoards[macroIdx][miniIdx] = current;
+  earnedBonusTurn = false; 
+  isFirstMove = false; 
+
+  if (checkGridWin(miniBoards[macroIdx], current)) {
+    macroBoard[macroIdx] = current;
+    earnedBonusTurn = true; 
+  } else if (miniBoards[macroIdx].every(cell => cell !== "")) {
+    macroBoard[macroIdx] = "DRAW";
+  }
+
+  if (checkGridWin(macroBoard, current)) {
+    renderStateUpdates();
+    endGameWin(current);
+    return;
+  }
+
+  if (macroBoard.every(b => b !== "")) {
+    gameOver = true;
+    document.getElementById("status").textContent = "Ultimate Draw Match!";
+    renderStateUpdates();
+    return;
+  }
+
+  if (earnedBonusTurn) {
+    activeMacro = -1;
+  } else {
+    if (macroBoard[miniIdx] === "") {
+      activeMacro = miniIdx;
+    } else {
+      activeMacro = -1; 
+    }
+    current = current === "X" ? "O" : "X";
+  }
+
+  setBackground(currentPlayer());
+  updateStatus();
+  updateTurnDot();
+  renderStateUpdates();
+
+  if (mode === 1 && current === "O" && !gameOver) {
+    aiIsThinking = true; 
+    updatePlayableHighlights(); 
+    setTimeout(executeAIMove, 600);
+  }
+}
+
+function executeAIMove() {
+  if (gameOver) { aiIsThinking = false; return; }
+
+  let playableBoards = [];
+  if (activeMacro === -1) {
+    for(let i=0; i<9; i++) if (macroBoard[i] === "") playableBoards.push(i);
+  } else {
+    playableBoards.push(activeMacro);
+  }
+
+  let movesPool = [];
+  playableBoards.forEach(b => {
+    miniBoards[b].forEach((val, c) => {
+      if (val === "") movesPool.push({ b, c });
+    });
+  });
+
+  if (movesPool.length === 0) { aiIsThinking = false; return; }
+
+  let selectedMove = null;
+  
+  for (let move of movesPool) {
+    miniBoards[move.b][move.c] = "O";
+    if (checkGridWin(miniBoards[move.b], "O")) { selectedMove = move; miniBoards[move.b][move.c] = ""; break; }
+    miniBoards[move.b][move.c] = "";
+    
+    miniBoards[move.b][move.c] = "X";
+    if (checkGridWin(miniBoards[move.b], "X")) { selectedMove = move; miniBoards[move.b][move.c] = ""; }
+    miniBoards[move.b][move.c] = "";
+  }
+
+  if(!selectedMove) selectedMove = movesPool[Math.floor(Math.random() * movesPool.length)];
+
+  aiIsThinking = false;
+  handleMove(selectedMove.b, selectedMove.c);
+}
+
+function checkGridWin(grid, p) {
+  const w = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+  return w.some(c => c.every(i => grid[i]===p));
+}
+
+function endGameWin(p) {
+  gameOver = true;
+  aiIsThinking = false;
+  const player = p === "X" ? 'p1' : 'p2';
+  scores[player]++;
+  document.getElementById(`${player}Score`).textContent = scores[player];
+  
+  document.getElementById("status").textContent = `${getName(player)} Wins the Match! 🎉`;
+  
+  updatePlayableHighlights();
+  const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+  for (let combo of wins) {
+    if (combo.every(i => macroBoard[i]===p)) {
+      combo.forEach(i => document.getElementById(`macro-${i}`).classList.add("win"));
+      break;
+    }
+  }
+}
+
+function updateTurnDot() {
+  const dot = document.getElementById('turnDot');
+  dot.style.marginTop = current === 'O' ? '45px' : '0px';
+  dot.classList.remove('spinning');
+  void dot.offsetWidth;
+  dot.classList.add('spinning');
+}
+
+function updateStatus() {
+  if (gameOver) return;
+  const name = getName(currentPlayer());
+  let contextMsg = "";
+  
+  if (earnedBonusTurn) {
+    contextMsg = " (Bonus Free Move!) ⚡";
+  } else if (activeMacro === -1 && !isFirstMove) {
+    contextMsg = " (Free Move!)";
+  }
+  
+  document.getElementById("status").textContent = `${name}'s Turn${contextMsg}`;
+}
+
+function showMainMenu() {
+  resetGame();
+  document.getElementById("menu").style.display = "flex";
+}
+
+function resetGame() {
+  macroBoard = ["","","","","","","","",""];
+  miniBoards = Array(9).fill(null).map(() => Array(9).fill(""));
+  activeMacro = -1;
+  current = "X";
+  gameOver = false;
+  earnedBonusTurn = false;
+  isFirstMove = true; 
+  aiIsThinking = false;
+  setBackground('p1');
+  
+  buildInitialDOM();
+  updatePlayableHighlights();
+  updateStatus();
+  updateTurnDot();
+}
+
+document.getElementById('turnDot').style.marginTop = '0px';
+</script>
+</body>
+</html>
