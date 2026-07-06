@@ -205,7 +205,6 @@ input[type="color"] {
   stroke-width: 5;
   stroke-linecap: round;
   stroke-linejoin: round;
-  pointer-events: none; /* Prevents blocking clicks on edge hexes */
 }
 </style>
 </head>
@@ -230,7 +229,7 @@ input[type="color"] {
 
 <div class="controls">
   <label>Grid Size
-    <input type="range" min="3" max="7" value="5" id="gridSize" />
+    <input type="range" min="5" max="11" value="9" id="gridSize" />
   </label>
 
   <div class="player">
@@ -254,8 +253,8 @@ input[type="color"] {
 </div>
 
 <script>
-let hexRadiusSize = 5; // Radius of the big hexagon shape (number of hexes from center to edge)
-let board = {}; // Keys will be 'q,r' strings
+let boardSize = 9;
+let board = []; 
 let currentTurn = "p1"; 
 let gameOver = false;
 let mode = 2;
@@ -288,8 +287,8 @@ function enterGameMode(selectedMode) {
 }
 
 function initBoard() {
-  hexRadiusSize = parseInt(document.getElementById("gridSize").value);
-  board = {};
+  boardSize = parseInt(document.getElementById("gridSize").value);
+  board = Array(boardSize).fill(null).map(() => Array(boardSize).fill(""));
   gameOver = false;
   aiThinking = false;
   currentTurn = "p1";
@@ -303,6 +302,7 @@ function initBoard() {
 function getHexPoints(cx, cy) {
   const points = [];
   for (let i = 0; i < 6; i++) {
+    // 0: upper-right, 1: lower-right, 2: bottom, 3: lower-left, 4: upper-left, 5: top
     const angle = (Math.PI / 180) * (60 * i - 30);
     points.push({ x: cx + hexRadius * Math.cos(angle), y: cy + hexRadius * Math.sin(angle) });
   }
@@ -313,102 +313,92 @@ function renderSVG() {
   const svg = document.getElementById("hexSvg");
   svg.innerHTML = "";
 
-  const margin = 40;
-  // Dynamic dimensional setup to perfectly encapsulate a centered big hexagon grid shape
-  const maxCellsAcross = 2 * hexRadiusSize - 1;
-  const totalWidth = hexWidth * maxCellsAcross + (margin * 2);
-  const totalHeight = hexHeight * 0.75 * maxCellsAcross + (hexRadius * 0.5) + (margin * 2);
+  const margin = 30;
+  const totalWidth = hexWidth * (boardSize + (boardSize - 1) / 2) + (margin * 2);
+  const totalHeight = hexHeight * 0.75 * (boardSize - 1) + hexHeight + (margin * 2);
 
   svg.setAttribute("width", totalWidth);
   svg.setAttribute("height", totalHeight);
 
   const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
-  group.setAttribute("transform", `translate(${totalWidth / 2}, ${totalHeight / 2})`);
+  group.setAttribute("transform", `translate(${margin}, ${margin})`);
   svg.appendChild(group);
 
   let cellCorners = {};
 
-  // Generate big hexagon grid using axial coordinate boundaries (q + r + s = 0)
-  for (let q = -(hexRadiusSize - 1); q <= (hexRadiusSize - 1); q++) {
-    let r1 = Math.max(-(hexRadiusSize - 1), -q - (hexRadiusSize - 1));
-    let r2 = Math.min((hexRadiusSize - 1), -q + (hexRadiusSize - 1));
-    for (let r = r1; r <= r2; r++) {
-      
-      board[`${q},${r}`] = "";
-
-      const cx = hexWidth * (q + r/2);
-      const cy = hexHeight * 0.75 * r;
+  for (let r = 0; r < boardSize; r++) {
+    for (let c = 0; c < boardSize; c++) {
+      const cx = hexWidth * c + (hexWidth / 2) * r + hexWidth / 2;
+      const cy = hexHeight * 0.75 * r + hexRadius;
 
       const pts = getHexPoints(cx, cy);
-      cellCorners[`${q},${r}`] = pts;
+      cellCorners[`${r}-${c}`] = pts;
 
       const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
       polygon.setAttribute("points", pts.map(p => `${p.x},${p.y}`).join(" "));
       polygon.setAttribute("class", "hex-cell");
-      polygon.setAttribute("id", `hex-${q}-${r}`);
-      polygon.addEventListener("click", () => handleHexClick(q, r));
+      polygon.setAttribute("id", `hex-${r}-${c}`);
+      polygon.addEventListener("click", () => handleHexClick(r, c));
 
       group.appendChild(polygon);
     }
   }
 
-  // Draw perimeter contour frames over cells
-  drawBigHexBorders(group, cellCorners);
+  drawContourBorders(group, cellCorners);
 }
 
-function drawBigHexBorders(parentGroup, cellCorners) {
+function drawContourBorders(parentGroup, cellCorners) {
   const p1Col = getColour('p1');
   const p2Col = getColour('p2');
-  const N = hexRadiusSize - 1;
 
   let leftContour = [], rightContour = [], topContour = [], bottomContour = [];
 
-  // P1 Goal: Left sides to Right sides. P2 Goal: Top sides to Bottom sides.
-  // We trace along the perimeter vertices using the outer-edge hex paths.
-  
-  // 1. TOP-LEFT & BOTTOM-LEFT WALLS (Player 1 Left Territory)
-  for (let r = -N; r <= 0; r++) {
-    let h = cellCorners[`${-N-r},${r}`];
-    leftContour.push(`${h[4].x},${h[4].y}`, `${h[3].x},${h[3].y}`);
-  }
-  for (let r = 1; r <= N; r++) {
-    let h = cellCorners[`${-N},${r}`];
-    leftContour.push(`${h[4].x},${h[4].y}`, `${h[3].x},${h[3].y}`);
-  }
-  let bLeftCorner = cellCorners[`${-N},${N}`];
-  leftContour.push(`${bLeftCorner[2].x},${bLeftCorner[2].y}`);
-
-  // 2. TOP-RIGHT & BOTTOM-RIGHT WALLS (Player 1 Right Territory)
-  for (let r = -N; r <= 0; r++) {
-    let h = cellCorners[`${N},${r}`];
-    rightContour.push(`${h[0].x},${h[0].y}`, `${h[1].x},${h[1].y}`);
-  }
-  for (let r = 1; r <= N; r++) {
-    let h = cellCorners[`${N-r},${r}`];
-    rightContour.push(`${h[0].x},${h[0].y}`, `${h[1].x},${h[1].y}`);
-  }
-  let bRightCorner = cellCorners[`0,${N}`];
-  rightContour.push(`${bRightCorner[2].x},${bRightCorner[2].y}`);
-
-  // 3. NORTH CEILING WALLS (Player 2 Top Territory)
-  for (let q = -N; q <= 0; q++) {
-    let h = cellCorners[`${q},${-N}`];
-    topContour.push(`${h[4].x},${h[4].y}`, `${h[5].x},${h[5].y}`);
-  }
-  for (let q = 1; q <= N; q++) {
-    let h = cellCorners[`${q},${-N-q}`];
-    topContour.push(`${h[5].x},${h[5].y}`, `${h[0].x},${h[0].y}`);
+  // 1. TOP CONTOUR (Player 2) - Follows row r=0 top peaks
+  for (let c = 0; c < boardSize; c++) {
+    let h = cellCorners[`0-${c}`];
+    if (c === 0) {
+      topContour.push(`${h[4].x},${h[4].y}`, `${h[5].x},${h[5].y}`, `${h[0].x},${h[0].y}`);
+    } else {
+      topContour.push(`${h[5].x},${h[5].y}`, `${h[0].x},${h[0].y}`);
+    }
   }
 
-  // 4. SOUTH FLOOR WALLS (Player 2 Bottom Territory)
-  for (let q = -N; q <= 0; q++) {
-    let h = cellCorners[`${q},${N-q}`];
-    bottomContour.push(`${h[3].x},${h[3].y}`, `${h[2].x},${h[2].y}`);
+  // 2. BOTTOM CONTOUR (Player 2) - Follows row r=boardSize-1 bottom peaks
+  for (let c = 0; c < boardSize; c++) {
+    let h = cellCorners[`${boardSize - 1}-${c}`];
+    if (c === 0) {
+      bottomContour.push(`${h[3].x},${h[3].y}`, `${h[2].x},${h[2].y}`, `${h[1].x},${h[1].y}`);
+    } else {
+      bottomContour.push(`${h[2].x},${h[2].y}`, `${h[1].x},${h[1].y}`);
+    }
   }
-  for (let q = 1; q <= N; q++) {
-    let h = cellCorners[`${q},${N}`];
-    bottomContour.push(`${h[2].x},${h[2].y}`, `${h[1].x},${h[1].y}`);
+
+  // 3. LEFT CONTOUR (Player 1) - Follows col c=0 left-facing zig-zags
+  for (let r = 0; r < boardSize; r++) {
+    let h = cellCorners[`${r}-0`];
+    if (r === 0) {
+      leftContour.push(`${h[5].x},${h[5].y}`, `${h[4].x},${h[4].y}`, `${h[3].x},${h[3].y}`);
+    } else {
+      leftContour.push(`${h[4].x},${h[4].y}`, `${h[3].x},${h[3].y}`);
+    }
   }
+  // Connect left line cleanly down to the bottom-left corner node
+  let finalLeftHex = cellCorners[`${boardSize - 1}-0`];
+  leftContour.push(`${finalLeftHex[2].x},${finalLeftHex[2].y}`);
+
+  // 4. RIGHT CONTOUR (Player 1) - Follows col c=boardSize-1 right-facing zig-zags
+  for (let r = 0; r < boardSize; r++) {
+    let h = cellCorners[`${r}-${boardSize - 1}`];
+    if (r === 0) {
+      rightContour.push(`${h[5].x},${h[5].y}`, `${h[0].x},${h[0].y}`, `${h[1].x},${h[1].y}`);
+    } else {
+      rightContour.push(`${h[0].x},${h[0].y}`, `${h[1].x},${h[1].y}`);
+    }
+  }
+  // Connect right line cleanly down to the bottom-right corner node
+  let finalRightHex = cellCorners[`${boardSize - 1}-${boardSize - 1}`];
+  rightContour.push(`${finalRightHex[2].x},${finalRightHex[2].y}`);
+
 
   const createContourLine = (pts, color) => {
     const pl = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
@@ -424,10 +414,10 @@ function drawBigHexBorders(parentGroup, cellCorners) {
   createContourLine(bottomContour, p2Col);
 }
 
-function handleHexClick(q, r) {
-  if (gameOver || aiThinking || board[`${q},${r}`] !== "") return;
+function handleHexClick(r, c) {
+  if (gameOver || aiThinking || board[r][c] !== "") return;
 
-  claimCell(q, r, currentTurn);
+  claimCell(r, c, currentTurn);
 
   if (checkWinCondition(currentTurn)) {
     endGame(currentTurn);
@@ -445,59 +435,44 @@ function handleHexClick(q, r) {
   }
 }
 
-function claimCell(q, r, player) {
-  board[`${q},${r}`] = player;
-  const cell = document.getElementById(`hex-${q}-${r}`);
-  if (cell) {
-    cell.classList.add("taken");
-    cell.style.fill = getColour(player);
-    cell.style.filter = `drop-shadow(0 0 6px ${getColour(player)})`;
-  }
+function claimCell(r, c, player) {
+  board[r][c] = player;
+  const cell = document.getElementById(`hex-${r}-${c}`);
+  cell.classList.add("taken");
+  cell.style.fill = getColour(player);
+  cell.style.filter = `drop-shadow(0 0 6px ${getColour(player)})`;
 }
 
-function getNeighbors(q, r) {
-  const neighbors = [
-    {q: q+1, r: r}, {q: q+1, r: r-1}, {q: q, r: r-1},
-    {q: q-1, r: r}, {q: q-1, r: r+1}, {q: q, r: r+1}
-  ];
-  return neighbors.filter(n => board[`${n.q},${n.r}`] !== undefined);
+function getNeighbors(r, c) {
+  return [
+    {r: r-1, c: c}, {r: r-1, c: c+1},
+    {r: r,   c: c-1},                 {r: r,   c: c+1},
+    {r: r+1, c: c-1}, {r: r+1, c: c}
+  ].filter(n => n.r >= 0 && n.r < boardSize && n.c >= 0 && n.c < boardSize);
 }
 
 function checkWinCondition(player) {
-  let visited = {};
+  let visited = Array(boardSize).fill(null).map(() => Array(boardSize).fill(false));
   let queue = [];
-  const N = hexRadiusSize - 1;
 
-  // Initialize nodes touching starting boundaries
-  for (let key in board) {
-    let [q, r] = key.split(',').map(Number);
-    if (player === "p1") {
-      // Starts if on left perimeter edges
-      if ((r <= 0 && q === -N-r) || (r > 0 && q === -N)) {
-        if (board[key] === "p1") { queue.push({q, r}); visited[key] = true; }
-      }
-    } else {
-      // Starts if on top perimeter edges
-      if ((q <= 0 && r === -N) || (q > 0 && r === -N-q)) {
-        if (board[key] === "p2") { queue.push({q, r}); visited[key] = true; }
-      }
+  for (let i = 0; i < boardSize; i++) {
+    if (player === "p1" && board[i][0] === "p1") {
+      queue.push({r: i, c: 0});
+      visited[i][0] = true;
+    } else if (player === "p2" && board[0][i] === "p2") {
+      queue.push({r: 0, c: i});
+      visited[0][i] = true;
     }
   }
 
   while (queue.length > 0) {
     let curr = queue.shift();
-    
-    // Check terminal winning condition paths reached
-    if (player === "p1") {
-      if ((curr.r <= 0 && curr.q === N) || (curr.r > 0 && curr.q === N-curr.r)) return true;
-    } else {
-      if ((curr.q <= 0 && curr.r === N-curr.q) || (curr.q > 0 && curr.r === N)) return true;
-    }
+    if (player === "p1" && curr.c === boardSize - 1) return true;
+    if (player === "p2" && curr.r === boardSize - 1) return true;
 
-    for (let n of getNeighbors(curr.q, curr.r)) {
-      let nKey = `${n.q},${n.r}`;
-      if (!visited[nKey] && board[nKey] === player) {
-        visited[nKey] = true;
+    for (let n of getNeighbors(curr.r, curr.c)) {
+      if (!visited[n.r][n.c] && board[n.r][n.c] === player) {
+        visited[n.r][n.c] = true;
         queue.push(n);
       }
     }
@@ -511,77 +486,64 @@ function executeSmartAIMove() {
   let bestMove = null;
   let highestWeight = -Infinity;
 
-  for (let key in board) {
-    if (board[key] === "") {
-      let [q, r] = key.split(',').map(Number);
-      
-      let aiWinUrgency = evaluateCellValue(q, r, "p2");
-      let playerBlockUrgency = evaluateCellValue(q, r, "p1");
+  for (let r = 0; r < boardSize; r++) {
+    for (let c = 0; c < boardSize; c++) {
+      if (board[r][c] === "") {
+        let aiWinUrgency = evaluateCellValue(r, c, "p2");
+        let playerBlockUrgency = evaluateCellValue(r, c, "p1");
 
-      let totalWeight = (aiWinUrgency * 1.1) + playerBlockUrgency + (Math.random() * 0.2);
+        let totalWeight = (aiWinUrgency * 1.1) + playerBlockUrgency + (Math.random() * 0.2);
 
-      if (totalWeight > highestWeight) {
-        highestWeight = totalWeight;
-        bestMove = { q, r };
+        if (totalWeight > highestWeight) {
+          highestWeight = totalWeight;
+          bestMove = { r, c };
+        }
       }
     }
   }
 
   aiThinking = false;
   if (bestMove) {
-    handleHexClick(bestMove.q, bestMove.r);
+    handleHexClick(bestMove.r, bestMove.c);
   }
 }
 
-function evaluateCellValue(q, r, player) {
-  board[`${q},${r}`] = player;
+function evaluateCellValue(r, c, player) {
+  board[r][c] = player;
   let remainingDistance = computeShortestPathLength(player);
-  board[`${q},${r}`] = ""; 
+  board[r][c] = ""; 
   
   if (remainingDistance === 0) return 1000; 
-  return (hexRadiusSize * 4) - remainingDistance;
+  return (boardSize * 2) - remainingDistance;
 }
 
 function computeShortestPathLength(player) {
-  let distance = {};
+  let distance = Array(boardSize).fill(null).map(() => Array(boardSize).fill(Infinity));
   let queue = [];
-  const N = hexRadiusSize - 1;
 
-  for (let key in board) {
-    distance[key] = Infinity;
-    let [q, r] = key.split(',').map(Number);
-
+  for (let i = 0; i < boardSize; i++) {
     if (player === "p1") {
-      if ((r <= 0 && q === -N-r) || (r > 0 && q === -N)) {
-        if (board[key] === "p1") { distance[key] = 0; queue.push({q, r}); }
-        else if (board[key] === "") { distance[key] = 1; queue.push({q, r}); }
-      }
+      if (board[i][0] === "p1") { distance[i][0] = 0; queue.push({r: i, c: 0}); }
+      else if (board[i][0] === "") { distance[i][0] = 1; queue.push({r: i, c: 0}); }
     } else {
-      if ((q <= 0 && r === -N) || (q > 0 && r === -N-q)) {
-        if (board[key] === "p2") { distance[key] = 0; queue.push({q, r}); }
-        else if (board[key] === "") { distance[key] = 1; queue.push({q, r}); }
-      }
+      if (board[0][i] === "p2") { distance[0][i] = 0; queue.push({r: 0, c: i}); }
+      else if (board[0][i] === "") { distance[0][i] = 1; queue.push({r: 0, c: i}); }
     }
   }
 
   while (queue.length > 0) {
     let curr = queue.shift();
-    let currKey = `${curr.q},${curr.r}`;
-    let currentCost = distance[currKey];
+    let currentCost = distance[curr.r][curr.c];
 
-    if (player === "p1") {
-      if ((curr.r <= 0 && curr.q === N) || (curr.r > 0 && curr.q === N-curr.r)) return currentCost;
-    } else {
-      if ((curr.q <= 0 && curr.r === N-curr.q) || (curr.q > 0 && curr.r === N)) return currentCost;
-    }
+    if (player === "p1" && curr.c === boardSize - 1) return currentCost;
+    if (player === "p2" && curr.r === boardSize - 1) return currentCost;
 
-    for (let n of getNeighbors(curr.q, curr.r)) {
-      let nKey = `${n.q},${n.r}`;
-      if (board[nKey] === (player === "p1" ? "p2" : "p1")) continue; 
+    for (let n of getNeighbors(curr.r, curr.c)) {
+      if (board[n.r][n.c] === (player === "p1" ? "p2" : "p1")) continue; 
 
-      let weight = (board[nKey] === player) ? 0 : 1;
-      if (currentCost + weight < distance[nKey]) {
-        distance[nKey] = currentCost + weight;
+      let weight = (board[n.r][n.c] === player) ? 0 : 1;
+      if (currentCost + weight < distance[n.r][n.c]) {
+        distance[n.r][n.c] = currentCost + weight;
         queue.push(n);
       }
     }
@@ -624,13 +586,14 @@ document.getElementById("p2Colour").addEventListener("change", () => {
 });
 
 function renderCellColorOverrides() {
-  for (let key in board) {
-    if (board[key] !== "") {
-      let [q, r] = key.split('-');
-      const cell = document.getElementById(`hex-${q}-${r}`);
-      if (cell) {
-        cell.style.fill = getColour(board[key]);
-        cell.style.filter = `drop-shadow(0 0 6px ${getColour(board[key])})`;
+  for (let r = 0; r < boardSize; r++) {
+    for (let c = 0; c < boardSize; c++) {
+      if (board[r][c] !== "") {
+        const cell = document.getElementById(`hex-${r}-${c}`);
+        if (cell) {
+          cell.style.fill = getColour(board[r][c]);
+          cell.style.filter = `drop-shadow(0 0 6px ${getColour(board[r][c])})`;
+        }
       }
     }
   }
