@@ -771,6 +771,7 @@ function renderFavorites() {
   `).join("");
   
   filterFavoritesGrid(document.getElementById("search").value.toLowerCase());
+  fixLayout();
 }
 
 function renderHistory() {
@@ -786,34 +787,44 @@ function renderHistory() {
       </div>
     </div>
   `).join("");
+  fixLayout();
 }
 
-/* DYNAMIC LAST-ROW LAYOUT ENGINE */
+/* DYNAMIC LAST-ROW LAYOUT ENGINE FOR ALL GRIDS */
 function fixLayout() {
-  const grid = document.getElementById("mainGameGrid");
-  if (!grid) return;
-  const visibleCards = Array.from(grid.querySelectorAll(".game-card")).filter(card => {
-    return card.style.display !== "none";
+  const gridIds = ["mainGameGrid", "favoritesGrid", "historyGrid"];
+
+  gridIds.forEach(id => {
+    const grid = document.getElementById(id);
+    if (!grid) return;
+    
+    // Grab only matching structural game cards that are explicitly visible
+    const visibleCards = Array.from(grid.querySelectorAll(".game-card")).filter(card => {
+      return card.style.display !== "none" && !card.closest(".locked-card");
+    });
+
+    // Reset layout attributes first
+    visibleCards.forEach(card => {
+      card.style.marginLeft = "0";
+      card.style.marginRight = "0";
+    });
+
+    const count = visibleCards.length;
+    if (count === 0) return;
+
+    // Apply layout calculation algorithm
+    if (count % 3 === 1) {
+      const lastCard = visibleCards[count - 1];
+      lastCard.style.marginLeft = "auto";
+      lastCard.style.marginRight = "auto";
+    } 
+    else if (count % 3 === 2) {
+      const secondToLast = visibleCards[count - 2];
+      const lastCard = visibleCards[count - 1];
+      secondToLast.style.marginRight = "auto";
+      lastCard.style.marginLeft = "auto";
+    }
   });
-
-  visibleCards.forEach(card => {
-    card.style.marginLeft = "0";
-    card.style.marginRight = "0";
-  });
-
-  const count = visibleCards.length;
-
-  if (count % 3 === 1) {
-    const lastCard = visibleCards[count - 1];
-    lastCard.style.marginLeft = "auto";
-    lastCard.style.marginRight = "auto";
-  } 
-  else if (count % 3 === 2) {
-    const secondToLast = visibleCards[count - 2];
-    const lastCard = visibleCards[count - 1];
-    secondToLast.style.marginRight = "auto";
-    lastCard.style.marginLeft = "auto";
-  }
 }
 
 /* DUAL SEARCH SYNCHRONIZER WITH "NOTHING FOUND" MESSAGING */
