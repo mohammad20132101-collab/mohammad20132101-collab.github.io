@@ -25,21 +25,21 @@
 
 /* HARD OVERRIDE - TRUE LIGHT MODE (PREMIUM SILVER & BLUE) */
 body.light-theme {
-  background: #f4f6f9 !important; /* Premium Crisp Light Silver-Gray */
-  color: #1a202c !important; /* Dark Charcoal Text */
+  background: #f4f6f9 !important; 
+  color: #1a202c !important; 
   --bg-main: #f4f6f9;
-  --bg-card: #ffffff; /* Pure White Cards for clean separation */
+  --bg-card: #ffffff; 
   --text-main: #1a202c;
   --text-muted: #5a6a85;
-  --accent: #0066ff; /* Vibrant Sky Blue */
+  --accent: #0066ff; 
   --border-locked: #de3838;
   --bg-locked: #e2e8f0;
-  --banner-bg: #ffffff; /* Matches clean card backgrounds */
-  --banner-border: 3px solid #0066ff; /* Bold premium blue layout indicator */
-  --star-active: #ff9900; /* Rich Gold Amber */
-  --star-inactive: #718096; /* Visible Gray Outline */
-  --input-bg: #ffffff; /* Crisp white search box */
-  --input-text: #1a202c; /* Clear, high-contrast text color when typing */
+  --banner-bg: #ffffff; 
+  --banner-border: 3px solid #0066ff; 
+  --star-active: #ff9900; 
+  --star-inactive: #718096; 
+  --input-bg: #ffffff; 
+  --input-text: #1a202c; 
 }
 
 body {
@@ -123,7 +123,7 @@ header {
 
 /* Smooth color handling inside the Game of the Day block for Light Mode */
 body.light-theme #gotwTitle {
-  color: var(--accent); /* Makes the dynamic game title text read in matching clean blue */
+  color: var(--accent); 
 }
 
 .gotw-banner.locked-banner {
@@ -478,11 +478,12 @@ a {
       <button onclick="openGame('hexes.html','Hexes')">Play</button>
     </div>
   </div>
-   <div class="game-card" data-name="hexes">
+  
+  <div class="game-card" data-name="sudoku">
     <button class="fav-btn" onclick="toggleFavorite('sudoku', 'Sudoku', 'sudoku.html')">☆</button>
     <div class="game-info">
-      <h3>Hexes</h3>
-      <button onclick="openGame('hexes.html','Hexes')">Play</button>
+      <h3>Sudoku</h3>
+      <button onclick="openGame('sudoku.html','Sudoku')">Play</button>
     </div>
   </div>
 </div>
@@ -569,7 +570,7 @@ const gamePool = [
   { id: "pac-man", name: "Pac-Man", page: "pacman.html" },
   { id: "wordle", name: "Wordle", page: "wordle.html" },
   { id: "connectfour", name: "Connect Four", page: "connectfour.html" },
-  { id: "chess", name: "Chess", page: "chess.html" }
+  { id: "chess", name: "Chess", page: "chess.html" },
   { id: "sudoku", name: "Sudoku", page: "sudoku.html" }
 ];
 
@@ -782,7 +783,7 @@ function renderFavorites() {
         <button onclick="openGame('${g.page}','${g.name}')">Play</button>
       </div>
     </div>
-  `).join("");
+   `).join("");
   
   filterFavoritesGrid(document.getElementById("search").value.toLowerCase());
   fixLayout();
@@ -800,7 +801,7 @@ function renderHistory() {
         <button onclick="openGame('${g.page}','${g.name}')">Play</button>
       </div>
     </div>
-  `).join("");
+   `).join("");
   fixLayout();
 }
 
