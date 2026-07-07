@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rift Stack Premium</title>
+<style>
+body {
+  margin: 0;
+  background: #07070f;
+  color: white;
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  user-select: none;
+  overflow-x: hidden;
+}
+
+h1 {
+  text-align: center;
+  margin: 15px 0 5px;
+  font-size: 26px;
+  letter-spacing: 2px;
+  background: linear-gradient(90deg, #00ffcc, #4c6fff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 15px rgba(0, 255, 204, 0.3);
+}
+
+.btn-row {
+  display: flex;
+  gap: 12px;
+  margin: 15px 0;
+}
+
+button {
+  background: #101026;
+  color: #00ffcc;
+  border: 1px solid #4c6fff;
+  padding: 10px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.2s;
+  box-shadow: inset 0 0 8px rgba(76, 111, 255, 0.2);
+}
+
+button:hover {
+  transform: scale(1.05);
+  background: #4c6fff;
+  color: white;
+  box-shadow: 0 0 15px #4c6fff;
+}
+
+.game-container {
+  position: relative;
+  background: #0d0d1f;
+  padding: 15px;
+  border-radius: 16px;
+  border: 2px solid rgba(76, 111, 255, 0.4);
+  box-shadow: 0 0 30px rgba(76, 111, 255, 0.15);
+  margin-bottom: 30px;
+  overflow: hidden;
+}
+
+.shake {
+  animation: riftShake 0.15s ease-in-out 2;
+}
+@keyframes riftShake {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(-4px, 2px); }
+  50% { transform: translate(4px, -2px); }
+  100% { transform: translate(0, 0); }
+}
+
+#scoreDisplay {
+  position: absolute;
+  top: 25px;
+  right: 35px;
+  font-size: 38px;
+  font-weight: 900;
+  color: #ffffff;
+  text-shadow: 0 0 10px #4c6fff, 0 0 20px #4c6fff;
+  z-index: 5;
+}
+
+#comboPopup {
+  position: absolute;
+  top: 30px;
+  left: 35px;
+  font-size: 20px;
+  font-weight: bold;
+  color: #00ffcc;
+  text-shadow: 0 0 12px #00ffcc;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+  transform: scale(0.7);
+  z-index: 5;
+}
+
+#comboPopup.show {
+  opacity: 1;
+  transform: scale(1);
+}
+
+canvas {
+  display: block;
+  background: radial-gradient(circle at middle, #0f0f26 0%, #05050d 100%);
+  border-radius: 10px;
+}
+
+#gameOverMenu {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(5, 5, 15, 0.95);
+  border: 2px solid #ff4c4c;
+  padding: 35px;
+  border-radius: 16px;
+  text-align: center;
+  display: none;
+  z-index: 10;
+  box-shadow: 0 0 30px rgba(255, 76, 76, 0.4);
+}
+
+#gameOverMenu h2 {
+  margin: 0 0 15px 0;
+  color: #ff4c4c;
+  letter-spacing: 1px;
+}
+</style>
+</head>
+<body>
+
+<h1>Rift Stack Engine</h1>
+
+<div class="btn-row">
+  <button onclick="restartGame()">Reset Grid</button>
+  <button onclick="window.location.href='index.html'">Back to Hub</button>
+</div>
+
+<div class="game-container" id="container">
+  <div id="scoreDisplay">0</div>
+  <div id="comboPopup">CRITICAL HIT! x1</div>
+  
+  <div id="gameOverMenu">
+    <h2>SYSTEM FAILURE</h2>
+    <p id="finalScoreDisplay">Score: 0</p>
+    <button onclick="restartGame()">Reboot Simulation</button>
+  </div>
+
+  <canvas id="gameCanvas" width="400" height="520"></canvas>
+</div>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+const container = document.getElementById("container");
+
+const blockHeight = 32;
+const baseWidth = 220;
+
+let stack = [];
+let floatingTexts = []; 
+let debrisParticles = []; // Physics particles for broken fragments
+let gameActive = true;
+let score = 0;
+let combo = 0;
+let cameraY = 0;
+let targetCameraY = 0;
+let hueOffset = Math.floor(Math.random() * 360);
+
+let currentBlock = {
+  x: 0,
+  width: baseWidth,
+  speed: 3.8,
+  y: 0,
+  hue: 0
+};
+
+function initGame() {
+  stack = [];
+  floatingTexts = [];
+  debrisParticles = [];
+  score = 0;
+  combo = 0;
+  cameraY = 0;
+  targetCameraY = 0;
+  gameActive = true;
+  hueOffset = Math.floor(Math.random() * 360);
+  
+  document.getElementById("scoreDisplay").textContent = score;
+  hideComboDisplay();
+  document.getElementById("gameOverMenu").style.display = "none";
+
+  // Anchor base platform block
+  stack.push({
+    x: (canvas.width - baseWidth) / 2,
+    width: baseWidth,
+    y: canvas.height - blockHeight,
+    hue: hueOffset
+  });
+
+  spawnNextBlock();
+}
+
+function spawnNextBlock() {
+  const topBlock = stack[stack.length - 1];
+  const speedBonus = Math.min(score * 0.25, 9);
+
+  currentBlock = {
+    x: 0,
+    width: topBlock.width,
+    speed: (4.0 + speedBonus) * (Math.random() > 0.5 ? 1 : -1),
+    y: topBlock.y - blockHeight,
+    hue: (hueOffset + (stack.length * 12)) % 360
+  };
+}
+
+function handlePlacement() {
+  if (!gameActive) return;
+
+  const topBlock = stack[stack.length - 1];
+  const leftDiff = currentBlock.x - topBlock.x;
+  const absDiff = Math.abs(leftDiff);
+
+  if (absDiff >= currentBlock.width) {
+    // Generate massive explosion for the entire falling block
+    createDebris(currentBlock.x, currentBlock.y, currentBlock.width, currentBlock.hue);
+    endGame();
+    return;
+  }
+
+  // RIFTY PERFECT WINDOW (Within 4 Pixels)
+  if (absDiff <= 4) {
+    combo++;
+    currentBlock.x = topBlock.x; 
+    currentBlock.width = Math.min(currentBlock.width + 10, baseWidth);
+    triggerJuice("PERFECT OVERLAP", "#00ffcc");
+  } else {
+    combo = 0; 
+    hideComboDisplay();
+
+    // Calculate sliced piece metrics to blow up into debris
+    let debrisX, debrisWidth;
+    if (leftDiff > 0) {
+      debrisX = currentBlock.x + (currentBlock.width - leftDiff);
+      debrisWidth = leftDiff;
+      currentBlock.width -= leftDiff;
+    } else {
+      debrisX = currentBlock.x;
+      debrisWidth = Math.abs(leftDiff);
+      currentBlock.width += leftDiff;
+      currentBlock.x = topBlock.x;
+    }
+
+    // Explode the waste chunk
+    createDebris(debrisX, currentBlock.y, debrisWidth, currentBlock.hue);
+  }
+
+  stack.push({
+    x: currentBlock.x,
+    width: currentBlock.width,
+    y: currentBlock.y,
+    hue: currentBlock.hue
+  });
+
+  score++;
+  document.getElementById("scoreDisplay").textContent = score;
+
+  if (score > 5) {
+    targetCameraY += blockHeight;
+  }
+
+  spawnNextBlock();
+}
+
+function createDebris(x, y, width, hue) {
+  const particleCount = Math.max(Math.floor(width / 6), 5);
+  for (let i = 0; i < particleCount; i++) {
+    debrisParticles.push({
+      x: x + (Math.random() * width),
+      y: y + (Math.random() * blockHeight),
+      vx: (Math.random() - 0.5) * 6 + (currentBlock.speed * 0.3),
+      vy: (Math.random() - 3) * 2, // Upward initial hop
+      size: Math.random() * 4 + 2,
+      hue: hue,
+      alpha: 1,
+      gravity: 0.25
+    });
+  }
+}
+
+function triggerJuice(text, color) {
+  container.classList.remove("shake");
+  void container.offsetWidth; 
+  container.classList.add("shake");
+
+  const popup = document.getElementById("comboPopup");
+  popup.textContent = `${text} x${combo}`;
+  popup.style.color = color;
+  popup.classList.add("show");
+
+  floatingTexts.push({
+    x: currentBlock.x + currentBlock.width / 2,
+    y: currentBlock.y - 10,
+    text: text,
+    color: color,
+    opacity: 1,
+    life: 35
+  });
+}
+
+function hideComboDisplay() {
+  document.getElementById("comboPopup").classList.remove("show");
+}
+
+function endGame() {
+  gameActive = false;
+  hideComboDisplay();
+  document.getElementById("finalScoreDisplay").textContent = `Score: ${score}`;
+  document.getElementById("gameOverMenu").style.display = "block";
+}
+
+function restartGame() {
+  initGame();
+}
+
+// Controls
+window.addEventListener("keydown", (e) => {
+  if (e.code === "Space" || e.keyCode === 32) {
+    e.preventDefault(); 
+    handlePlacement();
+  }
+});
+canvas.addEventListener("mousedown", (e) => { if (e.button === 0) handlePlacement(); });
+canvas.addEventListener("touchstart", (e) => { e.preventDefault(); handlePlacement(); });
+
+function update() {
+  if (gameActive) {
+    currentBlock.x += currentBlock.speed;
+    if (currentBlock.x + currentBlock.width > canvas.width || currentBlock.x < 0) {
+      currentBlock.speed *= -1;
+    }
+  }
+  cameraY += (targetCameraY - cameraY) * 0.12;
+
+  // Float text
+  for (let i = floatingTexts.length - 1; i >= 0; i--) {
+    let t = floatingTexts[i];
+    t.y -= 1.5; 
+    t.life--;
+    t.opacity = t.life / 35;
+    if (t.life <= 0) floatingTexts.splice(i, 1);
+  }
+
+  // Debris simulation
+  for (let i = debrisParticles.length - 1; i >= 0; i--) {
+    let p = debrisParticles[i];
+    p.x += p.vx;
+    p.vy += p.gravity;
+    p.y += p.vy;
+    p.alpha -= 0.02;
+    if (p.alpha <= 0 || p.y > canvas.height + 100) {
+      debrisParticles.splice(i, 1);
+    }
+  }
+}
+
+function drawRiftBlock(x, y, width, hue) {
+  // 1. Sleek Cyberpunk translucent gradient fill
+  let grad = ctx.createLinearGradient(x, y, x, y + blockHeight);
+  grad.addColorStop(0, `hsla(${hue}, 90%, 20%, 0.75)`);
+  grad.addColorStop(1, `hsla(${hue}, 90%, 5%, 0.9)`);
+  ctx.fillStyle = grad;
+  ctx.fillRect(x, y, width, blockHeight - 2);
+
+  // 2. High Tech Tech-Grid Mesh overlay
+  ctx.strokeStyle = `hsla(${hue}, 100%, 70%, 0.08)`;
+  ctx.lineWidth = 1;
+  for (let g = x + 15; g < x + width; g += 15) {
+    ctx.beginPath(); ctx.moveTo(g, y); ctx.lineTo(g, y + blockHeight - 2); ctx.stroke();
+  }
+
+  // 3. Bright Glowing Neon Outline
+  ctx.strokeStyle = `hsl(${hue}, 100%, 60%)`;
+  ctx.lineWidth = 2.5;
+  ctx.shadowBlur = 10;
+  ctx.shadowColor = `hsl(${hue}, 100%, 50%)`;
+  ctx.strokeRect(x, y, width, blockHeight - 2);
+  ctx.shadowBlur = 0; // Reset glow
+}
+
+function render() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  ctx.save();
+  ctx.translate(0, cameraY);
+
+  // Draw Stack
+  for (let i = 0; i < stack.length; i++) {
+    const b = stack[i];
+    drawRiftBlock(b.x, b.y, b.width, b.hue);
+  }
+
+  // Draw active tracking row
+  if (gameActive) {
+    drawRiftBlock(currentBlock.x, currentBlock.y, currentBlock.width, currentBlock.hue);
+  }
+
+  // Draw debris particles
+  debrisParticles.forEach(p => {
+    ctx.fillStyle = `hsla(${p.hue}, 100%, 65%, ${p.alpha})`;
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = `hsl(${p.hue}, 100%, 50%)`;
+    ctx.fillRect(p.x, p.y, p.size, p.size);
+    ctx.shadowBlur = 0;
+  });
+
+  // Draw Floating Text Info
+  floatingTexts.forEach(t => {
+    ctx.save();
+    ctx.globalAlpha = t.opacity;
+    ctx.font = "italic bold 15px Arial";
+    ctx.fillStyle = t.color;
+    ctx.textAlign = "center";
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = t.color;
+    ctx.fillText(t.text, t.x, t.y);
+    ctx.restore();
+  });
+
+  ctx.restore();
+}
+
+function loop() {
+  update();
+  render();
+  requestAnimationFrame(loop);
+}
+
+initGame();
+loop();
+</script>
+</body>
+</html>
