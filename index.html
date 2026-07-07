@@ -34,8 +34,8 @@ body.light-theme {
   --accent: #0066ff; /* Vibrant Sky Blue */
   --border-locked: #de3838;
   --bg-locked: #e2e8f0;
-  --banner-bg: #e1ebfa; /* Light Ice Blue Banner */
-  --banner-border: 2px solid #0066ff;
+  --banner-bg: #ffffff; /* Matches clean card backgrounds */
+  --banner-border: 3px solid #0066ff; /* Bold premium blue layout indicator */
   --star-active: #ff9900; /* Rich Gold Amber */
   --star-inactive: #718096; /* Visible Gray Outline */
   --input-bg: #ffffff; /* Crisp white search box */
@@ -120,6 +120,12 @@ header {
   color: var(--text-main);
   box-shadow: 0 4px 15px rgba(0,0,0,0.05);
 }
+
+/* Smooth color handling inside the Game of the Day block for Light Mode */
+body.light-theme #gotwTitle {
+  color: var(--accent); /* Makes the dynamic game title text read in matching clean blue */
+}
+
 .gotw-banner.locked-banner {
   background: var(--bg-locked);
   opacity: 0.8;
