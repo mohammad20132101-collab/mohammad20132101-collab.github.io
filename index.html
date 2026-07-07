@@ -1,16 +1,53 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rift Hub</title>
 
 <style>
+/* THEME VARIABLES - DARK MODE (DEFAULT) */
+:root {
+  --bg-main: #0f0f1a;
+  --bg-card: #1a1a2e;
+  --text-main: #ffffff;
+  --text-muted: #a0aec0;
+  --accent: #4c6fff;
+  --border-locked: #e53e3e;
+  --bg-locked: #141424;
+  --banner-bg: #1a1a2e;
+  --banner-border: 1px solid #4c6fff;
+  --star-active: #ffd700;
+  --star-inactive: #ffffff;
+  --input-bg: #1a1a2e;
+  --input-text: #ffffff;
+}
+
+/* HARD OVERRIDE - TRUE LIGHT MODE (PREMIUM SILVER & BLUE) */
+body.light-theme {
+  background: #f4f6f9 !important; /* Premium Crisp Light Silver-Gray */
+  color: #1a202c !important; /* Dark Charcoal Text */
+  --bg-main: #f4f6f9;
+  --bg-card: #ffffff; /* Pure White Cards for clean separation */
+  --text-main: #1a202c;
+  --text-muted: #5a6a85;
+  --accent: #0066ff; /* Vibrant Sky Blue */
+  --border-locked: #de3838;
+  --bg-locked: #e2e8f0;
+  --banner-bg: #e1ebfa; /* Light Ice Blue Banner */
+  --banner-border: 2px solid #0066ff;
+  --star-active: #ff9900; /* Rich Gold Amber */
+  --star-inactive: #718096; /* Visible Gray Outline */
+  --input-bg: #ffffff; /* Crisp white search box */
+  --input-text: #1a202c; /* Clear, high-contrast text color when typing */
+}
+
 body {
   margin: 0;
   font-family: Arial, sans-serif;
-  background: #0f0f1a;
-  color: white;
+  background: var(--bg-main);
+  color: var(--text-main);
+  transition: background 0.2s, color 0.2s;
 }
 
 #loginScreen {
@@ -22,16 +59,25 @@ body {
   padding: 10px;
   width: 200px;
   margin: 5px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  background: var(--input-bg);
+  color: var(--input-text);
 }
 
 button {
   padding: 8px 15px;
   border: none;
-  background: #4c6fff;
+  background: var(--accent);
   color: white;
   border-radius: 6px;
   cursor: pointer;
   margin-top: 5px;
+  font-weight: bold;
+}
+
+body.light-theme button {
+  color: #ffffff !important;
 }
 
 .guest-btn {
@@ -42,15 +88,54 @@ button {
 header {
   padding: 20px;
   text-align: center;
-  background: #1a1a2e;
+  background: var(--bg-card);
+  position: relative;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
 }
 
-#search {
+.theme-toggle-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
+.search-input {
   margin-top: 10px;
   padding: 10px;
   width: 60%;
   border-radius: 8px;
-  border: none;
+  border: 1px solid #cbd5e1;
+  background: var(--input-bg);
+  color: var(--input-text);
+}
+
+/* GAME OF THE DAY BANNER UNIFORM */
+.gotw-banner {
+  background: var(--banner-bg);
+  border: var(--banner-border);
+  margin: 20px;
+  padding: 30px;
+  border-radius: 12px;
+  text-align: center;
+  color: var(--text-main);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+.gotw-banner.locked-banner {
+  background: var(--bg-locked);
+  opacity: 0.8;
+  border: 2px dashed var(--border-locked);
+}
+
+/* DASHBOARD STATS */
+.stats-bar {
+  background: var(--bg-card);
+  margin: 15px 20px;
+  padding: 10px;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-around;
+  font-weight: bold;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
 /* FLEXBOX GRID SYSTEM */
@@ -58,78 +143,122 @@ header {
   display: flex;
   flex-wrap: wrap;
   gap: 15px;
-  padding: 10px;
-  justify-content: space-between;
+  padding: 20px;
+  justify-content: flex-start;
 }
 
 .game-card {
-  background: #1a1a2e;
+  background: var(--bg-card);
   border-radius: 12px;
   text-align: center;
   overflow: hidden;
   width: calc(33.333% - 10px);
   box-sizing: border-box;
+  position: relative;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+body.light-theme .game-card {
+  border: 1px solid #e2e8f0;
+}
+
+.game-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+}
+
+/* VIVID ACCENTED STAR BUTTONS */
+.fav-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--star-inactive);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  font-size: 22px;
+  line-height: 34px;
+  padding: 0;
+  z-index: 10;
+  transition: all 0.2s ease;
+}
+
+body.light-theme .fav-btn {
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.fav-btn.is-active {
+  color: var(--star-active) !important;
+  text-shadow: 0 0 8px rgba(255, 153, 0, 0.6);
+  background: rgba(0, 0, 0, 0.3) !important;
+}
+
+body.light-theme .fav-btn.is-active {
+  background: rgba(0, 0, 0, 0.06) !important;
 }
 
 .exclusives-list {
   display: flex;
   flex-direction: column;
   gap: 15px;
-  padding: 10px;
+  padding: 20px;
   max-height: 500px;
   overflow-y: auto;
 }
 
-/* FIXED: This forces cards inside the exclusives list to take up 100% width */
 .exclusives-list .game-card {
   width: 100%;
 }
 
 /* Visual layout for locked content */
 .game-card.locked-card {
-  background: #141424;
+  background: var(--bg-locked);
   opacity: 0.6;
-  border: 1px dashed #e53e3e;
+  border: 1px dashed var(--border-locked);
 }
 
-.game-card.locked-card button {
-  background: #2d3748;
+.game-card.locked-card button:not(.fav-btn) {
+  background: #4a5568;
   cursor: not-allowed;
 }
 
-.game-card img {
-  width: 100%;
-  height: 140px;
-  object-fit: cover;
-}
-
 .game-info {
-  padding: 10px;
+  padding: 20px;
 }
 
 footer {
   margin-top: 40px;
   padding: 20px;
-  background: #1a1a2e;
+  background: var(--bg-card);
   text-align: center;
 }
 
 a {
-  color: #4c6fff;
+  color: var(--accent);
   margin: 0 10px;
   cursor: pointer;
 }
 
 .guest-badge {
-  background: #e53e3e;
+  background: var(--border-locked);
+  color: white;
   padding: 3px 8px;
   border-radius: 4px;
   font-size: 12px;
   margin-left: 10px;
 }
-</style>      
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7292845069394911"
-     crossorigin="anonymous"></script>
+
+.section-title-container {
+  text-align: center;
+  margin-top: 20px;
+}
+</style>       
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7292845069394911" crossorigin="anonymous"></script>
 </head>
 
 <body>
@@ -139,6 +268,7 @@ a {
 </audio>
 
 <div id="loginScreen">
+  <h2>Rift Hub</h2>
   <input id="email" placeholder="Email"><br>
   <input id="password" type="password" placeholder="Password"><br>
 
@@ -150,17 +280,33 @@ a {
 <div id="site" style="display:none;">
 
 <header>
+  <button class="theme-toggle-btn" onclick="toggleTheme()">🌗 Theme</button>
   <h1>🎮 Rift Hub 🎮</h1>
   <p>Welcome, <span id="username"></span><span id="badgeArea"></span></p>
-  <input type="text" id="search" placeholder="Search games...">
+  <input type="text" id="search" class="search-input" placeholder="Search standard games...">
 </header>
+
+<div class="stats-bar" id="statsBar" style="display: none;">
+  <span>📊 Games Played: <span id="gamesPlayedCount">0</span></span>
+</div>
+
+<div class="gotw-banner" id="gotwBanner">
+  <h2>📅 GAME OF THE DAY 📅</h2>
+  <h3 id="gotwTitle">Loading Game...</h3>
+  <button id="gotwBtn" onclick="playGameOfDay()">Play Game of the Day</button>
+</div>
+
+<section id="favoritesSection">
+  <h2 align="center">⭐ Your Favorites</h2>
+  <div class="game-grid" id="favoritesGrid"></div>
+</section>
 
 <section>
 <h2 align="center">Games</h2>
 
 <div class="game-grid" id="mainGameGrid">
-
   <div class="game-card" data-name="snake">
+    <button class="fav-btn" onclick="toggleFavorite('snake', 'Snake', 'snake.html')">☆</button>
     <div class="game-info">
       <h3>Snake</h3>
       <button onclick="openGame('snake.html','Snake')">Play</button>
@@ -168,6 +314,7 @@ a {
   </div>
 
   <div class="game-card" data-name="tetris">
+    <button class="fav-btn" onclick="toggleFavorite('tetris', 'Tetris', 'tetris.html')">☆</button>
     <div class="game-info">
       <h3>Tetris</h3>
       <button onclick="openGame('tetris.html','Tetris')">Play</button>
@@ -175,6 +322,7 @@ a {
   </div>
 
   <div class="game-card" data-name="pong">
+    <button class="fav-btn" onclick="toggleFavorite('pong', 'Pong', 'pong.html')">☆</button>
     <div class="game-info">
       <h3>Pong</h3>
       <button onclick="openGame('pong.html','Pong')">Play</button>
@@ -182,6 +330,7 @@ a {
   </div>
 
   <div class="game-card" data-name="flappyblock">
+    <button class="fav-btn" onclick="toggleFavorite('flappyblock', 'Flappy Block', 'flappyblock.html')">☆</button>
     <div class="game-info">
       <h3>Flappy Block</h3>
       <button onclick="openGame('flappyblock.html','Flappy Block')">Play</button>
@@ -189,6 +338,7 @@ a {
   </div>
 
   <div class="game-card" data-name="2048">
+    <button class="fav-btn" onclick="toggleFavorite('2048', '2048', '2048.html')">☆</button>
     <div class="game-info">
       <h3>2048</h3>
       <button onclick="openGame('2048.html','2048')">Play</button>
@@ -196,6 +346,7 @@ a {
   </div>
 
   <div class="game-card" data-name="memorymatch">
+    <button class="fav-btn" onclick="toggleFavorite('memorymatch', 'Memory Match', 'memorymatch.html')">☆</button>
     <div class="game-info">
       <h3>Memory Match</h3>
       <button onclick="openGame('memorymatch.html','Memory Match')">Play</button>
@@ -203,90 +354,119 @@ a {
   </div>
    
   <div class="game-card" data-name="pac-man">
+    <button class="fav-btn" onclick="toggleFavorite('pac-man', 'Pac-Man', 'pacman.html')">☆</button>
     <div class="game-info">
       <h3>Pac-Man</h3>
       <button onclick="openGame('pacman.html','Pac-Man')">Play</button>
     </div>
   </div>
+
   <div class="game-card" data-name="wordle">
+    <button class="fav-btn" onclick="toggleFavorite('wordle', 'Wordle', 'wordle.html')">☆</button>
     <div class="game-info">
       <h3>Wordle</h3>
       <button onclick="openGame('wordle.html','Wordle')">Play</button>
     </div>
   </div>
+
   <div class="game-card" data-name="connectfour">
+    <button class="fav-btn" onclick="toggleFavorite('connectfour', 'Connect Four', 'connectfour.html')">☆</button>
     <div class="game-info">
       <h3>Connect Four</h3>
       <button onclick="openGame('connectfour.html','Connect Four')">Play</button>
     </div>
   </div>
-   <div class="game-card" data-name="tictactoe">
+
+  <div class="game-card" data-name="tictactoe">
+    <button class="fav-btn" onclick="toggleFavorite('tictactoe', 'Tic-Tac-Toe', 'tictactoe.html')">☆</button>
     <div class="game-info">
       <h3>Tic-Tac-Toe</h3>
       <button onclick="openGame('tictactoe.html','Tic-Tac-Toe')">Play</button>
     </div>
   </div>
-   <div class="game-card" data-name="rockpaperscissors">
+
+  <div class="game-card" data-name="rockpaperscissors">
+    <button class="fav-btn" onclick="toggleFavorite('rockpaperscissors', 'Rock, Paper, Scissors', 'rockpaperscissors.html')">☆</button>
     <div class="game-info">
       <h3>Rock, Paper, Scissors</h3>
       <button onclick="openGame('rockpaperscissors.html','Rock, Paper, Scissors')">Play</button>
     </div>
   </div>
-   <div class="game-card" data-name="dots&boxes">
+
+  <div class="game-card" data-name="dots&boxes">
+    <button class="fav-btn" onclick="toggleFavorite('dots&boxes', 'Dots & Boxes', 'dotsandboxes.html')">☆</button>
     <div class="game-info">
       <h3>Dots & Boxes</h3>
       <button onclick="openGame('dotsandboxes.html','Dots & Boxes')">Play</button>
     </div>
   </div>
+
   <div class="game-card" data-name="flowfree">
+    <button class="fav-btn" onclick="toggleFavorite('flowfree', 'Flow Free', 'flowfree.html')">☆</button>
     <div class="game-info">
       <h3>Flow Free</h3>
       <button onclick="openGame('flowfree.html','Flow Free')">Play</button>
     </div>
   </div>
-   <div class="game-card" data-name="chess">
+
+  <div class="game-card" data-name="chess">
+    <button class="fav-btn" onclick="toggleFavorite('chess', 'Chess', 'chess.html')">☆</button>
     <div class="game-info">
       <h3>Chess</h3>
       <button onclick="openGame('chess.html','Chess')">Play</button>
     </div>
   </div>
+
   <div class="game-card" data-name="snakesandladders">
+    <button class="fav-btn" onclick="toggleFavorite('snakesandladders', 'Portals and Rift Holes', 'snakesandladders.html')">☆</button>
     <div class="game-info">
       <h3>Portals and Rift Holes</h3>
       <button onclick="openGame('snakesandladders.html','Portals and Rift Holes')">Play</button>
     </div>
   </div>
+
   <div class="game-card" data-name="nonogram">
+    <button class="fav-btn" onclick="toggleFavorite('nonogram', 'Nonogram', 'nonogram.html')">☆</button>
     <div class="game-info">
       <h3>Nonogram</h3>
       <button onclick="openGame('nonogram.html','Nonogram')">Play</button>
     </div>
   </div>
-    <div class="game-card" data-name="hangman">
+
+  <div class="game-card" data-name="hangman">
+    <button class="fav-btn" onclick="toggleFavorite('hangman', 'Hangman', 'hangman.html')">☆</button>
     <div class="game-info">
       <h3>Hangman</h3>
       <button onclick="openGame('hangman.html','Hangman')">Play</button>
     </div>
   </div>
-      <div class="game-card" data-name="simonsays">
+
+  <div class="game-card" data-name="simonsays">
+    <button class="fav-btn" onclick="toggleFavorite('simonsays', 'Simon Says', 'simonsays.html')">☆</button>
     <div class="game-info">
       <h3>Simon Says</h3>
       <button onclick="openGame('simonsays.html','Simon Says')">Play</button>
     </div>
   </div>
-   <div class="game-card" data-name="checkers">
+
+  <div class="game-card" data-name="checkers">
+    <button class="fav-btn" onclick="toggleFavorite('checkers', 'Checkers', 'checkers.html')">☆</button>
     <div class="game-info">
       <h3>Checkers</h3>
       <button onclick="openGame('checkers.html','Checkers')">Play</button>
     </div>
   </div>
+
   <div class="game-card" data-name="Utictactoe">
+    <button class="fav-btn" onclick="toggleFavorite('Utictactoe', 'Ultimate Tic-Tac-Toe', 'Utictactoe.html')">☆</button>
     <div class="game-info">
       <h3>Ultimate Tic-Tac-Toe</h3>
       <button onclick="openGame('Utictactoe.html','Ultimate Tic-Tac-Toe')">Play</button>
     </div>
   </div>
+
   <div class="game-card" data-name="hexes">
+    <button class="fav-btn" onclick="toggleFavorite('hexes', 'Hexes', 'hexes.html')">☆</button>
     <div class="game-info">
       <h3>Hexes</h3>
       <button onclick="openGame('hexes.html','Hexes')">Play</button>
@@ -296,24 +476,27 @@ a {
 </section>
 
 <section>
-<h2 align="center">🔥 Exclusives 🔥</h2>
+<div class="section-title-container">
+  <h2>🔥 Exclusives 🔥</h2>
+  <input type="text" id="exclusiveSearch" class="search-input" placeholder="Search exclusive games...">
+</div>
 
 <div class="exclusives-list" id="exclusivesContainer">
-  <div class="game-card">
+  <div class="game-card" data-exclusive-name="rift runner">
     <div class="game-info">
       <h3 class="ex-title">Rift Runner</h3>
       <button class="ex-btn" onclick="openExclusive('riftrunner.html','Rift Runner')">Play</button>
     </div>
   </div>
 
-  <div class="game-card">
+  <div class="game-card" data-exclusive-name="rift defense">
     <div class="game-info">
       <h3 class="ex-title">Rift Defense</h3>
       <button class="ex-btn" onclick="openExclusive('riftdefense.html','Rift Defense')">Play</button>
     </div>
   </div>
 
-  <div class="game-card">
+  <div class="game-card" data-exclusive-name="rift breaker">
     <div class="game-info">
       <h3 class="ex-title">Rift Breaker</h3>
       <button class="ex-btn" onclick="openExclusive('riftbreaker.html','Rift Breaker')">Play</button>
@@ -332,7 +515,6 @@ a {
 <footer>
   <h3>Rift Hub</h3>
   <p>Free browser game platform.</p>
-
   <div>
     <a href="about.html">About</a>
     <a href="contact.html">Contact</a>
@@ -362,6 +544,47 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 let isGuest = false;
+let currentGameOfDay = {};
+
+const gamePool = [
+  { id: "snake", name: "Snake", page: "snake.html" },
+  { id: "tetris", name: "Tetris", page: "tetris.html" },
+  { id: "pong", name: "Pong", page: "pong.html" },
+  { id: "flappyblock", name: "Flappy Block", page: "flappyblock.html" },
+  { id: "2048", name: "2048", page: "2048.html" },
+  { id: "memorymatch", name: "Memory Match", page: "memorymatch.html" },
+  { id: "pac-man", name: "Pac-Man", page: "pacman.html" },
+  { id: "wordle", name: "Wordle", page: "wordle.html" },
+  { id: "connectfour", name: "Connect Four", page: "connectfour.html" },
+  { id: "chess", name: "Chess", page: "chess.html" }
+];
+
+/* THEME SYSTEM */
+window.toggleTheme = function() {
+  const isLight = document.body.classList.toggle("light-theme");
+  localStorage.setItem("riftTheme", isLight ? "light" : "dark");
+};
+
+if (localStorage.getItem("riftTheme") === "light") {
+  document.body.classList.add("light-theme");
+}
+
+/* DETERMINISTIC RANDOM GAME OF THE DAY */
+function setGameOfDay() {
+  const today = new Date();
+  const dayId = today.getFullYear() * 1000 + (today.getMonth() + 1) * 100 + today.getDate();
+  const index = dayId % gamePool.length;
+  currentGameOfDay = gamePool[index];
+  document.getElementById("gotwTitle").textContent = currentGameOfDay.name;
+}
+
+window.playGameOfDay = function() {
+  if (isGuest) {
+    alert("Game of the Day content highlights require an account connection!");
+    return;
+  }
+  window.openGame(currentGameOfDay.page, currentGameOfDay.name);
+};
 
 /* LOGIN */
 window.login = function () {
@@ -391,18 +614,25 @@ window.loginAsGuest = function () {
 function loadUser(email, guestModeStatus) {
   isGuest = guestModeStatus;
   
-  // Update visibility states immediately
   document.getElementById("loginScreen").style.display = "none";
   document.getElementById("site").style.display = "block";
   document.getElementById("username").textContent = email;
 
   const exclusivesContainer = document.getElementById("exclusivesContainer");
   const cards = exclusivesContainer.querySelectorAll(".game-card");
+  const gotwBanner = document.getElementById("gotwBanner");
+  const gotwBtn = document.getElementById("gotwBtn");
+
+  setGameOfDay();
 
   if (isGuest) {
     document.getElementById("badgeArea").innerHTML = `<span class="guest-badge">Guest Mode</span>`;
     document.getElementById("historySection").style.display = "none"; 
+    document.getElementById("statsBar").style.display = "none";
     
+    gotwBanner.classList.add("locked-banner");
+    gotwBtn.innerText = "🔒 Locked (Account Required)";
+
     cards.forEach(card => {
       card.classList.add("locked-card");
       const title = card.querySelector(".ex-title");
@@ -414,7 +644,11 @@ function loadUser(email, guestModeStatus) {
   } else {
     document.getElementById("badgeArea").innerHTML = "";
     document.getElementById("historySection").style.display = "block";
+    document.getElementById("statsBar").style.display = "flex";
     
+    gotwBanner.classList.remove("locked-banner");
+    gotwBtn.innerText = "Play Game of the Day";
+
     cards.forEach(card => {
       card.classList.remove("locked-card");
       const title = card.querySelector(".ex-title");
@@ -422,12 +656,12 @@ function loadUser(email, guestModeStatus) {
       card.querySelector(".ex-btn").innerText = "Play";
     });
     renderHistory();
+    updateStats();
   }
 
-  // Handle CSS Calculations
+  renderFavorites();
   fixLayout();
 
-  // Handle background music play after rendering content
   setTimeout(() => {
     const music = document.getElementById("bgMusic");
     if (music) {
@@ -448,6 +682,9 @@ window.openGame = function (page, name) {
     history.unshift({ name, page });
     history = history.slice(0, 3);
     localStorage.setItem("riftHistory", JSON.stringify(history));
+
+    let count = parseInt(localStorage.getItem("riftGamesPlayed")) || 0;
+    localStorage.setItem("riftGamesPlayed", count + 1);
   }
   window.location.href = page;
 };
@@ -455,11 +692,86 @@ window.openGame = function (page, name) {
 /* LOCKED EXCLUSIVES LAUNCH GUARD */
 window.openExclusive = function (page, name) {
   if (isGuest) {
-    alert("This game is an Exclusive! Please sign up or login with a full account to play.");
+    alert("This content is Premium Exclusive! Please sign up or login with a full account to play.");
     return;
   }
   window.openGame(page, name);
 };
+
+/* UPDATE STATS INTERFACE */
+function updateStats() {
+  if (isGuest) return;
+  const count = localStorage.getItem("riftGamesPlayed") || 0;
+  document.getElementById("gamesPlayedCount").textContent = count;
+}
+
+/* FAVORITES SYSTEM */
+window.toggleFavorite = function (id, name, page) {
+  if (isGuest) {
+    alert("Favorites tracking requires a registered account!");
+    return;
+  }
+  let favs = JSON.parse(localStorage.getItem("riftFavs")) || [];
+  const exists = favs.find(f => f.id === id);
+
+  if (exists) {
+    favs = favs.filter(f => f.id !== id);
+  } else {
+    favs.push({ id, name, page });
+  }
+  localStorage.setItem("riftFavs", JSON.stringify(favs));
+  renderFavorites();
+};
+
+function renderFavorites() {
+  const grid = document.getElementById("favoritesGrid");
+  const section = document.getElementById("favoritesSection");
+  
+  if (isGuest) {
+    grid.innerHTML = `
+      <div class="game-card locked-card" style="width: 100%; max-width: 400px; margin: 0 auto;">
+        <div class="game-info">
+          <h3>🔒 Favorites Grid Is Locked</h3>
+          <p>Create an account to build your personal dashboard panel.</p>
+        </div>
+      </div>`;
+    section.style.display = "block";
+    return;
+  }
+
+  let favs = JSON.parse(localStorage.getItem("riftFavs")) || [];
+  
+  document.querySelectorAll("#mainGameGrid .game-card").forEach(card => {
+    const button = card.querySelector(".fav-btn");
+    const clickHandlerString = button.getAttribute("onclick");
+    const targetFav = favs.find(f => clickHandlerString.includes(`'${f.id}'`));
+    
+    if (targetFav) {
+      button.textContent = "★";
+      button.classList.add("is-active");
+    } else {
+      button.textContent = "☆";
+      button.classList.remove("is-active");
+    }
+  });
+
+  if (favs.length === 0) {
+    grid.innerHTML = `<p id="noFavsMsg" style="text-align:center; width:100%; color: var(--text-muted); padding: 20px;">No favorite games marked yet. Click the star on any game card!</p>`;
+    return;
+  }
+
+  grid.innerHTML = favs.map(g => `
+    <div class="game-card" data-fav-id="${g.id}">
+      <button class="fav-btn is-active" onclick="toggleFavorite('${g.id}','${g.name}','${g.page}')">★</button>
+      <div class="game-info">
+        <h3>${g.name}</h3>
+        <button onclick="openGame('${g.page}','${g.name}')">Play</button>
+      </div>
+    </div>
+  `).join("");
+  
+  filterFavoritesGrid(document.getElementById("search").value.toLowerCase());
+}
 
 function renderHistory() {
   if (isGuest) return;
@@ -479,6 +791,7 @@ function renderHistory() {
 /* DYNAMIC LAST-ROW LAYOUT ENGINE */
 function fixLayout() {
   const grid = document.getElementById("mainGameGrid");
+  if (!grid) return;
   const visibleCards = Array.from(grid.querySelectorAll(".game-card")).filter(card => {
     return card.style.display !== "none";
   });
@@ -503,18 +816,65 @@ function fixLayout() {
   }
 }
 
-/* SEARCH FIELD WATCHER */
+/* DUAL SEARCH SYNCHRONIZER WITH "NOTHING FOUND" MESSAGING */
+function filterFavoritesGrid(queryValue) {
+  const grid = document.getElementById("favoritesGrid");
+  if (!grid || isGuest) return;
+
+  const cards = grid.querySelectorAll(".game-card");
+  let visibleCount = 0;
+
+  const oldSearchMsg = document.getElementById("emptyFavSearchMsg");
+  if (oldSearchMsg) oldSearchMsg.remove();
+  
+  const baseNoFavsMsg = document.getElementById("noFavsMsg");
+  if (baseNoFavsMsg) baseNoFavsMsg.style.display = "block";
+
+  cards.forEach(card => {
+    const favId = card.getAttribute("data-fav-id");
+    if (!favId) return;
+    
+    if (favId.includes(queryValue)) {
+      card.style.display = "";
+      visibleCount++;
+    } else {
+      card.style.display = "none";
+    }
+  });
+
+  if (cards.length > 0 && visibleCount === 0) {
+    if (baseNoFavsMsg) baseNoFavsMsg.style.display = "none";
+    
+    const msg = document.createElement("p");
+    msg.id = "emptyFavSearchMsg";
+    msg.style.cssText = "text-align: center; width: 100%; color: var(--text-muted); padding: 20px;";
+    msg.textContent = "🔍 No matching favorites found for this search.";
+    grid.appendChild(msg);
+  }
+}
+
 document.getElementById("search").addEventListener("input", function () {
   const val = this.value.toLowerCase();
 
   document.querySelectorAll("#mainGameGrid .game-card").forEach(card => {
     const name = card.getAttribute("data-name");
     if (!name) return;
-
-    card.style.display = name.toLowerCase().includes(val) ? "block" : "none";
+    card.style.display = name.toLowerCase().includes(val) ? "" : "none";
   });
 
+  filterFavoritesGrid(val);
   fixLayout();
+});
+
+/* SEARCH SYSTEM FOR EXCLUSIVE GAMES */
+document.getElementById("exclusiveSearch").addEventListener("input", function () {
+  const val = this.value.toLowerCase();
+
+  document.querySelectorAll("#exclusivesContainer .game-card").forEach(card => {
+    const name = card.getAttribute("data-exclusive-name");
+    if (!name) return;
+    card.style.display = name.toLowerCase().includes(val) ? "" : "none";
+  });
 });
 
 fixLayout();
