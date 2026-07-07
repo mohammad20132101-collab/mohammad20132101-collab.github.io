@@ -486,6 +486,14 @@ a {
       <button onclick="openGame('sudoku.html','Sudoku')">Play</button>
     </div>
   </div>
+
+  <div class="game-card" data-name="stack">
+    <button class="fav-btn" onclick="toggleFavorite('stack', 'Super Stack', 'stack.html')">☆</button>
+    <div class="game-info">
+      <h3>Super Stack</h3>
+      <button onclick="openGame('stack.html','Super Stack')">Play</button>
+    </div>
+  </div>
 </div>
 </section>
 
@@ -572,6 +580,7 @@ const gamePool = [
   { id: "connectfour", name: "Connect Four", page: "connectfour.html" },
   { id: "chess", name: "Chess", page: "chess.html" },
   { id: "sudoku", name: "Sudoku", page: "sudoku.html" }
+  { id: "stack", name: "Super Stack", page: "stack.html" }
 ];
 
 /* THEME SYSTEM */
