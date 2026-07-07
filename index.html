@@ -478,6 +478,13 @@ a {
       <button onclick="openGame('hexes.html','Hexes')">Play</button>
     </div>
   </div>
+   <div class="game-card" data-name="hexes">
+    <button class="fav-btn" onclick="toggleFavorite('sudoku', 'Sudoku', 'sudoku.html')">☆</button>
+    <div class="game-info">
+      <h3>Hexes</h3>
+      <button onclick="openGame('hexes.html','Hexes')">Play</button>
+    </div>
+  </div>
 </div>
 </section>
 
@@ -563,6 +570,7 @@ const gamePool = [
   { id: "wordle", name: "Wordle", page: "wordle.html" },
   { id: "connectfour", name: "Connect Four", page: "connectfour.html" },
   { id: "chess", name: "Chess", page: "chess.html" }
+  { id: "sudoku", name: "Sudoku", page: "sudoku.html" }
 ];
 
 /* THEME SYSTEM */
