@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rift Sudoku</title>
+<style>
+@import url("https://fonts.googleapis.com/css?family=Lato:400,400i,700");
+
+body, label, div, span {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0f0f1a;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: background 0.8s ease;
+  min-height: 100vh;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+h1 {
+  width: 100%;
+  text-align: center;
+  color: white;
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.5), 0 0 10px rgba(255,255,255,0.2);
+  margin: 10px 0;
+}
+
+/* MENU OVERLAY */
+#menu {
+  position: fixed;
+  inset: 0;
+  background: #0f0f1a;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.menuBox {
+  background: #141428;
+  padding: 30px;
+  border-radius: 15px;
+  border: 3px solid #4c6fff;
+  box-shadow: 0 0 25px rgba(76,108,255,0.35);
+  text-align: center;
+  flex-direction: column;
+}
+
+.menuBox h1 { color: #4c6fff; }
+
+.menuBox button {
+  margin: 10px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  background: #4c6fff;
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* BUTTONS */
+button {
+  background: linear-gradient(135deg, #4c6fff, #2f3cff);
+  color: white;
+  border: 1px solid rgba(76,111,255,0.5);
+  padding: 10px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.2s;
+  box-shadow: 0 0 10px rgba(76,111,255,0.25);
+}
+
+button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 18px rgba(76,111,255,0.45);
+}
+
+.btn-active {
+  background: #23cc71 !important;
+  border-color: #23cc71 !important;
+}
+
+.btn-row {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+/* PANEL CONTROLS */
+.controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 10px 0;
+}
+
+.player {
+  position: relative;
+  justify-content: space-between;
+  width: 250px;
+  height: 45px;
+  background: rgba(0, 0, 0, 0.45); /* Dark background shield protects text on white walls */
+  padding: 0 15px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.player span {
+  color: #ffc;
+  font: 700 18px Lato;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8); /* Protects text visibility */
+}
+
+.player-num {
+  width: 120px;
+  justify-content: flex-start;
+  outline: none;
+  cursor: text;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.player input[type="color"] {
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.player input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+.player input[type="color"]::-webkit-color-swatch { border: none; border-radius: 50%; }
+
+/* SUDOKU BOARD CONTAINER */
+#gameBoard {
+  background: #141428;
+  padding: 15px;
+  border-radius: 15px;
+  border: 3px solid #4c6fff;
+  box-shadow: 0 0 20px #4c6fff55;
+  margin: 15px auto;
+  width: max-content;
+}
+
+#gameGrid {
+  display: grid;
+  grid-template-columns: repeat(9, 44px);
+  grid-template-rows: repeat(9, 44px);
+  background: rgba(255, 255, 255, 0.08); 
+  gap: 1px;
+}
+
+/* CELL ARCHITECTURE */
+.cell {
+  width: 44px;
+  height: 44px;
+  background: #1a1a2e;
+  border: none;
+  color: white;
+  text-align: center;
+  font-weight: bold;
+  font-size: 18px;
+  box-sizing: border-box;
+  padding: 0;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.cell:focus:not(.fixed) {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Thick structural separation dividers framing the 3x3 box clusters */
+.cell:nth-child(3n) { border-right: 3px solid #4c6fff; }
+.cell:nth-child(9n) { border-right: none; }
+.cell-row-2, .cell-row-5 { border-bottom: 3px solid #4c6fff; }
+
+.cell.fixed {
+  background: rgba(0, 0, 0, 0.45);
+  color: #ffc;
+  cursor: not-allowed;
+}
+
+.cell.invalid {
+  background: rgba(255, 42, 42, 0.2) !important;
+  color: #ff7777 !important;
+  box-shadow: inset 0 0 8px rgba(255, 42, 42, 0.4);
+}
+
+.cell.showing-solution {
+  color: #6bff6b !important;
+  text-shadow: 0 0 8px #6bff6b !important;
+  background: rgba(107, 255, 107, 0.05);
+}
+
+#status {
+  font-size: 22px;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+  margin-top: 15px;
+  min-height: 30px;
+}
+
+.win-text {
+  color: #6bff6b;
+  font-weight: bold;
+  animation: pulse 1s infinite alternate;
+}
+
+@keyframes pulse {
+  0% { text-shadow: 0 0 5px rgba(107, 255, 107, 0.2); }
+  100% { text-shadow: 0 0 15px rgba(107, 255, 107, 0.6); }
+}
+</style>
+</head>
+<body>
+
+<div id="menu">
+  <div class="menuBox">
+    <h1>🌀 Rift Sudoku</h1>
+    <p style="color:#aaa; display:flex; flex-direction:column;">Ready to Solve?</p>
+    <button onclick="startGame()">Start Puzzle</button>
+  </div>
+</div>
+
+<h1 id="titleHeader">Rift Sudoku</h1>
+
+<div class="btn-row">
+  <button onclick="resetGame()">Reset</button>
+  <button id="solutionBtn" onclick="toggleSolution()">Show Solution</button>
+  <button onclick="location.reload()">Menu</button>
+  <button onclick="window.location.href='index.html'">Back</button>
+</div>
+<br>
+
+<div class="controls">
+  <div class="player">
+    <span class="player-num" contenteditable="true" id="p1Name" 
+    onkeydown="if(event.key==='Enter')event.preventDefault(); if(this.textContent.length>=9 && event.key.length===1)event.preventDefault()">Player 1</span>
+    <input type="color" value="#4c6fff" id="p1Colour" oninput="onColourChange()" />
+  </div>
+</div>
+
+<div id="gameBoard">
+  <div id="gameGrid"></div>
+</div>
+
+<div id="status"></div>
+
+<script>
+const initialPuzzle = [
+  [5, 3, 0, 0, 7, 0, 0, 0, 0],
+  [6, 0, 0, 1, 9, 5, 0, 0, 0],
+  [0, 9, 8, 0, 0, 0, 0, 6, 0],
+  [8, 0, 0, 0, 6, 0, 0, 0, 3],
+  [4, 0, 0, 8, 0, 3, 0, 0, 1],
+  [7, 0, 0, 0, 2, 0, 0, 0, 6],
+  [0, 6, 0, 0, 0, 0, 2, 8, 0],
+  [0, 0, 0, 4, 1, 9, 0, 0, 5],
+  [0, 0, 0, 0, 8, 0, 0, 7, 9]
+];
+
+const solvedPuzzle = [
+  [5, 3, 4, 6, 7, 8, 9, 1, 2],
+  [6, 7, 2, 1, 9, 5, 3, 4, 8],
+  [1, 9, 8, 3, 4, 2, 5, 6, 7],
+  [8, 5, 9, 7, 6, 1, 4, 2, 3],
+  [4, 2, 6, 8, 5, 3, 7, 9, 1],
+  [7, 1, 3, 9, 2, 4, 8, 5, 6],
+  [9, 6, 1, 5, 3, 7, 2, 8, 4],
+  [2, 8, 7, 4, 1, 9, 6, 3, 5],
+  [3, 4, 5, 2, 8, 6, 1, 7, 9]
+];
+
+let currentBoard = [];
+let gameOver = false;
+let showingSolution = false;
+
+function getColour() {
+  return document.getElementById('p1Colour').value;
+}
+
+// Function to determine contrast requirement for global headers
+function getRGBContrast(hex) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return (r * 299 + g * 587 + b * 114) / 1000;
+}
+
+function setBackground() {
+  const primaryColor = getColour();
+  document.body.style.background = primaryColor;
+  document.getElementById('gameBoard').style.borderColor = primaryColor;
+  document.getElementById('gameBoard').style.boxShadow = `0 0 20px ${primaryColor}55`;
+  
+  // Adapt page text elements to safely pop on clear/white backgrounds
+  const brightness = getRGBContrast(primaryColor);
+  const mainTitle = document.getElementById('titleHeader');
+  const statusBox = document.getElementById('status');
+  if (brightness > 200) {
+    mainTitle.style.color = "#141428";
+    statusBox.style.color = "#141428";
+  } else {
+    mainTitle.style.color = "white";
+    statusBox.style.color = "white";
+  }
+
+  document.querySelectorAll('.cell').forEach(cell => {
+    if (cell.style.borderRightColor || cell.style.borderRight) {
+      cell.style.borderRightColor = primaryColor;
+    }
+    if (cell.style.borderBottomColor || cell.style.borderBottom) {
+      cell.style.borderBottomColor = primaryColor;
+    }
+  });
+
+  if (!showingSolution) {
+    document.querySelectorAll('.cell:not(.fixed)').forEach(cell => {
+      if (cell.value !== "" && !cell.classList.contains('invalid')) {
+        cell.style.color = primaryColor;
+        cell.style.textShadow = `0 0 8px ${primaryColor}`;
+      }
+    });
+  }
+}
+
+function onColourChange() {
+  setBackground();
+}
+
+function startGame() {
+  document.getElementById("menu").style.display = "none";
+  gameOver = false;
+  showingSolution = false;
+  document.getElementById("status").innerHTML = "";
+  buildGrid();
+  setBackground();
+}
+
+function buildGrid() {
+  const grid = document.getElementById("gameGrid");
+  grid.innerHTML = "";
+  currentBoard = initialPuzzle.map(row => [...row]);
+
+  for (let r = 0; r < 9; r++) {
+    for (let c = 0; c < 9; c++) {
+      const val = currentBoard[r][c];
+      const input = document.createElement("input");
+      input.type = "text";
+      input.maxLength = 1;
+      input.className = "cell";
+      
+      if (r === 2 || r === 5) input.classList.add(`cell-row-${r}`);
+
+      if (val !== 0) {
+        input.value = val;
+        input.classList.add("fixed");
+        input.readOnly = true;
+      } else {
+        input.addEventListener("input", (e) => handleCellInput(e, r, c, input));
+      }
+      grid.appendChild(input);
+    }
+  }
+}
+
+function handleCellInput(e, r, c, element) {
+  if (gameOver || showingSolution) { element.value = ""; return; }
+  const val = e.target.value;
+
+  if (!/^[1-9]$/.test(val)) {
+    element.value = "";
+    element.style.color = "white";
+    element.style.textShadow = "none";
+    currentBoard[r][c] = 0;
+    validateGridLogic();
+    return;
+  }
+
+  currentBoard[r][c] = parseInt(val);
+  validateGridLogic();
+  checkGameEnd();
+}
+
+function validateGridLogic() {
+  const cells = document.querySelectorAll(".cell");
+  cells.forEach(cell => cell.classList.remove("invalid"));
+  let conflictFound = false;
+
+  for (let r = 0; r < 9; r++) {
+    for (let c = 0; c < 9; c++) {
+      const val = currentBoard[r][c];
+      if (val === 0) continue;
+
+      let cellErr = false;
+
+      for (let i = 0; i < 9; i++) {
+        if (i !== c && currentBoard[r][i] === val) cellErr = true;
+      }
+      for (let i = 0; i < 9; i++) {
+        if (i !== r && currentBoard[i][c] === val) cellErr = true;
+      }
+      const sRow = Math.floor(r / 3) * 3;
+      const sCol = Math.floor(c / 3) * 3;
+      for (let i = sRow; i < sRow + 3; i++) {
+        for (let j = sCol; j < sCol + 3; j++) {
+          if ((i !== r || j !== c) && currentBoard[i][j] === val) cellErr = true;
+        }
+      }
+
+      const activeCell = cells[r * 9 + c];
+      if (cellErr) {
+        activeCell.classList.add("invalid");
+        activeCell.style.color = "#ff7777";
+        activeCell.style.textShadow = "none";
+        conflictFound = true;
+      } else if (!activeCell.classList.contains("fixed") && !showingSolution) {
+        activeCell.style.color = getColour();
+        activeCell.style.textShadow = `0 0 8px ${getColour()}`;
+      }
+    }
+  }
+  return conflictFound;
+}
+
+function toggleSolution() {
+  if (gameOver) return;
+  showingSolution = !showingSolution;
+  const btn = document.getElementById("solutionBtn");
+  const cells = document.querySelectorAll(".cell");
+
+  if (showingSolution) {
+    btn.classList.add("btn-active");
+    btn.textContent = "Hide Solution";
+    
+    cells.forEach((cell, idx) => {
+      const r = Math.floor(idx / 9);
+      const c = idx % 9;
+      cell.value = solvedPuzzle[r][c];
+      if (!cell.classList.contains("fixed")) {
+        cell.classList.add("showing-solution");
+      }
+    });
+  } else {
+    btn.classList.remove("btn-active");
+    btn.textContent = "Show Solution";
+    
+    cells.forEach((cell, idx) => {
+      const r = Math.floor(idx / 9);
+      const c = idx % 9;
+      cell.classList.remove("showing-solution");
+      cell.value = currentBoard[r][c] !== 0 ? currentBoard[r][c] : "";
+    });
+    validateGridLogic();
+    setBackground();
+  }
+}
+
+function checkGameEnd() {
+  const filled = currentBoard.every(row => row.every(v => v !== 0));
+  const errs = document.querySelectorAll(".invalid").length > 0;
+
+  if (filled && !errs) {
+    gameOver = true;
+    document.getElementById("status").innerHTML = '<span class="win-text">Grid Clear! 🎉</span>';
+  }
+}
+
+function resetGame() {
+  startGame();
+}
+</script>
+</body>
+</html>
