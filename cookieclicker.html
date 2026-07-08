@@ -94,6 +94,42 @@ button:hover, .back-btn:hover {
   box-shadow: 0 0 15px rgba(165, 94, 234, 0.4);
 }
 
+.prestige-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  padding: 0;
+  font-size: 28px;
+  background: radial-gradient(circle at 30% 30%, #c58bff, #a55eea 60%, #6c5ce7);
+  border: 2px solid rgba(255,255,255,0.4);
+  box-shadow: 0 0 20px rgba(165, 94, 234, 0.7);
+  animation: prestigePulse 2.2s ease-in-out infinite;
+  z-index: 50;
+}
+
+.prestige-fab:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 28px rgba(165, 94, 234, 0.9);
+}
+
+@keyframes prestigePulse {
+  0%, 100% { box-shadow: 0 0 16px rgba(165, 94, 234, 0.6); }
+  50% { box-shadow: 0 0 30px rgba(165, 94, 234, 0.95); }
+}
+
+@media(max-width: 850px) {
+  .prestige-fab {
+    bottom: 16px;
+    right: 16px;
+    width: 54px;
+    height: 54px;
+    font-size: 24px;
+  }
+}
+
 /* MAIN PANEL LAYOUT */
 #clickerContainer {
   display: flex;
@@ -390,6 +426,8 @@ button:hover, .back-btn:hover {
   <button class="btn-nuclear" onclick="triggerFullWipeCheck()">☣️ Reset ALL Prestige</button>
 </div>
 
+<button id="prestigeFab" class="prestige-fab" onclick="triggerPrestigeCheck()" style="display:none;" title="Prestige">🌌</button>
+
 <div id="clickerContainer">
   <div class="clicker-section" id="clickArea">
     <div class="counter-display">
@@ -433,7 +471,7 @@ button:hover, .back-btn:hover {
 <div class="modal-overlay" id="prestigeModal">
   <div class="modal-box prestige-style">
     <h3>Trigger Cosmic Collapse?</h3>
-    <p>Sacrifice your current universe setup! This resets your structural items and current energy, but locks in a permanent multiplier jump based on your energy legacy levels.</p>
+    <p>Sacrifice your current universe setup! This resets your structural items and current energy, but permanently increases your Prestige Tier, boosting all future runs.</p>
     <p style="color:#a55eea; font-weight:bold;" id="prestigeGainEstimate">Ready to claim your timeline prestige?</p>
     <div class="modal-btns">
       <button class="btn-abort" onclick="closeModals()">Not Ready</button>
@@ -485,6 +523,16 @@ button:hover, .back-btn:hover {
   </div>
 </div>
 
+<div class="modal-overlay" id="maxCritModal">
+  <div class="modal-box prestige-style">
+    <h3>🎯 Max Crit Reached!</h3>
+    <p>Your Targeting Singularity has hit the 70% Crit Chance cap. Further upgrades will still boost your Crit Multiplier.</p>
+    <div class="modal-btns">
+      <button class="btn-abort" onclick="closeModals()">Nice</button>
+    </div>
+  </div>
+</div>
+
 <script>
 let energy = 0;
 let clickPower = 1;
@@ -495,12 +543,19 @@ let speedMultiplier = 1;
 // Prestige Variables
 let prestigeMultiplierTier = 0; 
 let prestigeBoostFactor = 1; 
-let hasUnlockedPrestigeEver = false; 
+let hasUnlockedPrestige = false;
 
 // Momentum Mechanic Variables
 let clickMomentumEPS = 0; 
 const momentumGainPerClick = 0.5; 
 const maxMomentumEPS = 50; 
+
+// Crit cap tracking
+const CRIT_CHANCE_CAP = 0.70;
+let critCapNotified = false;
+
+// Prestige unlock threshold
+const PRESTIGE_UNLOCK_ENERGY = 1000000;
 
 let globalOrbitAngle = 0;
 
@@ -520,7 +575,7 @@ let visualDronesElements = [];
 function loadGame() {
   const savedEnergy = localStorage.getItem("rift_clicker_energy");
   prestigeMultiplierTier = parseInt(localStorage.getItem("rift_clicker_prestige_tier") || 0);
-  hasUnlockedPrestigeEver = localStorage.getItem("rift_clicker_unlocked_prestige") === "true";
+  hasUnlockedPrestige = localStorage.getItem("rift_clicker_unlocked_prestige") === "true";
 
   if(savedEnergy !== null) {
     energy = parseFloat(savedEnergy);
@@ -537,7 +592,7 @@ function loadGame() {
 function saveGame() {
   localStorage.setItem("rift_clicker_energy", energy);
   localStorage.setItem("rift_clicker_prestige_tier", prestigeMultiplierTier);
-  localStorage.setItem("rift_clicker_unlocked_prestige", hasUnlockedPrestigeEver);
+  localStorage.setItem("rift_clicker_unlocked_prestige", hasUnlockedPrestige);
   upgrades.forEach(up => {
     localStorage.setItem(`rift_clicker_up_${up.id}`, up.count);
   });
@@ -555,28 +610,37 @@ function wipeAllDataIncludingPrestige() {
   localStorage.removeItem("rift_clicker_prestige_tier");
   localStorage.removeItem("rift_clicker_unlocked_prestige");
   prestigeMultiplierTier = 0;
-  hasUnlockedPrestigeEver = false;
+  hasUnlockedPrestige = false;
 }
 
 function recalculateStats() {
-  let baseScaling = energy / 1000000;
-  prestigeBoostFactor = 1 + (baseScaling * (1 + prestigeMultiplierTier));
+  prestigeBoostFactor = 1 + (prestigeMultiplierTier * 0.5);
 
   let clickUpgradeCount = upgrades.find(u => u.id === 'mouse').count;
   clickPower = (1 + clickUpgradeCount * 1) * prestigeBoostFactor;
 
   let critUpgradeCount = upgrades.find(u => u.id === 'crit').count;
-  critChance = Math.min(0.95, 0.05 + (critUpgradeCount * 0.005)); 
+  critChance = Math.min(CRIT_CHANCE_CAP, 0.05 + (critUpgradeCount * 0.005)); 
   critMultiplier = 3 + (critUpgradeCount * 1);
+
+  if (critChance >= CRIT_CHANCE_CAP && !critCapNotified) {
+    critCapNotified = true;
+    document.getElementById("maxCritModal").style.display = "flex";
+  }
 
   let warpUpgradeCount = upgrades.find(u => u.id === 'warp').count;
   speedMultiplier = 1 + (warpUpgradeCount * 0.15);
 
   document.getElementById("prestigeMultiplierDisplay").textContent = `Prestige Boost: ${prestigeBoostFactor.toFixed(2)}x`;
-  
-  if (energy >= 1000000 || prestigeMultiplierTier > 0) {
-    hasUnlockedPrestigeEver = true;
+
+  if (!hasUnlockedPrestige && (energy >= PRESTIGE_UNLOCK_ENERGY || prestigeMultiplierTier > 0)) {
+    hasUnlockedPrestige = true;
   }
+  syncPrestigeFab();
+}
+
+function syncPrestigeFab() {
+  document.getElementById("prestigeFab").style.display = hasUnlockedPrestige ? "flex" : "none";
 }
 
 function formatNumber(num) {
@@ -603,13 +667,16 @@ function getTOTAL_EPS() {
   return getPassiveEPS() + clickMomentumEPS;
 }
 
+function getCritUpgradeDesc() {
+  if (critChance >= CRIT_CHANCE_CAP) {
+    return `Crit Chance MAXED (${(CRIT_CHANCE_CAP * 100).toFixed(0)}%) & +1x Crit Multiplier`;
+  }
+  return '+0.5% Crit Chance & +1x Crit Multiplier';
+}
+
 function updateUI() {
   document.getElementById("energyDisplay").textContent = formatNumber(energy);
   document.getElementById("epsDisplay").textContent = formatNumber(getTOTAL_EPS());
-  
-  if (energy >= 1000000) {
-    hasUnlockedPrestigeEver = true;
-  }
 
   upgrades.forEach(up => {
     const card = document.getElementById(`card-${up.id}`);
@@ -624,6 +691,10 @@ function updateUI() {
       }
       document.getElementById(`cost-${up.id}`).textContent = `⚡ ${formatNumber(up.cost)}`;
       document.getElementById(`count-${up.id}`).textContent = up.type === 'win' ? 'Ending' : `Owned: ${up.count}`;
+
+      if (up.id === 'crit') {
+        document.getElementById(`effect-${up.id}`).textContent = getCritUpgradeDesc();
+      }
     }
   });
 }
@@ -692,11 +763,13 @@ function buildShopCards() {
     const card = document.createElement("div");
     card.className = "upgrade-card" + (up.type === 'win' ? ' game-closer' : '');
     card.id = `card-${up.id}`;
+
+    const initialDesc = up.id === 'crit' ? getCritUpgradeDesc() : up.desc;
     
     card.innerHTML = `
       <div class="upgrade-info">
         <span class="upgrade-name">${up.name}</span>
-        <span class="upgrade-effect">${up.desc}</span>
+        <span class="upgrade-effect" id="effect-${up.id}">${initialDesc}</span>
       </div>
       <div class="upgrade-cost-box">
         <div class="upgrade-cost" id="cost-${up.id}">⚡ ${formatNumber(up.cost)}</div>
@@ -738,21 +811,43 @@ function triggerFullWipeCheck() {
 }
 
 function triggerPrestigeCheck() {
-  if (energy < 1000000 && prestigeMultiplierTier === 0) {
+  if (energy < PRESTIGE_UNLOCK_ENERGY) {
     document.getElementById("prestigeLockedModal").style.display = "flex";
   } else {
+    const nextTier = prestigeMultiplierTier + 1;
+    const nextBoost = 1 + (nextTier * 0.5);
+    document.getElementById("prestigeGainEstimate").textContent =
+      `Prestige Tier ${prestigeMultiplierTier} → ${nextTier} (Boost: ${nextBoost.toFixed(2)}x)`;
     document.getElementById("prestigeModal").style.display = "flex";
   }
+}
+
+function confirmPrestigeLoop() {
+  prestigeMultiplierTier++;
+
+  wipeRunData();
+  energy = 0;
+  clickMomentumEPS = 0;
+  critCapNotified = false;
+  upgrades.forEach(up => { up.count = 0; up.cost = up.baseCost; });
+
+  saveGame();
+  recalculateStats();
+  syncVisualDrones();
+  closeModals();
+  buildShopCards();
+  updateUI();
 }
 
 function closeModals() { 
   document.getElementById("exitModal").style.display = "none"; 
   document.getElementById("restartModal").style.display = "none"; 
-  document.getElementById("prestigeModal").style.display = "none"; 
-  document.getElementById("prestigeLockedModal").style.display = "none"; 
+  document.getElementById("prestigeModal").style.display = "none";
+  document.getElementById("prestigeLockedModal").style.display = "none";
   document.getElementById("fullWipeModal").style.display = "none"; 
   document.getElementById("wipeBlockedModal").style.display = "none"; 
   document.getElementById("winModal").style.display = "none"; 
+  document.getElementById("maxCritModal").style.display = "none";
 }
 
 function confirmExitWipe() {
@@ -772,26 +867,11 @@ function confirmRestartWipe() {
   updateUI();
 }
 
-function confirmPrestigeLoop() {
-  prestigeMultiplierTier++;
-  
-  wipeRunData();
-  energy = 0;
-  clickMomentumEPS = 0;
-  upgrades.forEach(up => { up.count = 0; up.cost = up.baseCost; });
-  
-  saveGame();
-  recalculateStats();
-  syncVisualDrones();
-  closeModals();
-  buildShopCards();
-  updateUI();
-}
-
 function confirmFullWipe() {
   wipeAllDataIncludingPrestige();
   energy = 0;
   clickMomentumEPS = 0;
+  critCapNotified = false;
   upgrades.forEach(up => { up.count = 0; up.cost = up.baseCost; });
   
   saveGame();
