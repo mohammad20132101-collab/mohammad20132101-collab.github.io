@@ -3,9 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cookie Clicker</title>
+<title>Rift Clicker - Cosmic Edition</title>
 <style>
 @import url("https://fonts.googleapis.com/css?family=Lato:400,400i,700");
+
+/* Absolute nuclear option to completely prevent all browser text highlighting/selection */
+* {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
 
 body {
   margin: 0;
@@ -373,12 +382,11 @@ button:hover, .back-btn:hover {
 </head>
 <body>
 
-<h1>Cookie Clicker</h1>
+<h1>Rift Clicker</h1>
 
 <div class="btn-row">
   <button onclick="triggerExitCheck()">🏠 Exit to Hub</button>
   <button class="btn-warn" onclick="triggerRestartCheck()">🔄 Restart Run</button>
-
   <button class="btn-nuclear" onclick="triggerFullWipeCheck()">☣️ Reset ALL Prestige</button>
 </div>
 
@@ -386,7 +394,7 @@ button:hover, .back-btn:hover {
   <div class="clicker-section" id="clickArea">
     <div class="counter-display">
       <h2 id="energyDisplay">0</h2>
-      <p>⚡ Rift Energy &nbsp;(EPS: <span id="epsDisplay">0</span>)</p>
+      <p>⚡ Rift Energy &nbsp;<span style="white-space: nowrap;">(EPS: <span id="epsDisplay">0</span>)</span></p>
       <div class="prestige-tracker" id="prestigeMultiplierDisplay">Prestige Boost: 1.00x</div>
     </div>
     <div class="rift-wrapper" id="riftWrapper">
@@ -485,7 +493,7 @@ let critMultiplier = 3;
 let speedMultiplier = 1; 
 
 // Prestige Variables
-let prestigeMultiplierTier = 0; // Number of loops cleared
+let prestigeMultiplierTier = 0; 
 let prestigeBoostFactor = 1; 
 let hasUnlockedPrestigeEver = false; 
 
@@ -498,7 +506,7 @@ let globalOrbitAngle = 0;
 
 const upgrades = [
   { id: 'mouse', name: '⚡ Quantum Mouse', cost: 15, baseCost: 15, count: 0, type: 'click', power: 1, desc: '+1 per manual click' },
-  { id: 'crit', name: '🎯 Targeting Singularity', cost: 150, baseCost: 150, count: 0, type: 'crit', power: 0.04, desc: '+4% Crit Chance & +1x Crit Multiplier' },
+  { id: 'crit', name: '🎯 Targeting Singularity', cost: 150, baseCost: 150, count: 0, type: 'crit', power: 0.005, desc: '+0.5% Crit Chance & +1x Crit Multiplier' }, 
   { id: 'hand', name: '🤖 Subatomic Drone', cost: 500, baseCost: 500, count: 0, type: 'passive', power: 4, desc: '+4 energy/sec & spawns visual orbiters' },
   { id: 'matrix', name: '🧬 Drone Overclock Link', cost: 4500, baseCost: 4500, count: 0, type: 'synergy', power: 0.10, desc: 'Drones produce +10% more energy per link' },
   { id: 'battery', name: '🔋 Dark Matter Battery', cost: 15000, baseCost: 15000, count: 0, type: 'passive', power: 65, desc: '+65 energy/sec' },
@@ -551,7 +559,6 @@ function wipeAllDataIncludingPrestige() {
 }
 
 function recalculateStats() {
-  // Prestige boost dynamically calculated using current energy values: 1 + (Energy / 1,000,000) * (1 + Loops)
   let baseScaling = energy / 1000000;
   prestigeBoostFactor = 1 + (baseScaling * (1 + prestigeMultiplierTier));
 
@@ -559,7 +566,7 @@ function recalculateStats() {
   clickPower = (1 + clickUpgradeCount * 1) * prestigeBoostFactor;
 
   let critUpgradeCount = upgrades.find(u => u.id === 'crit').count;
-  critChance = 0.05 + (critUpgradeCount * 0.04);
+  critChance = Math.min(0.95, 0.05 + (critUpgradeCount * 0.005)); 
   critMultiplier = 3 + (critUpgradeCount * 1);
 
   let warpUpgradeCount = upgrades.find(u => u.id === 'warp').count;
@@ -586,7 +593,10 @@ function getPassiveEPS() {
   let batteryPower = upgrades.find(u => u.id === 'battery').count * upgrades.find(u => u.id === 'battery').power;
   let corePower = upgrades.find(u => u.id === 'singularity').count * upgrades.find(u => u.id === 'singularity').power;
 
-  return (totalDronePower + batteryPower + corePower) * speedMultiplier * prestigeBoostFactor;
+  let baselineBuildingsEPS = (totalDronePower + batteryPower + corePower) * speedMultiplier * prestigeBoostFactor;
+
+  let critWeightFactor = (critChance * critMultiplier) + (1 - critChance);
+  return baselineBuildingsEPS * critWeightFactor;
 }
 
 function getTOTAL_EPS() {
@@ -720,7 +730,6 @@ function triggerExitCheck() { document.getElementById("exitModal").style.display
 function triggerRestartCheck() { document.getElementById("restartModal").style.display = "flex"; }
 
 function triggerFullWipeCheck() {
-  // If user has LESS than 1M energy, block the action directly inside this button event handler
   if (energy < 1000000) {
     document.getElementById("wipeBlockedModal").style.display = "flex";
   } else {
@@ -807,7 +816,6 @@ setInterval(() => {
     clickMomentumEPS = Math.max(0, clickMomentumEPS - 0.15);
   }
   
-  // Constantly adjusts manual power scales using real-time dynamic calculations tied to current pool states
   recalculateStats();
 
   document.getElementById("energyDisplay").textContent = formatNumber(energy);
