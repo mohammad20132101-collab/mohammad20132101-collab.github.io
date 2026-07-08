@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rift Clicker - Exclusives</title>
+<style>
+@import url("https://fonts.googleapis.com/css?family=Lato:400,400i,700");
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0f0f1a; 
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+h1 {
+  width: 100%;
+  text-align: center;
+  color: white;
+  text-shadow: 0 0 10px rgba(255,255,255,0.4);
+  margin: 10px 0;
+}
+
+/* BUTTONS */
+button, .back-btn {
+  background: linear-gradient(135deg, #4c6fff, #2f3cff);
+  color: white;
+  border: 1px solid rgba(76,111,255,0.5);
+  padding: 10px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.2s;
+  box-shadow: 0 0 10px rgba(76,111,255,0.25);
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  text-decoration: none;
+}
+
+button:hover, .back-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 18px rgba(76,111,255,0.45);
+}
+
+.btn-row {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 10px;
+  margin-bottom: 20px;
+}
+
+.btn-warn {
+  background: linear-gradient(135deg, #ff9f43, #ff6b6b);
+  border: 1px solid rgba(255,107,107,0.5);
+  box-shadow: 0 0 10px rgba(255,107,107,0.25);
+}
+.btn-warn:hover {
+  box-shadow: 0 0 18px rgba(255,107,107,0.45);
+}
+
+/* MAIN PANEL LAYOUT */
+#clickerContainer {
+  display: flex;
+  flex-direction: row;
+  padding: 30px;
+  background: rgba(20, 20, 40, 0.85); 
+  border-radius: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+  margin-top: 10px;
+  gap: 40px;
+  max-width: 950px;
+  width: 92%;
+  box-sizing: border-box;
+  align-items: stretch;
+  z-index: 2;
+}
+
+/* LEFT PANEL */
+.clicker-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.counter-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 25px;
+  width: 100%;
+}
+
+.counter-display h2 {
+  font-size: 3rem;
+  margin: 0;
+  color: white;
+  text-shadow: 0 0 15px #4c6fff;
+}
+
+.counter-display p {
+  color: #ffc;
+  font: 18px Lato, sans-serif;
+  margin: 8px 0 0 0;
+  white-space: nowrap; 
+}
+
+/* PORTAL */
+.rift-wrapper {
+  position: relative;
+  width: 260px;
+  height: 260px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rift-portal {
+  width: 200px;
+  height: 200px;
+  cursor: pointer;
+  outline: none;
+  border: none;
+  border-radius: 50%; 
+  background: linear-gradient(45deg, #00ffcc, #4c6fff, #9b5cff, #00ffcc);
+  background-size: 300% 300%;
+  box-shadow: inset 0 0 40px rgba(255,255,255,0.6);
+  filter: drop-shadow(0 0 25px rgba(76, 111, 255, 0.8));
+  animation: riftChurn 5s linear infinite;
+  transition: transform 0.05s ease;
+  z-index: 5;
+}
+
+.rift-portal:active {
+  transform: scale(0.92) rotate(-5deg);
+}
+
+@keyframes riftChurn {
+  0% { background-position: 0% 50%; transform: rotate(0deg); }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; transform: rotate(360deg); }
+}
+
+/* VISUAL DRONE ORBITS */
+.visual-drone {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: #00ffcc;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #00ffcc, 0 0 20px #00ffcc;
+  z-index: 4;
+}
+
+/* RIGHT PANEL - STORE SYSTEM */
+.upgrades-section {
+  width: 420px; 
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #141428;
+  padding: 20px;
+  border-radius: 15px;
+  border: 2px solid #4c6fff;
+  box-shadow: 0 0 15px rgba(76, 111, 255, 0.2);
+  max-height: 480px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.upgrades-section h3 {
+  margin: 0 0 10px 0;
+  text-align: center;
+  color: #4c6fff;
+  font-size: 20px;
+  border-bottom: 1px solid rgba(76, 111, 255, 0.3);
+  padding-bottom: 8px;
+}
+
+.upgrade-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 12px 15px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.upgrade-card:hover:not(.disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #4c6fff;
+  box-shadow: 0 0 10px rgba(76, 111, 255, 0.3);
+}
+
+.upgrade-card.disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+.upgrade-card.game-closer {
+  border: 1px dashed #00ffcc;
+  background: rgba(0, 255, 204, 0.03);
+}
+.upgrade-card.game-closer:hover:not(.disabled) {
+  border-color: #ffc;
+  box-shadow: 0 0 15px rgba(0, 255, 204, 0.6);
+}
+
+.upgrade-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.upgrade-name {
+  font-weight: bold;
+  font-size: 15px;
+  color: white;
+}
+
+.upgrade-effect {
+  font-size: 11px;
+  color: #b0b0b0;
+  margin-top: 2px;
+}
+
+.upgrade-cost-box {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  white-space: nowrap;
+}
+
+.upgrade-cost {
+  color: #ffc;
+  font-family: Lato, sans-serif;
+  font-weight: bold;
+  font-size: 15px;
+}
+
+.upgrade-count {
+  font-size: 12px;
+  color: #aaa;
+  margin-top: 2px;
+}
+
+/* FLOATING POP NUMBERS */
+.floating-num {
+  position: absolute;
+  color: #00ffcc;
+  font-weight: bold;
+  font-size: 26px;
+  pointer-events: none;
+  animation: floatUp 0.8s ease-out forwards;
+  z-index: 99;
+  text-shadow: 0 0 6px rgba(0,0,0,0.8);
+}
+
+.floating-num.crit {
+  color: #ff9f43;
+  font-size: 34px;
+  text-shadow: 0 0 12px #ff4c4c;
+}
+
+@keyframes floatUp {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(-90px) scale(0.8); opacity: 0; }
+}
+
+/* OVERLAY MODALS */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 5, 10, 0.95);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.modal-box {
+  background: #141428;
+  padding: 35px;
+  border-radius: 15px;
+  border: 3px solid #4c6fff;
+  box-shadow: 0 0 25px rgba(76, 111, 255, 0.4);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  max-width: 440px;
+  width: 85%;
+}
+
+.modal-box.danger-style {
+  border-color: #ff4c4c;
+  box-shadow: 0 0 25px rgba(255, 76, 76, 0.4);
+}
+
+.modal-box.win-style {
+  border-color: #00ffcc;
+  box-shadow: 0 0 35px rgba(0, 255, 204, 0.6);
+}
+
+.modal-box h3 { margin: 0 0 12px 0; font-size: 24px; }
+.danger-style h3 { color: #ff4c4c; }
+.win-style h3 { color: #00ffcc; font-size: 28px; }
+.modal-box p { color: #ccc; margin: 0 0 24px 0; line-height: 1.5; }
+
+.modal-btns {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  width: 100%;
+}
+
+.btn-abort { background: #4a5568; border: 1px solid rgba(255,255,255,0.1); box-shadow: none; }
+.btn-danger { background: linear-gradient(135deg, #ff4c4c, #cc0000); border: 1px solid rgba(255,76,76,0.3); }
+
+@media(max-width: 850px) {
+  #clickerContainer { flex-direction: column; align-items: center; }
+  .upgrades-section { width: 100%; max-height: none; }
+}
+</style>
+</head>
+<body>
+
+<h1>Rift Clicker</h1>
+
+<div class="btn-row">
+  <button onclick="triggerExitCheck()">🏠 Exit to Hub</button>
+  <button class="btn-warn" onclick="triggerRestartCheck()">🔄 Restart Run</button>
+</div>
+
+<div id="clickerContainer">
+  <div class="clicker-section" id="clickArea">
+    <div class="counter-display">
+      <h2 id="energyDisplay">0</h2>
+      <p>⚡ Rift Energy &nbsp;(EPS: <span id="epsDisplay">0</span>)</p>
+    </div>
+    <div class="rift-wrapper" id="riftWrapper">
+      <button class="rift-portal" onclick="clickRift(event)"></button>
+    </div>
+  </div>
+
+  <div class="upgrades-section">
+    <h3>Cosmic Upgrades</h3>
+    <div id="upgradesWrapper" style="display:flex; flex-direction:column; gap:10px;"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="exitModal">
+  <div class="modal-box danger-style">
+    <h3>Warning: Abandon Timeline?</h3>
+    <p>Leaving will completely destabilize the matrix. All of your accumulated energy and purchases will be lost forever.</p>
+    <div class="modal-btns">
+      <button class="btn-abort" onclick="closeModals()">Keep Playing</button>
+      <button class="btn-danger" onclick="confirmExitWipe()">Wipe & Exit</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="restartModal">
+  <div class="modal-box danger-style">
+    <h3>Reset Current Progress?</h3>
+    <p>This will collapse your current matrix configuration back to absolute zero. You will lose everything from this run.</p>
+    <div class="modal-btns">
+      <button class="btn-abort" onclick="closeModals()">Keep Going</button>
+      <button class="btn-danger" onclick="confirmRestartWipe()">Reset Run</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="winModal">
+  <div class="modal-box win-style">
+    <h3>🌌 Universe Stabilized! 🌌</h3>
+    <p>Incredible job! You achieved Absolute Rift Stability and safely secured the cosmos loop. You have beaten Rift Clicker!</p>
+    <div class="modal-btns">
+      <button onclick="confirmExitWipe()" style="background: linear-gradient(135deg, #00ffcc, #4c6fff); color: #0f0f1a; font-size: 16px; padding: 12px 30px; border-radius:10px; font-weight:bold; border:none; cursor:pointer;">Return to Hub</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let energy = 0;
+let clickPower = 1;
+let critChance = 0.05; 
+let critMultiplier = 3; 
+let speedMultiplier = 1; 
+
+// Momentum Mechanic Variables
+let clickMomentumEPS = 0; 
+const momentumGainPerClick = 0.5; 
+const maxMomentumEPS = 50; 
+
+// Global Tracking Angle for the unified orbit ring
+let globalOrbitAngle = 0;
+
+const upgrades = [
+  { id: 'mouse', name: '⚡ Quantum Mouse', cost: 15, baseCost: 15, count: 0, type: 'click', power: 1, desc: '+1 per manual click' },
+  { id: 'crit', name: '🎯 Targeting Singularity', cost: 150, baseCost: 150, count: 0, type: 'crit', power: 0.04, desc: '+4% Crit Chance & +1x Crit Multiplier' },
+  { id: 'hand', name: '🤖 Subatomic Drone', cost: 500, baseCost: 500, count: 0, type: 'passive', power: 4, desc: '+4 energy/sec & spawns visual orbiters' },
+  { id: 'matrix', name: '🧬 Drone Overclock Link', cost: 4500, baseCost: 4500, count: 0, type: 'synergy', power: 0.10, desc: 'Drones produce +10% more energy per link' },
+  { id: 'battery', name: '🔋 Dark Matter Battery', cost: 15000, baseCost: 15000, count: 0, type: 'passive', power: 65, desc: '+65 energy/sec' },
+  { id: 'warp', name: '🌀 Chrono Warp Core', cost: 125000, baseCost: 125000, count: 0, type: 'speed', power: 0.15, desc: 'Permanently boost global system ticker speed by 15%' },
+  { id: 'singularity', name: '🌌 Singularity Engine', cost: 2500000, baseCost: 2500000, count: 0, type: 'passive', power: 1250, desc: '+1.25k energy/sec' },
+  { id: 'victory', name: '♾️ Absolute Stability', cost: 100000000, baseCost: 100000000, count: 0, type: 'win', power: 0, desc: 'Secure the final paradox sequence to finish the game' }
+];
+
+let visualDronesElements = [];
+
+function loadGame() {
+  const savedEnergy = localStorage.getItem("rift_clicker_energy");
+  if(savedEnergy !== null) {
+    energy = parseFloat(savedEnergy);
+    upgrades.forEach(up => {
+      const count = parseInt(localStorage.getItem(`rift_clicker_up_${up.id}`) || 0);
+      up.count = count;
+      up.cost = Math.round(up.baseCost * Math.pow(1.18, count));
+    });
+    recalculateStats();
+    syncVisualDrones();
+  }
+}
+
+function saveGame() {
+  localStorage.setItem("rift_clicker_energy", energy);
+  upgrades.forEach(up => {
+    localStorage.setItem(`rift_clicker_up_${up.id}`, up.count);
+  });
+}
+
+function wipeData() {
+  localStorage.removeItem("rift_clicker_energy");
+  upgrades.forEach(up => {
+    localStorage.removeItem(`rift_clicker_up_${up.id}`);
+  });
+}
+
+function recalculateStats() {
+  let clickUpgradeCount = upgrades.find(u => u.id === 'mouse').count;
+  clickPower = 1 + clickUpgradeCount * 1;
+
+  let critUpgradeCount = upgrades.find(u => u.id === 'crit').count;
+  critChance = 0.05 + (critUpgradeCount * 0.04);
+  critMultiplier = 3 + (critUpgradeCount * 1);
+
+  let warpUpgradeCount = upgrades.find(u => u.id === 'warp').count;
+  speedMultiplier = 1 + (warpUpgradeCount * 0.15);
+}
+
+function formatNumber(num) {
+  if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
+  if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
+  return Math.floor(num);
+}
+
+function getPassiveEPS() {
+  let baseDronePower = upgrades.find(u => u.id === 'hand').count * upgrades.find(u => u.id === 'hand').power;
+  let droneMultiplier = 1 + (upgrades.find(u => u.id === 'matrix').count * upgrades.find(u => u.id === 'matrix').power);
+  
+  let totalDronePower = baseDronePower * droneMultiplier;
+  let batteryPower = upgrades.find(u => u.id === 'battery').count * upgrades.find(u => u.id === 'battery').power;
+  let corePower = upgrades.find(u => u.id === 'singularity').count * upgrades.find(u => u.id === 'singularity').power;
+
+  return (totalDronePower + batteryPower + corePower) * speedMultiplier;
+}
+
+function getTOTAL_EPS() {
+  return getPassiveEPS() + clickMomentumEPS;
+}
+
+function updateUI() {
+  document.getElementById("energyDisplay").textContent = formatNumber(energy);
+  document.getElementById("epsDisplay").textContent = formatNumber(getTOTAL_EPS());
+  
+  upgrades.forEach(up => {
+    const card = document.getElementById(`card-${up.id}`);
+    if (card) {
+      const isDisabled = energy < up.cost;
+      if (isDisabled) {
+        card.classList.add('disabled');
+        card.onclick = null;
+      } else {
+        card.classList.remove('disabled');
+        card.onclick = () => buyUpgrade(up);
+      }
+      document.getElementById(`cost-${up.id}`).textContent = `⚡ ${formatNumber(up.cost)}`;
+      document.getElementById(`count-${up.id}`).textContent = up.type === 'win' ? 'Ending' : `Owned: ${up.count}`;
+    }
+  });
+}
+
+function clickRift(event) {
+  let isCrit = Math.random() < critChance;
+  let finalGain = isCrit ? (clickPower * critMultiplier) : clickPower;
+  
+  energy += finalGain;
+  clickMomentumEPS = Math.min(maxMomentumEPS, clickMomentumEPS + momentumGainPerClick);
+  
+  const clickArea = document.getElementById("clickArea");
+  const rect = clickArea.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
+
+  const floatNum = document.createElement("div");
+  floatNum.className = "floating-num" + (isCrit ? " crit" : "");
+  floatNum.textContent = isCrit ? `💥 CRIT +${formatNumber(finalGain)}` : `+${finalGain}`;
+  floatNum.style.left = `${x}px`;
+  floatNum.style.top = `${y}px`;
+  
+  clickArea.appendChild(floatNum);
+  setTimeout(() => floatNum.remove(), 800);
+
+  updateUI();
+}
+
+/* SYNC & SPAWN EQUALLY DISTANCED DRONES */
+function syncVisualDrones() {
+  const wrapper = document.getElementById("riftWrapper");
+  
+  // Wipe old elements
+  visualDronesElements.forEach(el => el.remove());
+  visualDronesElements = [];
+
+  const droneCount = upgrades.find(u => u.id === 'hand').count;
+  const displayLimit = Math.min(droneCount, 40);
+
+  for(let i = 0; i < displayLimit; i++) {
+    const el = document.createElement("div");
+    el.className = "visual-drone";
+    wrapper.appendChild(el);
+    visualDronesElements.push(el);
+  }
+}
+
+/* ANIMATE AT FIXED SPEED WITH MATHEMATICALLY EQUAL SPACING */
+function animateDrones() {
+  // Advance one single velocity clock for the whole system ring
+  globalOrbitAngle += 0.015; 
+  
+  const totalDrones = visualDronesElements.length;
+  const orbitRadius = 120; // Exact distance from the center
+
+  visualDronesElements.forEach((el, index) => {
+    // Distribute perfectly evenly along the 360-degree circle circumference
+    const offsetAngle = (index * (360 / totalDrones)) * (Math.PI / 180);
+    const finalAngle = globalOrbitAngle + offsetAngle;
+
+    const x = Math.cos(finalAngle) * orbitRadius;
+    const y = Math.sin(finalAngle) * orbitRadius;
+    
+    el.style.transform = `translate(${x}px, ${y}px)`;
+  });
+  
+  requestAnimationFrame(animateDrones);
+}
+
+function buildShopCards() {
+  const wrapper = document.getElementById("upgradesWrapper");
+  wrapper.innerHTML = "";
+
+  upgrades.forEach(up => {
+    const card = document.createElement("div");
+    card.className = "upgrade-card" + (up.type === 'win' ? ' game-closer' : '');
+    card.id = `card-${up.id}`;
+    
+    card.innerHTML = `
+      <div class="upgrade-info">
+        <span class="upgrade-name">${up.name}</span>
+        <span class="upgrade-effect">${up.desc}</span>
+      </div>
+      <div class="upgrade-cost-box">
+        <div class="upgrade-cost" id="cost-${up.id}">⚡ ${formatNumber(up.cost)}</div>
+        <div class="upgrade-count" id="count-${up.id}">Owned: ${up.count}</div>
+      </div>
+    `;
+    wrapper.appendChild(card);
+  });
+}
+
+function buyUpgrade(up) {
+  if (energy >= up.cost) {
+    energy -= up.cost;
+    
+    if (up.type === 'win') {
+      document.getElementById("winModal").style.display = "flex";
+      return;
+    }
+    
+    up.count++;
+    up.cost = Math.round(up.baseCost * Math.pow(1.18, up.count));
+    
+    recalculateStats();
+    if(up.id === 'hand') syncVisualDrones();
+    saveGame();
+    updateUI();
+  }
+}
+
+function triggerExitCheck() { document.getElementById("exitModal").style.display = "flex"; }
+function triggerRestartCheck() { document.getElementById("restartModal").style.display = "flex"; }
+function closeModals() { document.getElementById("exitModal").style.display = "none"; document.getElementById("restartModal").style.display = "none"; }
+function confirmExitWipe() { wipeData(); window.location.href = "index.html"; }
+
+function confirmRestartWipe() {
+  wipeData();
+  energy = 0;
+  clickMomentumEPS = 0;
+  upgrades.forEach(up => { up.count = 0; up.cost = up.baseCost; });
+  recalculateStats();
+  syncVisualDrones();
+  closeModals();
+  buildShopCards();
+  updateUI();
+  window.location.reload();
+}
+
+loadGame();
+buildShopCards();
+updateUI();
+requestAnimationFrame(animateDrones);
+
+setInterval(() => {
+  const passiveGain = getTOTAL_EPS() / 10;
+  energy += passiveGain;
+  
+  if (clickMomentumEPS > 0) {
+    clickMomentumEPS = Math.max(0, clickMomentumEPS - 0.15);
+  }
+  
+  document.getElementById("energyDisplay").textContent = formatNumber(energy);
+  document.getElementById("epsDisplay").textContent = formatNumber(getTOTAL_EPS());
+  
+  upgrades.forEach(up => {
+    const card = document.getElementById(`card-${up.id}`);
+    if (card) {
+      if (energy < up.cost) {
+        card.classList.add('disabled');
+        card.onclick = null;
+      } else {
+        card.classList.remove('disabled');
+        card.onclick = () => buyUpgrade(up);
+      }
+    }
+  });
+}, 100);
+
+setInterval(saveGame, 15000);
+</script>
+</body>
+</html>
