@@ -169,9 +169,11 @@ body.light-theme .game-card {
   border: 1px solid #e2e8f0;
 }
 
+/* NEON HOVER GLOW SYSTEM */
 .game-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+  transform: translateY(-5px) scale(1.02);
+  border-color: #00ffcc !important;
+  box-shadow: 0 0 20px rgba(0, 255, 204, 0.4), 0 0 40px rgba(76, 111, 255, 0.2);
 }
 
 /* VIVID ACCENTED STAR BUTTONS */
@@ -250,20 +252,11 @@ a {
   cursor: pointer;
 }
 
-.guest-badge {
-  background: var(--border-locked);
-  color: white;
-  padding: 3px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  margin-left: 10px;
-}
-
 .section-title-container {
   text-align: center;
   margin-top: 20px;
 }
-</style>       
+</style>     
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7292845069394911" crossorigin="anonymous"></script>
 </head>
 
@@ -275,7 +268,7 @@ a {
 
 <div id="loginScreen">
   <h2>Rift Hub</h2>
-  <input id="email" placeholder="Email"><br>
+  <input id="email" placeholder="Email" autofocus><br>
   <input id="password" type="password" placeholder="Password"><br>
 
   <button onclick="login()">Login</button>
@@ -288,7 +281,7 @@ a {
 <header>
   <button class="theme-toggle-btn" onclick="toggleTheme()">🌗 Theme</button>
   <h1>🎮 Rift Hub 🎮</h1>
-  <p>Welcome, <span id="username"></span><span id="badgeArea"></span></p>
+  <p>Welcome, <span id="username"></span> <button onclick="logout()" style="background: #e53e3e; margin-left: 15px; padding: 4px 10px; font-size: 12px;">Exit Session</button></p>
   <input type="text" id="search" class="search-input" placeholder="Search standard games...">
 </header>
 
@@ -599,7 +592,12 @@ function setGameOfDay() {
   const dayId = today.getFullYear() * 1000 + (today.getMonth() + 1) * 100 + today.getDate();
   const index = dayId % gamePool.length;
   currentGameOfDay = gamePool[index];
-  document.getElementById("gotwTitle").textContent = currentGameOfDay.name;
+  
+  if (isGuest) {
+    document.getElementById("gotwTitle").textContent = "🔒 Locked Content";
+  } else {
+    document.getElementById("gotwTitle").textContent = currentGameOfDay.name;
+  }
 }
 
 window.playGameOfDay = function() {
@@ -608,6 +606,32 @@ window.playGameOfDay = function() {
     return;
   }
   window.openGame(currentGameOfDay.page, currentGameOfDay.name);
+};
+
+/* ENTER KEY FORM CAPTURE SHORTCUT */
+document.getElementById("password").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    window.login();
+  }
+});
+
+/* DUAL SESSION LOGOUT CONTROLLER */
+window.logout = function() {
+  if (isGuest) {
+    isGuest = false;
+    document.getElementById("site").style.display = "none";
+    document.getElementById("loginScreen").style.display = "block";
+    document.getElementById("email").value = "";
+    document.getElementById("password").value = "";
+  } else {
+    auth.signOut().then(() => {
+      isGuest = false;
+      document.getElementById("site").style.display = "none";
+      document.getElementById("loginScreen").style.display = "block";
+      document.getElementById("email").value = "";
+      document.getElementById("password").value = "";
+    }).catch(err => alert(err.message));
+  }
 };
 
 /* LOGIN */
@@ -650,7 +674,6 @@ function loadUser(email, guestModeStatus) {
   setGameOfDay();
 
   if (isGuest) {
-    document.getElementById("badgeArea").innerHTML = `<span class="guest-badge">Guest Mode</span>`;
     document.getElementById("historySection").style.display = "none"; 
     document.getElementById("statsBar").style.display = "none";
     
@@ -666,7 +689,6 @@ function loadUser(email, guestModeStatus) {
       card.querySelector(".ex-btn").innerText = "Locked";
     });
   } else {
-    document.getElementById("badgeArea").innerHTML = "";
     document.getElementById("historySection").style.display = "block";
     document.getElementById("statsBar").style.display = "flex";
     
@@ -822,12 +844,10 @@ function fixLayout() {
     const grid = document.getElementById(id);
     if (!grid) return;
     
-    // Grab only matching structural game cards that are explicitly visible
     const visibleCards = Array.from(grid.querySelectorAll(".game-card")).filter(card => {
       return card.style.display !== "none" && !card.closest(".locked-card");
     });
 
-    // Reset layout attributes first
     visibleCards.forEach(card => {
       card.style.marginLeft = "0";
       card.style.marginRight = "0";
@@ -836,7 +856,6 @@ function fixLayout() {
     const count = visibleCards.length;
     if (count === 0) return;
 
-    // Apply layout calculation algorithm
     if (count % 3 === 1) {
       const lastCard = visibleCards[count - 1];
       lastCard.style.marginLeft = "auto";
