@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rift Clicker - Exclusives</title>
+<title>Rift Clicker - Cosmic Edition</title>
 <style>
 @import url("https://fonts.googleapis.com/css?family=Lato:400,400i,700");
 
@@ -58,6 +58,7 @@ button:hover, .back-btn:hover {
   gap: 12px;
   margin-top: 10px;
   margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
 .btn-warn {
@@ -67,6 +68,21 @@ button:hover, .back-btn:hover {
 }
 .btn-warn:hover {
   box-shadow: 0 0 18px rgba(255,107,107,0.45);
+}
+
+.btn-nuclear {
+  background: linear-gradient(135deg, #d63031, #2d3436);
+  border: 1px solid #ff7675;
+  box-shadow: 0 0 10px rgba(214, 48, 49, 0.3);
+}
+.btn-nuclear:hover {
+  box-shadow: 0 0 20px rgba(214, 48, 49, 0.7);
+}
+
+.btn-prestige-action {
+  background: linear-gradient(135deg, #a55eea, #4b7bec);
+  border: 1px solid rgba(165, 94, 234, 0.6);
+  box-shadow: 0 0 15px rgba(165, 94, 234, 0.4);
 }
 
 /* MAIN PANEL LAYOUT */
@@ -118,6 +134,14 @@ button:hover, .back-btn:hover {
   font: 18px Lato, sans-serif;
   margin: 8px 0 0 0;
   white-space: nowrap; 
+}
+
+.prestige-tracker {
+  color: #a55eea;
+  font-weight: bold;
+  font-size: 14px;
+  margin-top: 4px;
+  text-shadow: 0 0 8px rgba(165, 94, 234, 0.5);
 }
 
 /* PORTAL */
@@ -320,9 +344,15 @@ button:hover, .back-btn:hover {
   box-shadow: 0 0 35px rgba(0, 255, 204, 0.6);
 }
 
+.modal-box.prestige-style {
+  border-color: #a55eea;
+  box-shadow: 0 0 30px rgba(165, 94, 234, 0.6);
+}
+
 .modal-box h3 { margin: 0 0 12px 0; font-size: 24px; }
 .danger-style h3 { color: #ff4c4c; }
 .win-style h3 { color: #00ffcc; font-size: 28px; }
+.prestige-style h3 { color: #a55eea; }
 .modal-box p { color: #ccc; margin: 0 0 24px 0; line-height: 1.5; }
 
 .modal-btns {
@@ -348,6 +378,8 @@ button:hover, .back-btn:hover {
 <div class="btn-row">
   <button onclick="triggerExitCheck()">🏠 Exit to Hub</button>
   <button class="btn-warn" onclick="triggerRestartCheck()">🔄 Restart Run</button>
+
+  <button class="btn-nuclear" onclick="triggerFullWipeCheck()">☣️ Reset ALL Prestige</button>
 </div>
 
 <div id="clickerContainer">
@@ -355,6 +387,7 @@ button:hover, .back-btn:hover {
     <div class="counter-display">
       <h2 id="energyDisplay">0</h2>
       <p>⚡ Rift Energy &nbsp;(EPS: <span id="epsDisplay">0</span>)</p>
+      <div class="prestige-tracker" id="prestigeMultiplierDisplay">Prestige Boost: 1.00x</div>
     </div>
     <div class="rift-wrapper" id="riftWrapper">
       <button class="rift-portal" onclick="clickRift(event)"></button>
@@ -370,10 +403,10 @@ button:hover, .back-btn:hover {
 <div class="modal-overlay" id="exitModal">
   <div class="modal-box danger-style">
     <h3>Warning: Abandon Timeline?</h3>
-    <p>Leaving will completely destabilize the matrix. All of your accumulated energy and purchases will be lost forever.</p>
+    <p>Leaving will pause your automatic machinery. Your current run values will stay safely saved, and your Prestige level will remain unharmed.</p>
     <div class="modal-btns">
       <button class="btn-abort" onclick="closeModals()">Keep Playing</button>
-      <button class="btn-danger" onclick="confirmExitWipe()">Wipe & Exit</button>
+      <button class="btn-danger" onclick="confirmExitWipe()">Exit Game</button>
     </div>
   </div>
 </div>
@@ -381,10 +414,55 @@ button:hover, .back-btn:hover {
 <div class="modal-overlay" id="restartModal">
   <div class="modal-box danger-style">
     <h3>Reset Current Progress?</h3>
-    <p>This will collapse your current matrix configuration back to absolute zero. You will lose everything from this run.</p>
+    <p>This will collapse your upgrades back to zero. You will lose your current energy, but your <strong>Prestige Multiplier will NOT be lost</strong>.</p>
     <div class="modal-btns">
       <button class="btn-abort" onclick="closeModals()">Keep Going</button>
       <button class="btn-danger" onclick="confirmRestartWipe()">Reset Run</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="prestigeModal">
+  <div class="modal-box prestige-style">
+    <h3>Trigger Cosmic Collapse?</h3>
+    <p>Sacrifice your current universe setup! This resets your structural items and current energy, but locks in a permanent multiplier jump based on your energy legacy levels.</p>
+    <p style="color:#a55eea; font-weight:bold;" id="prestigeGainEstimate">Ready to claim your timeline prestige?</p>
+    <div class="modal-btns">
+      <button class="btn-abort" onclick="closeModals()">Not Ready</button>
+      <button class="btn-danger" style="background: linear-gradient(135deg, #a55eea, #6c5ce7); border:none;" onclick="confirmPrestigeLoop()">Collapse Reality</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="prestigeLockedModal">
+  <div class="modal-box prestige-style" style="border-color: #ff6b6b; box-shadow: 0 0 20px rgba(255, 107, 107, 0.4);">
+    <h3 style="color:#ff6b6b;">Matrix Stabilizer Offline</h3>
+    <p>The cosmic compression engine requires extreme pressure to trigger a timeline loop.</p>
+    <p style="color:#ff9f43; font-weight:bold;">Reach 1,000,000 Rift Energy to unlock the Prestige loop!</p>
+    <div class="modal-btns">
+      <button class="btn-abort" onclick="closeModals()">Back to Clicking</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="fullWipeModal">
+  <div class="modal-box danger-style">
+    <h3>☣️ CRITICAL WARNING: FULL RESET ☣️</h3>
+    <p>This will purge <strong>EVERYTHING</strong> from existence. You will lose your upgrades, your progress, and your entire prestige legacy rank. This cannot be undone!</p>
+    <div class="modal-btns">
+      <button class="btn-abort" onclick="closeModals()">Abort Reset</button>
+      <button class="btn-danger" onclick="confirmFullWipe()">Delete All Data</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="wipeBlockedModal">
+  <div class="modal-box danger-style" style="border-color: #ffc107; box-shadow: 0 0 25px rgba(255, 193, 7, 0.4);">
+    <h3 style="color:#ffc107;">Quantum Lock Active</h3>
+    <p>You cannot trigger a master timeline system wipe yet. Your anchor holds too strong.</p>
+    <p style="color:#ffffff; font-weight:bold;">You must have at least 1,000,000 Energy right now before you can fully clear your prestige record!</p>
+    <div class="modal-btns">
+      <button class="btn-abort" style="background: #ffc107; color: #111;" onclick="closeModals()">Understood</button>
     </div>
   </div>
 </div>
@@ -394,7 +472,7 @@ button:hover, .back-btn:hover {
     <h3>🌌 Universe Stabilized! 🌌</h3>
     <p>Incredible job! You achieved Absolute Rift Stability and safely secured the cosmos loop. You have beaten Rift Clicker!</p>
     <div class="modal-btns">
-      <button onclick="confirmExitWipe()" style="background: linear-gradient(135deg, #00ffcc, #4c6fff); color: #0f0f1a; font-size: 16px; padding: 12px 30px; border-radius:10px; font-weight:bold; border:none; cursor:pointer;">Return to Hub</button>
+      <button onclick="closeModals()" style="background: linear-gradient(135deg, #00ffcc, #4c6fff); color: #0f0f1a; font-size: 16px; padding: 12px 30px; border-radius:10px; font-weight:bold; border:none; cursor:pointer;">Keep Playing</button>
     </div>
   </div>
 </div>
@@ -406,12 +484,16 @@ let critChance = 0.05;
 let critMultiplier = 3; 
 let speedMultiplier = 1; 
 
+// Prestige Variables
+let prestigeMultiplierTier = 0; // Number of loops cleared
+let prestigeBoostFactor = 1; 
+let hasUnlockedPrestigeEver = false; 
+
 // Momentum Mechanic Variables
 let clickMomentumEPS = 0; 
 const momentumGainPerClick = 0.5; 
 const maxMomentumEPS = 50; 
 
-// Global Tracking Angle for the unified orbit ring
 let globalOrbitAngle = 0;
 
 const upgrades = [
@@ -429,6 +511,9 @@ let visualDronesElements = [];
 
 function loadGame() {
   const savedEnergy = localStorage.getItem("rift_clicker_energy");
+  prestigeMultiplierTier = parseInt(localStorage.getItem("rift_clicker_prestige_tier") || 0);
+  hasUnlockedPrestigeEver = localStorage.getItem("rift_clicker_unlocked_prestige") === "true";
+
   if(savedEnergy !== null) {
     energy = parseFloat(savedEnergy);
     upgrades.forEach(up => {
@@ -436,28 +521,42 @@ function loadGame() {
       up.count = count;
       up.cost = Math.round(up.baseCost * Math.pow(1.18, count));
     });
-    recalculateStats();
-    syncVisualDrones();
   }
+  recalculateStats();
+  syncVisualDrones();
 }
 
 function saveGame() {
   localStorage.setItem("rift_clicker_energy", energy);
+  localStorage.setItem("rift_clicker_prestige_tier", prestigeMultiplierTier);
+  localStorage.setItem("rift_clicker_unlocked_prestige", hasUnlockedPrestigeEver);
   upgrades.forEach(up => {
     localStorage.setItem(`rift_clicker_up_${up.id}`, up.count);
   });
 }
 
-function wipeData() {
+function wipeRunData() {
   localStorage.removeItem("rift_clicker_energy");
   upgrades.forEach(up => {
     localStorage.removeItem(`rift_clicker_up_${up.id}`);
   });
 }
 
+function wipeAllDataIncludingPrestige() {
+  wipeRunData();
+  localStorage.removeItem("rift_clicker_prestige_tier");
+  localStorage.removeItem("rift_clicker_unlocked_prestige");
+  prestigeMultiplierTier = 0;
+  hasUnlockedPrestigeEver = false;
+}
+
 function recalculateStats() {
+  // Prestige boost dynamically calculated using current energy values: 1 + (Energy / 1,000,000) * (1 + Loops)
+  let baseScaling = energy / 1000000;
+  prestigeBoostFactor = 1 + (baseScaling * (1 + prestigeMultiplierTier));
+
   let clickUpgradeCount = upgrades.find(u => u.id === 'mouse').count;
-  clickPower = 1 + clickUpgradeCount * 1;
+  clickPower = (1 + clickUpgradeCount * 1) * prestigeBoostFactor;
 
   let critUpgradeCount = upgrades.find(u => u.id === 'crit').count;
   critChance = 0.05 + (critUpgradeCount * 0.04);
@@ -465,6 +564,12 @@ function recalculateStats() {
 
   let warpUpgradeCount = upgrades.find(u => u.id === 'warp').count;
   speedMultiplier = 1 + (warpUpgradeCount * 0.15);
+
+  document.getElementById("prestigeMultiplierDisplay").textContent = `Prestige Boost: ${prestigeBoostFactor.toFixed(2)}x`;
+  
+  if (energy >= 1000000 || prestigeMultiplierTier > 0) {
+    hasUnlockedPrestigeEver = true;
+  }
 }
 
 function formatNumber(num) {
@@ -481,7 +586,7 @@ function getPassiveEPS() {
   let batteryPower = upgrades.find(u => u.id === 'battery').count * upgrades.find(u => u.id === 'battery').power;
   let corePower = upgrades.find(u => u.id === 'singularity').count * upgrades.find(u => u.id === 'singularity').power;
 
-  return (totalDronePower + batteryPower + corePower) * speedMultiplier;
+  return (totalDronePower + batteryPower + corePower) * speedMultiplier * prestigeBoostFactor;
 }
 
 function getTOTAL_EPS() {
@@ -492,6 +597,10 @@ function updateUI() {
   document.getElementById("energyDisplay").textContent = formatNumber(energy);
   document.getElementById("epsDisplay").textContent = formatNumber(getTOTAL_EPS());
   
+  if (energy >= 1000000) {
+    hasUnlockedPrestigeEver = true;
+  }
+
   upgrades.forEach(up => {
     const card = document.getElementById(`card-${up.id}`);
     if (card) {
@@ -523,7 +632,7 @@ function clickRift(event) {
 
   const floatNum = document.createElement("div");
   floatNum.className = "floating-num" + (isCrit ? " crit" : "");
-  floatNum.textContent = isCrit ? `💥 CRIT +${formatNumber(finalGain)}` : `+${finalGain}`;
+  floatNum.textContent = isCrit ? `💥 CRIT +${formatNumber(finalGain)}` : `+${formatNumber(finalGain)}`;
   floatNum.style.left = `${x}px`;
   floatNum.style.top = `${y}px`;
   
@@ -533,11 +642,8 @@ function clickRift(event) {
   updateUI();
 }
 
-/* SYNC & SPAWN EQUALLY DISTANCED DRONES */
 function syncVisualDrones() {
   const wrapper = document.getElementById("riftWrapper");
-  
-  // Wipe old elements
   visualDronesElements.forEach(el => el.remove());
   visualDronesElements = [];
 
@@ -552,22 +658,16 @@ function syncVisualDrones() {
   }
 }
 
-/* ANIMATE AT FIXED SPEED WITH MATHEMATICALLY EQUAL SPACING */
 function animateDrones() {
-  // Advance one single velocity clock for the whole system ring
   globalOrbitAngle += 0.015; 
-  
   const totalDrones = visualDronesElements.length;
-  const orbitRadius = 120; // Exact distance from the center
+  const orbitRadius = 120;
 
   visualDronesElements.forEach((el, index) => {
-    // Distribute perfectly evenly along the 360-degree circle circumference
     const offsetAngle = (index * (360 / totalDrones)) * (Math.PI / 180);
     const finalAngle = globalOrbitAngle + offsetAngle;
-
     const x = Math.cos(finalAngle) * orbitRadius;
     const y = Math.sin(finalAngle) * orbitRadius;
-    
     el.style.transform = `translate(${x}px, ${y}px)`;
   });
   
@@ -618,14 +718,74 @@ function buyUpgrade(up) {
 
 function triggerExitCheck() { document.getElementById("exitModal").style.display = "flex"; }
 function triggerRestartCheck() { document.getElementById("restartModal").style.display = "flex"; }
-function closeModals() { document.getElementById("exitModal").style.display = "none"; document.getElementById("restartModal").style.display = "none"; }
-function confirmExitWipe() { wipeData(); window.location.href = "index.html"; }
+
+function triggerFullWipeCheck() {
+  // If user has LESS than 1M energy, block the action directly inside this button event handler
+  if (energy < 1000000) {
+    document.getElementById("wipeBlockedModal").style.display = "flex";
+  } else {
+    document.getElementById("fullWipeModal").style.display = "flex";
+  }
+}
+
+function triggerPrestigeCheck() {
+  if (energy < 1000000 && prestigeMultiplierTier === 0) {
+    document.getElementById("prestigeLockedModal").style.display = "flex";
+  } else {
+    document.getElementById("prestigeModal").style.display = "flex";
+  }
+}
+
+function closeModals() { 
+  document.getElementById("exitModal").style.display = "none"; 
+  document.getElementById("restartModal").style.display = "none"; 
+  document.getElementById("prestigeModal").style.display = "none"; 
+  document.getElementById("prestigeLockedModal").style.display = "none"; 
+  document.getElementById("fullWipeModal").style.display = "none"; 
+  document.getElementById("wipeBlockedModal").style.display = "none"; 
+  document.getElementById("winModal").style.display = "none"; 
+}
+
+function confirmExitWipe() {
+  saveGame();
+  window.location.href = "index.html";
+}
 
 function confirmRestartWipe() {
-  wipeData();
+  wipeRunData();
   energy = 0;
   clickMomentumEPS = 0;
   upgrades.forEach(up => { up.count = 0; up.cost = up.baseCost; });
+  recalculateStats();
+  syncVisualDrones();
+  closeModals();
+  buildShopCards();
+  updateUI();
+}
+
+function confirmPrestigeLoop() {
+  prestigeMultiplierTier++;
+  
+  wipeRunData();
+  energy = 0;
+  clickMomentumEPS = 0;
+  upgrades.forEach(up => { up.count = 0; up.cost = up.baseCost; });
+  
+  saveGame();
+  recalculateStats();
+  syncVisualDrones();
+  closeModals();
+  buildShopCards();
+  updateUI();
+}
+
+function confirmFullWipe() {
+  wipeAllDataIncludingPrestige();
+  energy = 0;
+  clickMomentumEPS = 0;
+  upgrades.forEach(up => { up.count = 0; up.cost = up.baseCost; });
+  
+  saveGame();
   recalculateStats();
   syncVisualDrones();
   closeModals();
@@ -647,6 +807,9 @@ setInterval(() => {
     clickMomentumEPS = Math.max(0, clickMomentumEPS - 0.15);
   }
   
+  // Constantly adjusts manual power scales using real-time dynamic calculations tied to current pool states
+  recalculateStats();
+
   document.getElementById("energyDisplay").textContent = formatNumber(energy);
   document.getElementById("epsDisplay").textContent = formatNumber(getTOTAL_EPS());
   
