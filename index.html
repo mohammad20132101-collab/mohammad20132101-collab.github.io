@@ -16,11 +16,12 @@
   --border-locked: #e53e3e;
   --bg-locked: #141424;
   --banner-bg: #1a1a2e;
-  --banner-border: 1px solid #4c6fff;
+  --banner-border: none;
   --star-active: #ffd700;
   --star-inactive: #ffffff;
   --input-bg: #1a1a2e;
   --input-text: #ffffff;
+  --hover-glow: rgba(76, 111, 255, 0.4);
 }
 
 /* HARD OVERRIDE - TRUE LIGHT MODE (PREMIUM SILVER & BLUE) */
@@ -35,11 +36,12 @@ body.light-theme {
   --border-locked: #de3838;
   --bg-locked: #e2e8f0;
   --banner-bg: #ffffff; 
-  --banner-border: 3px solid #0066ff; 
+  --banner-border: none; 
   --star-active: #ff9900; 
   --star-inactive: #718096; 
   --input-bg: #ffffff; 
   --input-text: #1a202c; 
+  --hover-glow: rgba(0, 102, 255, 0.2);
 }
 
 body {
@@ -161,7 +163,8 @@ body.light-theme #gotwTitle {
   width: calc(33.333% - 10px);
   box-sizing: border-box;
   position: relative;
-  transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid transparent;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
   box-shadow: 0 4px 6px rgba(0,0,0,0.05);
 }
 
@@ -172,8 +175,8 @@ body.light-theme .game-card {
 /* NEON HOVER GLOW SYSTEM */
 .game-card:hover {
   transform: translateY(-5px) scale(1.02);
-  border-color: #00ffcc !important;
-  box-shadow: 0 0 20px rgba(0, 255, 204, 0.4), 0 0 40px rgba(76, 111, 255, 0.2);
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 20px var(--hover-glow), 0 4px 15px rgba(0,0,0,0.15);
 }
 
 /* VIVID ACCENTED STAR BUTTONS */
@@ -210,17 +213,17 @@ body.light-theme .fav-btn.is-active {
   background: rgba(0, 0, 0, 0.06) !important;
 }
 
+/* FIXED EXCLUSIVES LAYOUT CONTAINER */
 .exclusives-list {
   display: flex;
   flex-direction: column;
   gap: 15px;
   padding: 20px;
-  max-height: 500px;
-  overflow-y: auto;
 }
 
 .exclusives-list .game-card {
   width: 100%;
+  height: auto; /* Ensures card wraps content completely */
 }
 
 /* Visual layout for locked content */
@@ -228,6 +231,12 @@ body.light-theme .fav-btn.is-active {
   background: var(--bg-locked);
   opacity: 0.6;
   border: 1px dashed var(--border-locked);
+}
+
+.game-card.locked-card:hover {
+  transform: none;
+  border-color: var(--border-locked) !important;
+  box-shadow: none;
 }
 
 .game-card.locked-card button:not(.fav-btn) {
@@ -256,7 +265,7 @@ a {
   text-align: center;
   margin-top: 20px;
 }
-</style>     
+</style>    
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7292845069394911" crossorigin="anonymous"></script>
 </head>
 
@@ -524,6 +533,13 @@ a {
       <button class="ex-btn" onclick="openExclusive('riftbreaker.html','Rift Breaker')">Play</button>
     </div>
   </div>
+  
+  <div class="game-card" data-exclusive-name="rift whacker">
+    <div class="game-info">
+      <h3 class="ex-title">Rift Whacker</h3>
+      <button class="ex-btn" onclick="openExclusive('riftwhacker.html','Rift Whacker')">Play</button>
+    </div>
+  </div>
 </div>
 </section>
 
@@ -578,7 +594,18 @@ const gamePool = [
   { id: "pac-man", name: "Pac-Man", page: "pacman.html" },
   { id: "wordle", name: "Wordle", page: "wordle.html" },
   { id: "connectfour", name: "Connect Four", page: "connectfour.html" },
+  { id: "tictactoe", name: "Tic-Tac-Toe", page: "tictactoe.html" },
+  { id: "rockpaperscissors", name: "Rock, Paper, Scissors", page: "rockpaperscissors.html" },
+  { id: "dotsandboxes", name: "Dots & Boxes", page: "dotsandboxes.html" },
   { id: "chess", name: "Chess", page: "chess.html" },
+  { id: "snakesandladders", name: "Portals and Rift Holes", page: "snakesandladders.html" },
+  { id: "flowfree", name: "Flow Free", page: "flowfree.html" },
+  { id: "nonogram", name: "Nonogram", page: "nonogram.html" },
+  { id: "hangman", name: "Hangman", page: "hangman.html" },
+  { id: "simonsays", name: "Simon Says", page: "simonsays.html" },
+  { id: "checkers", name: "Checkers", page: "checkers.html" },
+  { id: "Utictactoe", name: "Ultimate Tic-Tac-Toe", page: "Utictactoe.html" },
+  { id: "hexes", name: "Hexes", page: "hexes.html" },
   { id: "sudoku", name: "Sudoku", page: "sudoku.html" },
   { id: "stack", name: "Super Stack", page: "stack.html" },
   { id: "cookieclicker", name: "Cookie Clicker", page: "cookieclicker.html" }
@@ -822,7 +849,7 @@ function renderFavorites() {
         <button onclick="openGame('${g.page}','${g.name}')">Play</button>
       </div>
     </div>
-   `).join("");
+     `).join("");
   
   filterFavoritesGrid(document.getElementById("search").value.toLowerCase());
   fixLayout();
@@ -840,7 +867,7 @@ function renderHistory() {
         <button onclick="openGame('${g.page}','${g.name}')">Play</button>
       </div>
     </div>
-   `).join("");
+     `).join("");
   fixLayout();
 }
 
