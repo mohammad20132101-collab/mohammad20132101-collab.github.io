@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rift Whacker</title>
+
+<style>
+@import url("https://fonts.googleapis.com/css?family=Lato:400,700");
+
+body {
+  margin: 0;
+  font-family: 'Lato', Arial, sans-serif;
+  background: #0f0f1a;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  user-select: none;
+  -webkit-user-select: none;
+  min-height: 100vh;
+}
+
+header {
+  width: 100%;
+  text-align: center;
+  padding: 15px;
+  background: #1a1a2e;
+  box-sizing: border-box;
+}
+
+/* MENU OVERLAY */
+#menu {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 15, 26, 0.95);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+.menuBox {
+  background: #141428;
+  padding: 40px;
+  border-radius: 15px;
+  border: 3px solid #4c6fff;
+  box-shadow: 0 0 25px rgba(76,108,255,0.35);
+  text-align: center;
+  max-width: 440px;
+  width: 90%;
+  box-sizing: border-box;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.menuBox h1 {
+  color: #4c6fff;
+  margin-bottom: 25px;
+  transition: color 0.3s;
+}
+
+.menu-btn-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+}
+
+.menu-btn-container button {
+  width: 85%;
+  box-sizing: border-box;
+}
+
+/* GAMEPLAY CONTAINER */
+.game-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  max-width: 480px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.score-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  font-size: 18px;
+  margin-bottom: 15px;
+  background: #1a1a2e;
+  padding: 12px 20px;
+  border-radius: 8px;
+  box-sizing: border-box;
+  gap: 10px;
+}
+.score-container > div {
+  white-space: nowrap;
+}
+.mode-tag {
+  color: #4c6fff;
+  font-weight: bold;
+  transition: color 0.3s;
+}
+#timerLabel {
+  font-weight: bold;
+}
+#timer {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 3x3 MATRIX GRID */
+.whack-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  background: #050814;
+  border: 3px solid #4c6fff;
+  border-radius: 12px;
+  padding: 15px;
+  box-shadow: 0 0 20px rgba(76, 108, 255, 0.2);
+  max-width: 380px;
+  width: 100%;
+  aspect-ratio: 1;
+  box-sizing: border-box;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.cell {
+  background: #0a0e24;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
+  aspect-ratio: 1;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: transform 0.1s;
+  box-shadow: inset 0 0 8px rgba(0,0,0,0.6);
+}
+.cell:active {
+  transform: scale(0.95);
+}
+
+/* RIFTS */
+.rift {
+  width: 85%;
+  height: 85%;
+  border-radius: 50%;
+  position: absolute;
+  transition: background 0.15s, box-shadow 0.15s, opacity 0.2s;
+  animation: spawn 0.2s ease-out;
+  border: 4px double rgba(0, 0, 0, 0.35);
+  box-sizing: border-box;
+}
+
+@keyframes spawn {
+  0% { transform: scale(0); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.rift.blue {
+  background: radial-gradient(circle, #7392ff 0%, #4c6fff 60%, #2040c7 100%);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5), inset 0 3px 6px rgba(255,255,255,0.4), 0 0 15px rgba(76,108,255,0.6);
+}
+.rift.green {
+  background: radial-gradient(circle, #52c5c3 0%, #319795 60%, #165c5b 100%);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5), inset 0 3px 6px rgba(255,255,255,0.4), 0 0 15px rgba(49,151,149,0.6);
+}
+
+/* BUTTONS */
+button {
+  background: linear-gradient(135deg, #141428, #222244);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  padding: 12px 24px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 16px;
+  transition: 0.2s;
+  margin: 5px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+button:hover {
+  transform: scale(1.03);
+  border-color: white;
+}
+
+.btn-row {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 15px;
+  width: 100%;
+}
+</style>
+</head>
+<body>
+
+<div id="menu">
+  <div class="menuBox" id="menuBox">
+    <h1 id="menuTitle">🌌 Rift Whacker</h1>
+    
+    <div class="menu-btn-container">
+      <button onclick="selectMode('normal')" style="border-color: #4c6fff;">Normal Mode</button>
+      <button onclick="selectMode('countdown')" style="border-color: #9b5cff;">Countdown Mode 🌀</button>
+    </div>
+  </div>
+</div>
+
+<header>
+  <h1>🌌 Rift Whacker</h1>
+</header>
+
+<div class="game-container">
+  <div class="score-container">
+    <div>Nodes: <span id="score">0</span><span id="scoreMax">/9</span></div>
+    <div>Mode: <span id="modeDisplay" class="mode-tag">Normal</span></div>
+    <div><span id="timerLabel">Time:</span> <span id="timer">0.00</span>s</div>
+  </div>
+
+  <div class="whack-grid" id="grid">
+    <div class="cell" onclick="whack(0)" id="c-0"></div>
+    <div class="cell" onclick="whack(1)" id="c-1"></div>
+    <div class="cell" onclick="whack(2)" id="c-2"></div>
+    <div class="cell" onclick="whack(3)" id="c-3"></div>
+    <div class="cell" onclick="whack(4)" id="c-4"></div>
+    <div class="cell" onclick="whack(5)" id="c-5"></div>
+    <div class="cell" onclick="whack(6)" id="c-6"></div>
+    <div class="cell" onclick="whack(7)" id="c-7"></div>
+    <div class="cell" onclick="whack(8)" id="c-8"></div>
+  </div>
+
+  <div class="btn-row">
+    <button onclick="window.location.href='index.html'">🏠 Back</button>
+    <button onclick="showMenu()">Menu</button>
+    <button onclick="startGame()">Restart</button>
+  </div>
+</div>
+
+<script>
+let currentMode = 'normal';
+let score = 0;
+let timeElapsed = 0.0;
+let timeLeft = 15.0;
+let gameInterval = null;
+let spawnInterval = null;
+let activeRifts = Array(9).fill(null); 
+let baseRiftDuration = 1500; 
+let audioCtx = null;
+
+function initAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  // Re-verify context state to combat post-alert browser audio pausing
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+}
+
+function playSound(freq, duration = 0.15, type = "sine") {
+  initAudio(); // Double check system initialization on trigger
+  if (!audioCtx || audioCtx.state === 'suspended') return;
+  
+  let osc = audioCtx.createOscillator();
+  let gain = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + duration);
+}
+
+function showMenu() {
+  clearInterval(gameInterval);
+  clearInterval(spawnInterval);
+  clearAllGridCells();
+  document.getElementById("menu").style.display = "flex";
+}
+
+function selectMode(mode) {
+  currentMode = mode;
+  document.getElementById("menu").style.display = "none";
+  
+  const displayTag = document.getElementById("modeDisplay");
+  const menuBox = document.getElementById("menuBox");
+  const menuTitle = document.getElementById("menuTitle");
+  const grid = document.getElementById("grid");
+  const timerLabel = document.getElementById("timerLabel");
+  const timerDisplay = document.getElementById("timer");
+  const scoreMax = document.getElementById("scoreMax");
+  
+  if(mode === 'countdown') {
+    displayTag.textContent = "Countdown 🌀";
+    displayTag.style.color = "#9b5cff";
+    grid.style.borderColor = "#9b5cff";
+    grid.style.boxShadow = "0 0 20px rgba(155, 92, 255, 0.2)";
+    menuBox.style.borderColor = "#9b5cff";
+    menuBox.style.boxShadow = "0 0 25px rgba(155,92,255,0.35)";
+    menuTitle.style.color = "#9b5cff";
+    timerLabel.textContent = "Time Left:";
+    timerDisplay.style.color = "#e53e3e";
+    scoreMax.style.display = "none"; 
+  } else {
+    displayTag.textContent = "Normal";
+    displayTag.style.color = "#4c6fff";
+    grid.style.borderColor = "#4c6fff";
+    grid.style.boxShadow = "0 0 20px rgba(76, 108, 255, 0.2)";
+    menuBox.style.borderColor = "#4c6fff";
+    menuBox.style.boxShadow = "0 0 25px rgba(76,108,255,0.35)";
+    menuTitle.style.color = "#4c6fff";
+    timerLabel.textContent = "Time:";
+    timerDisplay.style.color = "#4c6fff";
+    scoreMax.style.display = "inline"; 
+  }
+  
+  startGame();
+}
+
+function startGame() {
+  initAudio();
+  clearInterval(gameInterval);
+  clearInterval(spawnInterval);
+  clearAllGridCells();
+  
+  score = 0;
+  timeElapsed = 0.0;
+  timeLeft = 15.0;
+  
+  document.getElementById("score").textContent = score;
+  
+  if (currentMode === 'normal') {
+    document.getElementById("timer").textContent = timeElapsed.toFixed(2);
+    gameInterval = setInterval(() => {
+      timeElapsed += 0.01;
+      document.getElementById("timer").textContent = timeElapsed.toFixed(2);
+    }, 10);
+    
+    spawnInterval = setInterval(spawnRift, 150);
+  } else {
+    document.getElementById("timer").textContent = timeLeft.toFixed(2);
+    gameInterval = setInterval(() => {
+      timeLeft -= 0.01;
+      if (timeLeft <= 0) {
+        timeLeft = 0.00;
+        document.getElementById("timer").textContent = timeLeft.toFixed(2);
+        gameOverCountdown();
+      } else {
+        document.getElementById("timer").textContent = timeLeft.toFixed(2);
+      }
+    }, 10);
+    
+    spawnInterval = setInterval(spawnRift, 450);
+  }
+  
+  spawnRift();
+}
+
+function clearAllGridCells() {
+  activeRifts.fill(null);
+  for (let i = 0; i < 9; i++) {
+    const cell = document.getElementById(`c-${i}`);
+    cell.innerHTML = "";
+  }
+}
+
+function spawnRift() {
+  let emptyIndices = [];
+  let blueCount = 0;
+
+  for (let i = 0; i < 9; i++) {
+    if (!activeRifts[i]) {
+      emptyIndices.push(i);
+    } else if (activeRifts[i].type === 'blue') {
+      blueCount++;
+    }
+  }
+  
+  if (emptyIndices.length === 0) return; 
+
+  if (currentMode === 'normal' && blueCount >= 2) return;
+  
+  let randIndex = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+  let type = 'blue'; 
+  
+  activeRifts[randIndex] = { type: type, timestamp: Date.now() };
+  
+  const cell = document.getElementById(`c-${randIndex}`);
+  const riftDiv = document.createElement('div');
+  riftDiv.className = `rift ${type}`;
+  cell.appendChild(riftDiv);
+  
+  if (currentMode === 'countdown') {
+    setTimeout(() => {
+      if (activeRifts[randIndex] && activeRifts[randIndex].type === type) {
+        playSound(150, 0.2, 'sawtooth');
+        timeLeft = Math.max(0, timeLeft - 1.5); 
+        removeRift(randIndex);
+      }
+    }, baseRiftDuration);
+  }
+}
+
+function removeRift(index) {
+  activeRifts[index] = null;
+  const cell = document.getElementById(`c-${index}`);
+  cell.innerHTML = "";
+}
+
+function whack(index) {
+  let riftData = activeRifts[index];
+  if (!riftData || riftData.type === 'green') return;
+  
+  let targetNode = document.getElementById(`c-${index}`).querySelector('.rift');
+  
+  if (currentMode === 'normal') {
+    if (riftData.type === 'blue') {
+      score++;
+      document.getElementById("score").textContent = score;
+      riftData.type = 'green';
+      if(targetNode) targetNode.className = 'rift green';
+      playSound(440, 0.1);
+      
+      if (score === 9) {
+        let finalTimeDisplay = document.getElementById("timer").textContent;
+        clearInterval(gameInterval);
+        clearInterval(spawnInterval);
+        setTimeout(() => winNormalMode(finalTimeDisplay), 50);
+      }
+    }
+  } else {
+    if (riftData.type === 'blue') {
+      score++;
+      document.getElementById("score").textContent = score;
+      riftData.type = 'green';
+      if(targetNode) targetNode.className = 'rift green';
+      playSound(440, 0.1);
+      
+      setTimeout(() => {
+        if(activeRifts[index] && activeRifts[index].type === 'green') {
+          removeRift(index);
+        }
+      }, 150);
+    }
+  }
+}
+
+function winNormalMode(lockedTime) {
+  playSound(587.33, 0.4, 'sine');
+  alert(`⚡ Matrix Synchronized!\nTotal Time: ${lockedTime} seconds.`);
+  showMenu();
+}
+
+function gameOverCountdown() {
+  clearInterval(gameInterval);
+  clearInterval(spawnInterval);
+  playSound(100, 0.5, 'sawtooth');
+  alert("Anomaly window closed!\nFinal Neutralization Count: " + score);
+  showMenu();
+}
+</script>
+
+</body>
+</html>
