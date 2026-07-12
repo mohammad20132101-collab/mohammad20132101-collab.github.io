@@ -123,7 +123,6 @@ header {
   box-shadow: 0 4px 15px rgba(0,0,0,0.05);
 }
 
-/* Smooth color handling inside the Game of the Day block for Light Mode */
 body.light-theme #gotwTitle {
   color: var(--accent); 
 }
@@ -172,14 +171,12 @@ body.light-theme .game-card {
   border: 1px solid #e2e8f0;
 }
 
-/* NEON HOVER GLOW SYSTEM */
 .game-card:hover {
   transform: translateY(-5px) scale(1.02);
   border-color: var(--accent) !important;
   box-shadow: 0 0 20px var(--hover-glow), 0 4px 15px rgba(0,0,0,0.15);
 }
 
-/* VIVID ACCENTED STAR BUTTONS */
 .fav-btn {
   position: absolute;
   top: 10px;
@@ -213,7 +210,6 @@ body.light-theme .fav-btn.is-active {
   background: rgba(0, 0, 0, 0.06) !important;
 }
 
-/* FIXED EXCLUSIVES LAYOUT CONTAINER */
 .exclusives-list {
   display: flex;
   flex-direction: column;
@@ -223,10 +219,9 @@ body.light-theme .fav-btn.is-active {
 
 .exclusives-list .game-card {
   width: 100%;
-  height: auto; /* Ensures card wraps content completely */
+  height: auto;
 }
 
-/* Visual layout for locked content */
 .game-card.locked-card {
   background: var(--bg-locked);
   opacity: 0.6;
@@ -567,7 +562,8 @@ import {
   getAuth,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  onAuthStateChanged
+  onAuthStateChanged,
+  sendEmailVerification
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -669,23 +665,38 @@ window.logout = function() {
   }
 };
 
-/* LOGIN */
+/* LOGIN WITH EMAIL VERIFICATION GUARD */
 window.login = function () {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
 
   signInWithEmailAndPassword(auth, email, password)
-    .then(u => loadUser(u.user.email, false))
+    .then((userCredential) => {
+      const user = userCredential.user;
+      if (user.emailVerified) {
+        loadUser(user.email, false);
+      } else {
+        alert("📧 Please verify your email address before logging in! Check your inbox.");
+        auth.signOut();
+      }
+    })
     .catch(err => alert(err.message));
 };
 
-/* SIGN UP */
+/* SIGN UP WITH AUTOMATIC DISPATCH OF VERIFICATION LINK */
 window.signup = function () {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
 
   createUserWithEmailAndPassword(auth, email, password)
-    .then(u => loadUser(u.user.email, false))
+    .then((userCredential) => {
+      const user = userCredential.user;
+      sendEmailVerification(user)
+        .then(() => {
+          alert("⚡ Registration successful! A verification link has been sent to your email. Please check your inbox before logging in.");
+          auth.signOut();
+        });
+    })
     .catch(err => alert(err.message));
 };
 
@@ -752,7 +763,14 @@ function loadUser(email, guestModeStatus) {
 }
 
 onAuthStateChanged(auth, (user) => {
-  if (user) loadUser(user.email, false);
+  if (user) {
+    if (user.emailVerified) {
+      loadUser(user.email, false);
+    } else {
+      document.getElementById("site").style.display = "none";
+      document.getElementById("loginScreen").style.display = "block";
+    }
+  }
 });
 
 /* STANDARD GAME OPEN ENGINE */
@@ -849,7 +867,7 @@ function renderFavorites() {
         <button onclick="openGame('${g.page}','${g.name}')">Play</button>
       </div>
     </div>
-     `).join("");
+       `).join("");
   
   filterFavoritesGrid(document.getElementById("search").value.toLowerCase());
   fixLayout();
@@ -867,7 +885,7 @@ function renderHistory() {
         <button onclick="openGame('${g.page}','${g.name}')">Play</button>
       </div>
     </div>
-     `).join("");
+       `).join("");
   fixLayout();
 }
 
@@ -970,4 +988,4 @@ fixLayout();
 </script>
 
 </body>
-</html>
+</html> 
