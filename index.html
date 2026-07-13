@@ -9,7 +9,7 @@
 /* THEME VARIABLES - DARK MODE (DEFAULT) */
 :root {
   --bg-main: #06070d;
-  --bg-card: rgba(255, 255, 255, 0.03);
+  --bg-card: rgba(255, 255, 255, 0.06);
   --bg-solid: #0d0e15;
   --text-main: #ffffff;
   --text-muted: #94a3b8;
@@ -30,8 +30,8 @@
 
 /* PREMIUM SILVER & BLUE LIGHT MODE */
 body.light-theme {
-  --bg-main: #e2e8f0;
-  --bg-card: rgba(255, 255, 255, 0.55);
+  --bg-main: #eef1f7;
+  --bg-card: rgba(219, 234, 254, 0.45);
   --bg-solid: rgba(255, 255, 255, 0.8);
   --text-main: #0f172a;
   --text-muted: #475569;
@@ -45,7 +45,7 @@ body.light-theme {
   --input-bg: rgba(0, 0, 0, 0.05);
   --input-text: #0f172a;
   --glass-blur: blur(25px) saturate(190%);
-  --card-shadow: 0 12px 35px rgba(100, 116, 139, 0.12);
+  --card-shadow: 0 16px 40px rgba(30, 58, 110, 0.16), 0 3px 10px rgba(30, 58, 110, 0.12);
   --glass-highlight: inset 0 1px 1px 0 rgba(255, 255, 255, 0.7);
   --card-border: rgba(0, 0, 0, 0.08);
 }
@@ -59,6 +59,15 @@ body {
   min-height: 100vh;
 }
 
+/* Light mode gets a soft directional gradient instead of a flat slab of
+   grey — a single flat colour next to bright white glass cards is what was
+   reading as dull/"puke". A gentle white-to-silver-blue sweep gives it the
+   same premium depth the dark theme gets for free from its near-black base. */
+body.light-theme {
+  background: linear-gradient(160deg, #fbfcfe 0%, #eef1f8 45%, #dfe6f2 100%);
+  background-attachment: fixed;
+}
+
 /* INNER CONTAINMENT MASK TO SHIELD EDGES FROM FILTER DISPLACEMENT RIPS */
 .glass-card-inner {
   position: relative;
@@ -66,29 +75,84 @@ body {
   height: 100%;
   border-radius: 24px;
   overflow: hidden;
+  /* clip-path forces correct rounded clipping of the backdrop-filter layer.
+     Combining filter + backdrop-filter + border-radius is a known trigger
+     for browsers to silently stop clipping to the radius (square/jagged
+     corners) — clip-path sidesteps that bug entirely. */
+  clip-path: inset(0 round 24px);
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
   isolation: isolate;
 }
 
-/* LIQUID GLASS ARCHITECTURE LAYER */
+/* LIQUID GLASS LAYER — blur + saturation only. The previous version ran an
+   SVG turbulence/displacement filter here, which is what caused the square
+   corners (filter + backdrop-filter + border-radius clipping is buggy
+   cross-browser) and also read as woven fabric rather than glass. Real
+   glass sells itself through blur, saturation, and light (the rim +
+   gloss pseudo-elements below), not through a noise texture. */
 .glass-layer {
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
   z-index: 1;
   background: var(--bg-card);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  filter: url(#apple-liquid-glass-refraction);
-  box-shadow: var(--glass-highlight);
+  backdrop-filter: blur(30px) saturate(220%);
+  -webkit-backdrop-filter: blur(30px) saturate(220%);
   pointer-events: none;
-  border-radius: 24px;
 }
 
 .glass-content {
   position: relative;
   z-index: 2;
   pointer-events: auto;
+}
+
+/* GLASS RIM — a thin gradient ring: brightest at the top, tapering down,
+   but never fading fully to zero — the ring stays closed all the way
+   around instead of leaving a borderless gap at the bottom. Built with the
+   padding+mask-composite trick so only the ring itself (not the fill)
+   picks up the gradient. Light mode uses a blue-tinted version instead of
+   white, since a white highlight is invisible against a light background —
+   the same reason it needs to be white against the dark theme's near-black
+   base. */
+.glass-card-inner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: 24px;
+  padding: 1.5px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.22) 45%, rgba(255, 255, 255, 0.1) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+body.light-theme .glass-card-inner::before {
+  background: linear-gradient(180deg, rgba(59, 130, 246, 0.6) 0%, rgba(59, 130, 246, 0.25) 45%, rgba(59, 130, 246, 0.12) 100%);
+}
+
+/* GLOSS — a very soft, even sheen rather than a bright spotlight. Light
+   mode leans on the same blue tint as the rim (instead of white-on-white)
+   so the glass character actually shows up. */
+.glass-card-inner::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0) 40%),
+    radial-gradient(90% 70% at 100% 100%, rgba(120, 170, 255, 0.1) 0%, rgba(120, 170, 255, 0) 60%);
+  mix-blend-mode: overlay;
+}
+
+body.light-theme .glass-card-inner::after {
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 45%),
+    radial-gradient(90% 70% at 100% 100%, rgba(59, 130, 246, 0.14) 0%, rgba(59, 130, 246, 0) 60%);
+  mix-blend-mode: soft-light;
 }
 
 /* LOGIN SCREEN GLASS RECOGNITION PANEL */
@@ -243,21 +307,19 @@ body.light-theme .theme-toggle-btn:hover {
   box-shadow: 0 0 0 3px var(--accent-glow);
 }
 
-/* GAME OF THE DAY BANNER */
+/* GAME OF THE DAY BANNER — now uses the same glass-card-inner/glass-layer
+   system as the game cards (rim ring + gloss + clip-path rounding) instead
+   of its own separate flat-glass style, so it visually matches. */
 .gotw-banner {
-  background: var(--bg-solid);
+  position: relative;
   margin: 30px 20px;
-  padding: 40px 35px;
   border-radius: 24px;
-  text-align: center;
-  border: 1px solid var(--card-border);
   box-shadow: var(--card-shadow);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
 }
 
-body.light-theme .gotw-banner {
-  background: var(--bg-card);
+.gotw-banner .glass-content {
+  padding: 40px 35px;
+  text-align: center;
 }
 
 .gotw-banner h2 {
@@ -275,11 +337,33 @@ body.light-theme .gotw-banner {
   letter-spacing: -0.02em;
 }
 
-/* PREMIUM UNIFIED INTEGRATION ON GUEST RESTRICTION FILTERS */
-.gotw-banner.locked-banner {
-  background: var(--bg-locked) !important;
-  border: 1px solid var(--border-locked) !important;
-  box-shadow: inset 0 0 15px rgba(239, 68, 68, 0.05);
+/* Locked state recolors the fill/rim/gloss to red, same treatment as
+   locked game cards, instead of leaving default white/blue glass on a red
+   background. */
+.gotw-banner.locked-banner .glass-layer {
+  background: rgba(239, 68, 68, 0.06);
+}
+
+.gotw-banner.locked-banner .glass-card-inner::before {
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.55) 0%, rgba(239, 68, 68, 0.2) 45%, rgba(239, 68, 68, 0.12) 100%);
+}
+
+.gotw-banner.locked-banner .glass-card-inner::after {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0) 40%);
+  mix-blend-mode: overlay;
+}
+
+body.light-theme .gotw-banner.locked-banner .glass-layer {
+  background: rgba(220, 38, 38, 0.05);
+}
+
+body.light-theme .gotw-banner.locked-banner .glass-card-inner::before {
+  background: linear-gradient(180deg, rgba(220, 38, 38, 0.55) 0%, rgba(220, 38, 38, 0.22) 45%, rgba(220, 38, 38, 0.14) 100%);
+}
+
+body.light-theme .gotw-banner.locked-banner .glass-card-inner::after {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 40%);
+  mix-blend-mode: soft-light;
 }
 
 .stats-bar {
@@ -302,13 +386,17 @@ body.light-theme .gotw-banner {
   justify-content: flex-start;
 }
 
+/* The card itself owns the crisp, unfiltered border + highlight + shadow.
+   This is the shape the eye reads as "the edge" — it never passes through
+   the SVG turbulence filter, so it stays perfectly straight/round, exactly
+   like the theme toggle button. */
 .game-card {
   position: relative;
   border-radius: 24px;
   text-align: center;
   width: calc(33.333% - 14px);
   box-sizing: border-box;
-  border: 1px solid var(--card-border);
+  border: 1px solid transparent;
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease, border-color 0.4s ease;
   box-shadow: var(--card-shadow);
   background: transparent;
@@ -361,8 +449,33 @@ body.light-theme .gotw-banner {
   border: 1px solid var(--border-locked) !important;
 }
 
+/* Locked cards recolor the glass fill/rim/gloss to match the red locked
+   theme instead of leaving the default white/blue glass on top of a red
+   card — that mismatch was what read as color bleeding into a muddy mess. */
 .game-card.locked-card .glass-layer {
-  opacity: 0.4; /* Soft blur attenuation inside structural locks */
+  background: rgba(239, 68, 68, 0.06);
+}
+
+.game-card.locked-card .glass-card-inner::before {
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.55) 0%, rgba(239, 68, 68, 0.2) 45%, rgba(239, 68, 68, 0.12) 100%);
+}
+
+.game-card.locked-card .glass-card-inner::after {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0) 40%);
+  mix-blend-mode: overlay;
+}
+
+body.light-theme .game-card.locked-card .glass-layer {
+  background: rgba(220, 38, 38, 0.05);
+}
+
+body.light-theme .game-card.locked-card .glass-card-inner::before {
+  background: linear-gradient(180deg, rgba(220, 38, 38, 0.55) 0%, rgba(220, 38, 38, 0.22) 45%, rgba(220, 38, 38, 0.14) 100%);
+}
+
+body.light-theme .game-card.locked-card .glass-card-inner::after {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 40%);
+  mix-blend-mode: soft-light;
 }
 
 .game-card.locked-card button:not(.fav-btn) {
@@ -418,24 +531,11 @@ a {
 a:hover { color: var(--accent); }
 .section-title-container { text-align: center; margin-top: 40px; }
 </style> 
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7292845069394911"
+     crossorigin="anonymous"></script>
 </head>
 
 <body>
-
-<svg style="position: absolute; width: 0; height: 0; pointer-events: none;">
-  <defs>
-    <filter id="apple-liquid-glass-refraction" x="-10%" y="-10%" width="120%" height="120%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves="3" result="noise" />
-      <feDisplacementMap in="SourceGraphic" in2="noise" scale="10" xChannelSelector="R" yChannelSelector="G" result="displaced" />
-      <feGaussianBlur in="noise" stdDeviation="0.75" result="blurredNoise" />
-      <feSpecularLighting in="blurredNoise" surfaceScale="5" specularConstant="1.4" specularExponent="40" lighting-color="#ffffff" result="specular">
-        <feDistantLight azimuth="225" elevation="60" />
-      </feSpecularLighting>
-      <feComposite in="specular" in2="displaced" operator="in" result="specularCut" />
-      <feBlend mode="screen" in="specularCut" in2="displaced" />
-    </filter>
-  </defs>
-</svg>
 
 <audio id="bgMusic" loop>
   <source src="magpiemusic-action-trailer-promo-rock-513687.mp3" type="audio/mpeg">
@@ -467,9 +567,14 @@ a:hover { color: var(--accent); }
 </div>
 
 <div class="gotw-banner" id="gotwBanner">
-  <h2>📅 Game of the Day</h2>
-  <h3 id="gotwTitle">Loading Game...</h3>
-  <button id="gotwBtn" onclick="playGameOfDay()">Play Game of the Day</button>
+  <div class="glass-card-inner">
+    <div class="glass-layer"></div>
+    <div class="glass-content">
+      <h2>📅 Game of the Day</h2>
+      <h3 id="gotwTitle">Loading Game...</h3>
+      <button id="gotwBtn" onclick="playGameOfDay()">Play Game of the Day</button>
+    </div>
+  </div>
 </div>
 
 <section id="favoritesSection">
