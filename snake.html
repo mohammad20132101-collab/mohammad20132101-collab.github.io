@@ -3,209 +3,108 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rift Snake</title>
+<title>Snake</title>
 
 <style>
-/* ============================================================
-   DESIGN SYSTEM AS index.html (Rift Hub) — ONLY DARK MODE
-   ============================================================ */
+@import url("https://fonts.googleapis.com/css?family=Lato:400,700");
 
-:root {
-  --bg-main: #06070d;
-  --bg-card: rgba(255, 255, 255, 0.06);
-  --text-main: #ffffff;
-  --text-muted: #94a3b8;
-  --accent: #3b82f6;
-  --accent-glow: rgba(59, 130, 246, 0.25);
-  --card-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
-  --card-border: rgba(255, 255, 255, 0.08);
-}
-
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  background: var(--bg-main);
-  color: var(--text-main);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-height: 100vh;
+body{
+  margin:0;
+  font-family: 'Lato', Arial, sans-serif;
+  background:#0f0f1a;
+  color:white;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
   user-select: none;
   -webkit-user-select: none;
 }
 
-header {
-  width: 100%;
-  text-align: center;
-  padding: 30px 15px 10px;
-}
-
-header h1 {
-  font-weight: 700;
-  font-size: 28px;
-  margin: 0;
-  letter-spacing: -0.02em;
-}
-
-/* GLASS CARD ARCHITECTURE */
-.glass-card-inner {
-  position: relative;
-  border-radius: 24px;
-  overflow: hidden;
-  clip-path: inset(0 round 24px);
-  transform: translateZ(0);
-  -webkit-transform: translateZ(0);
-  isolation: isolate;
-}
-
-.glass-layer {
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  z-index: 1;
-  background: var(--bg-card);
-  backdrop-filter: blur(30px) saturate(220%);
-  -webkit-backdrop-filter: blur(30px) saturate(220%);
-  pointer-events: none;
-}
-
-.glass-content {
-  position: relative;
-  z-index: 2;
-}
-
-/* Rim ring — brightest at top, tapers but never fully disappears */
-.glass-card-inner::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  border-radius: 24px;
-  padding: 1.5px;
-  background: linear-gradient(180deg, rgba(var(--mode-rgb, 59, 130, 246), 0.75) 0%, rgba(var(--mode-rgb, 59, 130, 246), 0.25) 45%, rgba(var(--mode-rgb, 59, 130, 246), 0.12) 100%);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-}
-
-.glass-card-inner::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background:
-    linear-gradient(160deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0) 40%),
-    radial-gradient(90% 70% at 100% 100%, rgba(var(--mode-rgb, 59, 130, 246), 0.16) 0%, rgba(var(--mode-rgb, 59, 130, 246), 0) 60%);
-  mix-blend-mode: overlay;
+header{
+  width:100%;
+  text-align:center;
+  padding:15px;
+  background:#1a1a2e;
 }
 
 /* MENU OVERLAY */
 #menu {
     position: fixed;
     inset: 0;
-    background: rgba(6, 7, 13, 0.7);
-    backdrop-filter: blur(4px);
+    background: rgba(15, 15, 26, 0.85);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 999;
 }
-
 .menuBox {
-    box-shadow: var(--card-shadow);
+    background: #141428;
+    padding: 40px;
+    border-radius: 15px;
+    border: 3px solid #4c6fff;
+    box-shadow: 0 0 25px rgba(76,108,255,0.35);
     text-align: center;
+    transition: border-color 0.3s, box-shadow 0.3s;
 }
-
-.menuBox .glass-content {
-  padding: 40px 45px;
-}
-
 .menuBox h1 {
-    font-size: 26px;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    margin: 0 0 6px 0;
-    color: rgb(var(--mode-rgb, 59, 130, 246));
+    color: #4c6fff;
+    margin-bottom: 5px;
     transition: color 0.3s;
 }
-
 .menuBox p {
-    color: var(--text-muted);
-    margin: 0 0 25px 0;
-}
-
-/* GAME PANEL */
-.game-panel {
-  margin-top: 15px;
-  box-shadow: var(--card-shadow);
-}
-
-.game-panel .glass-content {
-  padding: 24px 28px 28px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.score-container {
-  display: flex;
-  gap: 24px;
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 14px;
-  color: var(--text-muted);
-}
-
-.score-container span:first-child {
-  color: var(--text-main);
-}
-
-.mode-tag {
-  color: rgb(var(--mode-rgb, 59, 130, 246));
-  font-weight: 700;
-  transition: color 0.3s;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 25px;
 }
 
 canvas {
   background: #050814;
-  border-radius: 16px;
-  box-shadow: 0 0 0 1px rgba(var(--mode-rgb, 59, 130, 246), 0.4), 0 0 24px rgba(var(--mode-rgb, 59, 130, 246), 0.25);
-  transition: box-shadow 0.3s;
+  border: 3px solid #4c6fff;
+  border-radius: 12px;
+  margin-top: 15px;
+  box-shadow: 0 0 20px rgba(76, 108, 255, 0.2);
+  transition: border-color 0.3s, box-shadow 0.3s;
   display: block;
   max-width: 100%;
   height: auto;
 }
 
+.score-container {
+  display: flex;
+  gap: 20px;
+  font-size:22px;
+  margin:10px;
+}
+.mode-tag {
+  color: #4c6fff;
+  font-weight: bold;
+  transition: color 0.3s;
+}
+
 /* BUTTONS */
 button {
-    background: var(--accent);
+    background: linear-gradient(135deg, #141428, #222244);
     color: white;
-    border: none;
+    border: 2px solid rgba(255, 255, 255, 0.2);
     padding: 12px 24px;
-    border-radius: 12px;
+    border-radius: 10px;
     cursor: pointer;
-    font-weight: 600;
-    font-family: inherit;
-    font-size: 14px;
-    transition: all 0.2s ease;
+    font-weight: bold;
+    font-size: 16px;
+    transition: 0.2s;
     margin: 5px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 
 button:hover {
-    transform: translateY(-1px);
-    opacity: 0.95;
+    transform: scale(1.05);
+    border-color: white;
 }
-
-.mode-btn-classic { background: #3b82f6; }
-.mode-btn-portal { background: #9b5cff; }
 
 .btn-row {
     display: flex;
     justify-content: center;
-    flex-wrap: wrap;
-    gap: 4px;
-    margin: 18px 0 4px;
+    gap: 12px;
+    margin: 15px 0;
 }
 </style>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7292845069394911"
@@ -215,16 +114,11 @@ button:hover {
 <body>
 
 <div id="menu">
-  <div class="menuBox">
-    <div class="glass-card-inner">
-      <div class="glass-layer"></div>
-      <div class="glass-content">
-        <h1 id="menuTitle">🐍 Rift Snake</h1>
-        <p>Select a game mode</p>
-        <button class="mode-btn-classic" onclick="selectMode('classic')">Classic Mode</button>
-        <button class="mode-btn-portal" onclick="selectMode('portal')">Portal Mode 🌀</button>
-      </div>
-    </div>
+  <div class="menuBox" id="menuBox">
+    <h1 id="menuTitle">🐍 Rift Snake</h1>
+    <p>Select A Game Mode</p>
+    <button onclick="selectMode('classic')" style="border-color: #4c6fff;">Classic Mode</button>
+    <button onclick="selectMode('portal')" style="border-color: #9b5cff;">Portal Mode 🌀</button>
   </div>
 </div>
 
@@ -232,26 +126,17 @@ button:hover {
   <h1>🐍 Rift Snake</h1>
 </header>
 
-<div class="game-panel">
-  <div class="glass-card-inner">
-    <div class="glass-layer"></div>
-    <div class="glass-content">
+<div class="score-container">
+  <div>Score: <span id="score">0</span></div>
+  <div>Mode: <span id="modeDisplay" class="mode-tag">Classic</span></div>
+</div>
 
-      <div class="score-container">
-        <div>Score: <span id="score">0</span></div>
-        <div>Mode: <span id="modeDisplay" class="mode-tag">Classic</span></div>
-      </div>
+<canvas id="game" width="400" height="400"></canvas>
 
-      <canvas id="game" width="400" height="400"></canvas>
-
-      <div class="btn-row">
-        <button onclick="window.location.href='index.html'" id="backBtn">🏠 Back</button>
-        <button onclick="showMenu()" id="menuBtn">Menu</button>
-        <button onclick="startGame()" id="restartBtn">Restart</button>
-      </div>
-
-    </div>
-  </div>
+<div class="btn-row">
+  <button onclick="window.location.href='index.html'" id="backBtn">🏠 Back</button>
+  <button onclick="showMenu()" id="menuBtn">Menu</button>
+  <button onclick="startGame()" id="restartBtn">Restart</button>
 </div>
 
 <script>
@@ -276,19 +161,32 @@ function selectMode(mode) {
     document.getElementById("menu").style.display = "none";
     
     const displayTag = document.getElementById("modeDisplay");
+    const menuBox = document.getElementById("menuBox");
     const menuTitle = document.getElementById("menuTitle");
-
-    const classicRgb = "59, 130, 246";
-    const portalRgb = "155, 92, 255";
-
+    
+    const classicColor = "#4c6fff";
+    const portalColor = "#9b5cff";
+    
     if(mode === 'portal') {
         displayTag.textContent = "Portal 🌀";
-        document.body.style.setProperty("--mode-rgb", portalRgb);
+        displayTag.style.color = portalColor;
+        canvas.style.borderColor = portalColor;
+        canvas.style.boxShadow = "0 0 20px rgba(155, 92, 255, 0.2)";
+        
+        menuBox.style.borderColor = portalColor;
+        menuBox.style.boxShadow = "0 0 25px rgba(155,92,255,0.35)";
+        menuTitle.style.color = portalColor;
     } else {
         displayTag.textContent = "Classic";
-        document.body.style.setProperty("--mode-rgb", classicRgb);
+        displayTag.style.color = classicColor;
+        canvas.style.borderColor = classicColor;
+        canvas.style.boxShadow = "0 0 20px rgba(76, 108, 255, 0.2)";
+        
+        menuBox.style.borderColor = classicColor;
+        menuBox.style.boxShadow = "0 0 25px rgba(76,108,255,0.35)";
+        menuTitle.style.color = classicColor;
     }
-
+    
     startGame();
 }
 
