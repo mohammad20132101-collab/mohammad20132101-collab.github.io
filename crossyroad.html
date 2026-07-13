@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rift Crosser</title>
+
+<style>
+@import url("https://fonts.googleapis.com/css?family=Lato:400,700");
+
+body{
+  margin:0;
+  font-family: 'Lato', Arial, sans-serif;
+  background:#0f0f1a;
+  color:white;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+header{
+  width:100%;
+  text-align:center;
+  padding:15px;
+  background:#1a1a2e;
+}
+
+/* MENU OVERLAY */
+#menu {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 15, 26, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+}
+.menuBox {
+    background: #141428;
+    padding: 40px;
+    border-radius: 15px;
+    border: 3px solid #4c6fff;
+    box-shadow: 0 0 25px rgba(76, 108, 255, 0.35);
+    text-align: center;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+.menuBox h1 {
+    color: #4c6fff;
+    margin-bottom: 5px;
+    transition: color 0.3s;
+}
+.menuBox p {
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 25px;
+}
+
+canvas {
+  background: #050814;
+  border: 3px solid #4c6fff;
+  border-radius: 12px;
+  margin-top: 15px;
+  box-shadow: 0 0 20px rgba(76, 108, 255, 0.2);
+  transition: border-color 0.3s, box-shadow 0.3s;
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.score-container {
+  display: flex;
+  gap: 30px;
+  font-size:22px;
+  margin:10px;
+}
+.mode-tag {
+  color: #4c6fff;
+  font-weight: bold;
+  transition: color 0.3s;
+}
+
+/* BUTTONS */
+button {
+    background: linear-gradient(135deg, #141428, #222244);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    padding: 12px 24px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 16px;
+    transition: 0.2s;
+    margin: 5px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+button:hover {
+    transform: scale(1.05);
+    border-color: white;
+}
+
+.btn-row {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin: 15px 0;
+}
+</style>
+</head>
+
+<body>
+
+<div id="menu">
+  <div class="menuBox" id="menuBox">
+    <h1 id="menuTitle">🌀 Rift Crosser</h1>
+    <p>Navigate the infinite scaling dimensions!</p>
+    <button onclick="selectMode('classic')" style="border-color: #4c6fff;">Normal Mode</button>
+    <button onclick="selectMode('expanded')" style="border-color: #9b5cff;">Expanded Mode</button>
+  </div>
+</div>
+
+<header>
+  <h1>🌀 Rift Crosser</h1>
+</header>
+
+<div class="score-container">
+  <div>Score: <span id="score">0</span></div>
+  <div>Level: <span id="levelDisplay">1</span></div>
+  <div>Mode: <span id="modeDisplay" class="mode-tag">Normal Mode</span></div>
+</div>
+
+<canvas id="game" width="640" height="480"></canvas>
+
+<div class="btn-row">
+  <button onclick="window.location.href='index.html'" id="backBtn">🏠 Back</button>
+  <button onclick="showMenu()" id="menuBtn">Menu</button>
+  <button onclick="startGame()" id="restartBtn">Restart</button>
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const COLS = 20; 
+const VISIBLE_ROWS = 15; 
+const SIZE = 32; 
+
+let player, lanes, score, level, gameLoop, cameraY, highestScoreReached;
+let currentMode = 'classic'; 
+
+function showMenu() {
+    clearInterval(gameLoop);
+    document.getElementById("menu").style.display = "flex";
+}
+
+function selectMode(mode) {
+    currentMode = mode;
+    document.getElementById("menu").style.display = "none";
+    
+    const displayTag = document.getElementById("modeDisplay");
+    const menuBox = document.getElementById("menuBox");
+    const menuTitle = document.getElementById("menuTitle");
+    
+    const blueColor = "#4c6fff";
+    const purpleColor = "#9b5cff";
+    
+    if(mode === 'expanded') {
+        displayTag.textContent = "Expanded Mode";
+        displayTag.style.color = purpleColor;
+        canvas.style.borderColor = purpleColor;
+        canvas.style.boxShadow = "0 0 20px rgba(155, 92, 255, 0.2)";
+        menuBox.style.borderColor = purpleColor;
+        menuBox.style.boxShadow = "0 0 25px rgba(155, 92, 255, 0.35)";
+        menuTitle.style.color = purpleColor;
+    } else {
+        displayTag.textContent = "Normal Mode";
+        displayTag.style.color = blueColor;
+        canvas.style.borderColor = blueColor;
+        canvas.style.boxShadow = "0 0 20px rgba(76, 108, 255, 0.2)";
+        menuBox.style.borderColor = blueColor;
+        menuBox.style.boxShadow = "0 0 25px rgba(76, 108, 255, 0.35)";
+        menuTitle.style.color = blueColor;
+    }
+    
+    startGame();
+}
+
+function createLane(y) {
+  if (y === 0) return { type: 'safe', color: 'rgba(255,255,255,0.05)' };
+
+  if (y % 8 === 0) {
+    return { type: 'safe', color: currentMode === 'expanded' ? 'rgba(155, 92, 255, 0.15)' : 'rgba(76, 108, 255, 0.15)' };
+  }
+
+  let laneLevel = Math.floor(y / 8) + 1;
+  let direction = Math.random() < 0.5 ? 1 : -1;
+  let baseSpeed = (Math.random() * 0.04 + 0.03) + (laneLevel * 0.012);
+  let speed = baseSpeed * direction;
+
+  // Evenly spaced distribution to guarantee things NEVER bunch up or clip
+  let pos1 = Math.random() * 4;           // Section 1: 0 to 4
+  let pos2 = 10 + (Math.random() * 4);    // Section 2: 10 to 14
+
+  if (currentMode === 'expanded' && Math.random() < 0.4) {
+    return {
+      type: 'river',
+      speed: speed * 0.7, 
+      obstacles: [pos1, pos2] 
+    };
+  } else {
+    return {
+      type: 'road',
+      speed: speed,
+      obstacles: [pos1, pos2] 
+    };
+  }
+}
+
+function startGame(){
+  player = { x: 10, y: 0 };
+  score = 0;
+  level = 1;
+  highestScoreReached = 0;
+  cameraY = 0;
+
+  document.getElementById("score").textContent = score;
+  document.getElementById("levelDisplay").textContent = level;
+
+  lanes = {};
+  for (let i = -5; i < 30; i++) {
+    lanes[i] = createLane(i);
+  }
+
+  clearInterval(gameLoop);
+  gameLoop = setInterval(update, 1000 / 30);
+}
+
+function handleDirection(dir) {
+  let targetX = player.x;
+  let targetY = player.y;
+
+  if (dir === "up") targetY++;
+  if (dir === "down" && player.y > 0) targetY--;
+  if (dir === "left" && player.x > 0) targetX--;
+  if (dir === "right" && player.x < COLS - 1) targetX++;
+
+  let nextLane = lanes[targetY];
+  if (nextLane && nextLane.type !== 'river') {
+    targetX = Math.round(targetX);
+  }
+
+  player.x = Math.max(0, Math.min(COLS - 1, targetX));
+  player.y = targetY;
+
+  if (!lanes[player.y + 15]) {
+    for(let i = player.y; i < player.y + 30; i++) {
+      if(!lanes[i]) lanes[i] = createLane(i);
+    }
+  }
+
+  if (player.y > highestScoreReached) {
+    highestScoreReached = player.y;
+    score = highestScoreReached;
+    document.getElementById("score").textContent = score;
+
+    let currentLevelCheck = Math.floor(player.y / 8) + 1;
+    if (currentLevelCheck > level) {
+      level = currentLevelCheck;
+      document.getElementById("levelDisplay").textContent = level;
+    }
+  }
+}
+
+document.addEventListener("keydown", e => {
+  if(e.key==="ArrowUp") handleDirection("up");
+  else if(e.key==="ArrowDown") handleDirection("down");
+  else if(e.key==="ArrowLeft") handleDirection("left");
+  else if(e.key==="ArrowRight") handleDirection("right");
+});
+
+function update(){
+  let targetCameraY = player.y - 3; 
+  if (targetCameraY < 0) targetCameraY = 0;
+  cameraY += (targetCameraY - cameraY) * 0.2;
+
+  let startRenderRow = Math.floor(cameraY) - 5;
+  let endRenderRow = startRenderRow + 25;
+
+  for (let y = startRenderRow; y <= endRenderRow; y++) {
+    if (lanes[y] && (lanes[y].type === 'road' || lanes[y].type === 'river')) {
+      let lane = lanes[y];
+      for (let i = 0; i < lane.obstacles.length; i++) {
+        lane.obstacles[i] += lane.speed;
+
+        if (lane.obstacles[i] >= COLS) lane.obstacles[i] -= COLS;
+        if (lane.obstacles[i] < 0) lane.obstacles[i] += COLS;
+      }
+    }
+  }
+
+  let currentLane = lanes[player.y];
+  if (currentLane) {
+    let pLeft = player.x + 0.1;
+    let pRight = player.x + 0.9;
+
+    if (currentLane.type === 'road') {
+      for (let i = 0; i < currentLane.obstacles.length; i++) {
+        let carX = currentLane.obstacles[i];
+        let carLeft = carX + 0.1;
+        let carRight = carX + 0.9;
+
+        let hit = false;
+        if (carLeft < carRight) {
+            hit = (pLeft < carRight && pRight > carLeft);
+        } else { 
+            hit = (pLeft < carRight || pRight > carLeft);
+        }
+
+        if (hit) {
+          gameOver("💥 Collision! You were vaporized on the cyber-highway.");
+          return;
+        }
+      }
+    } 
+    else if (currentLane.type === 'river') {
+      let onLog = false;
+      let logWidth = 2.5; 
+
+      for (let i = 0; i < currentLane.obstacles.length; i++) {
+        let logX = currentLane.obstacles[i];
+        let logLeft = logX;
+        let logRight = logX + logWidth;
+
+        let standingOnThisLog = false;
+        if (logLeft < COLS) {
+          if (logRight <= COLS) {
+            standingOnThisLog = (player.x >= logLeft - 0.1 && player.x + 1 <= logRight + 0.1);
+          } else { 
+            let wrappedRight = logRight - COLS;
+            standingOnThisLog = (player.x >= logLeft - 0.1) || (player.x + 1 <= wrappedRight + 0.1);
+          }
+        }
+
+        if (standingOnThisLog) {
+          onLog = true;
+          player.x += currentLane.speed; 
+          break;
+        }
+      }
+      
+      if (!onLog || player.x < 0 || player.x >= COLS) {
+        gameOver("🌊 Drowned! Fell off the platform into the Rift Stream.");
+        return;
+      }
+    }
+  }
+
+  draw();
+}
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle="#050814";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  ctx.save();
+  ctx.translate(0, canvas.height - (SIZE * 2) + (cameraY * SIZE));
+
+  let startRenderRow = Math.floor(cameraY) - 5;
+  let endRenderRow = startRenderRow + 20;
+
+  for(let y = startRenderRow; y <= endRenderRow; y++) {
+    if (!lanes[y]) continue;
+
+    let canvasY = -y * SIZE;
+
+    if (lanes[y].type === 'safe') {
+      ctx.fillStyle = lanes[y].color;
+      ctx.fillRect(0, canvasY, canvas.width, SIZE);
+    } else if (lanes[y].type === 'river') {
+      ctx.fillStyle = "rgba(155, 92, 255, 0.08)"; 
+      ctx.fillRect(0, canvasY, canvas.width, SIZE);
+    }
+
+    ctx.strokeStyle="rgba(255,255,255,0.02)";
+    ctx.beginPath();
+    ctx.moveTo(0, canvasY);
+    ctx.lineTo(canvas.width, canvasY);
+    ctx.stroke();
+
+    if (lanes[y].type === 'road') {
+      ctx.fillStyle = currentMode === 'expanded' ? "#a877fc" : "#4c6fff"; 
+      lanes[y].obstacles.forEach(obstacleX => {
+        ctx.fillRect(obstacleX * SIZE + 4, canvasY + 4, SIZE - 8, SIZE - 8);
+        
+        if (obstacleX > COLS - 1) {
+           ctx.fillRect((obstacleX - COLS) * SIZE + 4, canvasY + 4, SIZE - 8, SIZE - 8);
+        }
+      });
+    } 
+    else if (lanes[y].type === 'river') {
+      lanes[y].obstacles.forEach(obstacleX => {
+        let logWidth = SIZE * 2.5;
+        let logHeight = SIZE - 6;
+        let logYPos = canvasY + 3;
+
+        const renderPlatform = (xCoord) => {
+            // Main solid base block to avoid stacking transparency artifact mud
+            ctx.fillStyle = "#161033";
+            ctx.beginPath();
+            ctx.roundRect(xCoord, logYPos, logWidth, logHeight, 6);
+            ctx.fill();
+
+            // Neon outer highlight stroke
+            ctx.strokeStyle = "#9b5cff";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Internal cyan accent dash line
+            ctx.fillStyle = "#00ffff";
+            ctx.fillRect(xCoord + (logWidth / 2) - 8, logYPos + (logHeight / 2) - 1.5, 16, 3);
+        };
+
+        renderPlatform(obstacleX * SIZE);
+        
+        if ((obstacleX * SIZE) + logWidth > canvas.width) {
+            renderPlatform((obstacleX * SIZE) - canvas.width);
+        }
+      });
+    }
+  }
+
+  ctx.fillStyle = currentMode === 'expanded' ? "#9b5cff" : "#00ffff"; 
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 2;
+  
+  let playerCanvasY = -player.y * SIZE;
+  ctx.fillRect(player.x * SIZE + 4, playerCanvasY + 4, SIZE - 8, SIZE - 8);
+  ctx.strokeRect(player.x * SIZE + 4, playerCanvasY + 4, SIZE - 8, SIZE - 8);
+
+  ctx.restore();
+}
+
+function gameOver(message){
+  clearInterval(gameLoop);
+  alert(message + "\nFinal Score: " + score);
+  showMenu();
+}
+
+document.addEventListener("keydown", function(e) {
+  if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(e.key)) {
+    e.preventDefault();
+  }
+});
+
+showMenu();
+</script>
+
+</body>
+</html>
