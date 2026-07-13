@@ -869,6 +869,16 @@ a:hover { color: var(--accent); }
       </div>
     </div>
   </div>
+  <div class="game-card" data-name="crossyroad">
+    <div class="glass-card-inner">
+      <div class="glass-layer"></div>
+      <button class="fav-btn" onclick="toggleFavorite('crossyroad', 'Crossy Road', 'crossyroad.html')">☆</button>
+      <div class="glass-content game-info">
+        <h3>Crossy Road</h3>
+        <button onclick="openGame('crossyroad.html','Crossy Road')">Play</button>
+      </div>
+    </div>
+  </div>
 </div>
 </section>
 
@@ -986,7 +996,8 @@ const gamePool = [
   { id: "hexes", name: "Hexes", page: "hexes.html" },
   { id: "sudoku", name: "Sudoku", page: "sudoku.html" },
   { id: "stack", name: "Super Stack", page: "stack.html" },
-  { id: "cookieclicker", name: "Cookie Clicker", page: "cookieclicker.html" }
+  { id: "cookieclicker", name: "Cookie Clicker", page: "cookieclicker.html" },
+  { id: "crossyroad", name: "Crossy Road", page: "crossyroad.html" }
 ];
 
 /* THEME SYSTEM */
