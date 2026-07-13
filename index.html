@@ -258,11 +258,13 @@ header h1 {
   letter-spacing: -0.03em;
 }
 
-/* OUTLINED DYNAMIC THEME TOGGLE BUTTON */
+/* OUTLINED DYNAMIC THEME TOGGLE BUTTON — fixed to the viewport so the
+   same button/markup works both in the header and on the login screen. */
 .theme-toggle-btn {
-  position: absolute;
+  position: fixed;
   top: 25px;
   right: 25px;
+  z-index: 100;
   padding: 8px 14px;
   font-size: 13px;
   background: rgba(255, 255, 255, 0.05);
@@ -426,6 +428,23 @@ body.light-theme .gotw-banner.locked-banner .glass-card-inner::after {
   transition: all 0.2s ease;
 }
 
+/* The dark circle + medium-grey star combo (tuned for dark mode, where it
+   reads clearly against a bright photo background) was nearly invisible in
+   light mode: a mid-grey star on a mostly-transparent dark circle, sitting
+   on an already-light card. Light mode gets a light circle with a clearly
+   dark star instead. */
+body.light-theme .fav-btn {
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  color: #475569;
+  box-shadow: 0 2px 6px rgba(30, 58, 110, 0.12);
+}
+
+body.light-theme .fav-btn.is-active {
+  background: rgba(255, 255, 255, 0.85) !important;
+  border-color: var(--star-active);
+}
+
 .fav-btn.is-active {
   color: var(--star-active) !important;
   background: rgba(0, 0, 0, 0.5) !important;
@@ -531,8 +550,6 @@ a {
 a:hover { color: var(--accent); }
 .section-title-container { text-align: center; margin-top: 40px; }
 </style> 
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7292845069394911"
-     crossorigin="anonymous"></script>
 </head>
 
 <body>
@@ -540,6 +557,8 @@ a:hover { color: var(--accent); }
 <audio id="bgMusic" loop>
   <source src="magpiemusic-action-trailer-promo-rock-513687.mp3" type="audio/mpeg">
 </audio>
+
+<button class="theme-toggle-btn" onclick="toggleTheme()">🌗 Theme</button>
 
 <div id="loginScreen">
   <h2>Rift Hub</h2>
@@ -556,7 +575,6 @@ a:hover { color: var(--accent); }
 <div id="site" style="display:none;">
 
 <header>
-  <button class="theme-toggle-btn" onclick="toggleTheme('site')">🌗 Theme</button>
   <h1>🎮 Rift Hub 🎮</h1>
   <p style="color: var(--text-muted);">Welcome, <span id="username" style="color: var(--text-main); font-weight: 600;"></span> <button onclick="logout()" style="background: #e53e3e; margin-left: 15px; padding: 6px 12px; font-size: 12px;">Exit Session</button></p>
   <input type="text" id="search" class="search-input" placeholder="Search standard games...">
