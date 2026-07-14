@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rift Anchor</title>
+
+<style>
+@import url("https://fonts.googleapis.com/css?family=Lato:400,700");
+
+* {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+body {
+  margin: 0;
+  font-family: 'Lato', Arial, sans-serif;
+  background: #0d0d18;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+header {
+  width: 100%;
+  text-align: center;
+  padding: 15px;
+  background: #121224;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+
+header h1 {
+  margin: 0;
+  font-size: 28px;
+  color: #8b9bb4;
+  text-shadow: 0 0 15px rgba(107, 118, 255, 0.4);
+}
+
+canvas {
+  background: #070714;
+  border: 3px solid #6b76ff;
+  border-radius: 12px;
+  margin-top: 15px;
+  box-shadow: 0 0 30px rgba(107, 118, 255, 0.25);
+  display: block;
+  max-width: 100%;
+  height: auto;
+  cursor: pointer;
+}
+
+.score-container {
+  display: flex;
+  gap: 30px;
+  font-size: 22px;
+  margin: 15px 0 5px 0;
+  text-shadow: 0 0 10px rgba(255,255,255,0.2);
+}
+
+.time-val {
+  color: #a0a5ff;
+  font-weight: bold;
+}
+
+/* BUTTONS */
+button {
+  background: linear-gradient(135deg, #121224, #1b1b3a);
+  color: white;
+  border: 2px solid rgba(107, 118, 255, 0.4);
+  padding: 12px 24px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 16px;
+  transition: 0.2s;
+  margin: 5px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+button:hover {
+  transform: scale(1.05);
+  border-color: #a0a5ff;
+  box-shadow: 0 0 15px rgba(107, 118, 255, 0.4);
+}
+
+.btn-row {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin: 15px 0;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>⚡ Rift Anchor</h1>
+</header>
+
+<div class="score-container">
+  <div>Hold Time: <span id="timeDisplay" class="time-val">0.00s</span></div>
+  <div>Integrity: <span id="integrityDisplay" style="color:#ff4f79; font-weight:bold;">100%</span></div>
+</div>
+
+<canvas id="game" width="640" height="480"></canvas>
+
+<div class="btn-row">
+  <button onclick="window.location.href='index.html'" id="backBtn">🏠 Back</button>
+  <button onclick="startGame()" id="restartBtn">Restart</button>
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let gameLoop;
+let isHolding = false;
+let integrity = 100;
+let level = 1;
+let screenShake = 0;
+
+// Hold Time Tracking
+let currentHoldTime = 0; 
+
+// Rotating Starburst Rays Angle (Cookie Clicker background style)
+let bgRayAngle = 0;
+
+// Core Configuration
+let core = {
+  x: canvas.width / 2,
+  y: canvas.height / 2,
+  radius: 65,
+  targetRadius: 65,
+  pulseAngle: 0
+};
+
+// Orbiting subatomic particles
+let coreDrones = [];
+const numDrones = 10;
+for (let i = 0; i < numDrones; i++) {
+  coreDrones.push({
+    angle: (i * (360 / numDrones)) * (Math.PI / 180),
+    distance: 85,
+    size: 3 + Math.random() * 3
+  });
+}
+
+// Hazards (Organic, sweeping plasma flares)
+let hazards = [];
+let spawnTimer = 0;
+
+function startGame(){
+  currentHoldTime = 0;
+  integrity = 100;
+  isHolding = false;
+  level = 1;
+  hazards = [];
+  spawnTimer = 0;
+  screenShake = 0;
+
+  core.x = canvas.width / 2;
+  core.y = canvas.height / 2;
+  core.radius = 65;
+
+  document.getElementById("timeDisplay").textContent = "0.00s";
+  document.getElementById("integrityDisplay").textContent = "100%";
+
+  clearInterval(gameLoop);
+  gameLoop = setInterval(update, 1000 / 30);
+}
+
+function formatTime(seconds) {
+  if (seconds >= 60) {
+    const mins = Math.floor(seconds / 60);
+    const secs = (seconds % 60).toFixed(2);
+    return `${mins}m ${secs}s`;
+  }
+  return `${seconds.toFixed(2)}s`;
+}
+
+// Coordinate calculation
+function getCanvasCoords(e) {
+  const rect = canvas.getBoundingClientRect();
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  return {
+    x: (clientX - rect.left) * (canvas.width / rect.width),
+    y: (clientY - rect.top) * (canvas.height / rect.height)
+  };
+}
+
+function checkCoreTouch(coords) {
+  const dist = Math.hypot(coords.x - core.x, coords.y - core.y);
+  return dist <= core.radius + 15;
+}
+
+function startHold(e) {
+  const coords = getCanvasCoords(e);
+  if (checkCoreTouch(coords)) {
+    isHolding = true;
+  }
+}
+
+function moveHold(e) {
+  if (!isHolding) return;
+  const coords = getCanvasCoords(e);
+  core.x = Math.max(core.radius + 20, Math.min(canvas.width - core.radius - 20, coords.x));
+  core.y = Math.max(core.radius + 20, Math.min(canvas.height - core.radius - 20, coords.y));
+}
+
+function endHold() {
+  isHolding = false;
+}
+
+// Event Listeners
+canvas.addEventListener('mousedown', startHold);
+canvas.addEventListener('mousemove', moveHold);
+window.addEventListener('mouseup', endHold);
+
+canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startHold(e); });
+canvas.addEventListener('touchmove', (e) => { e.preventDefault(); moveHold(e); });
+canvas.addEventListener('touchend', endHold);
+
+function spawnHazard() {
+  let type = Math.random() < 0.5 ? 'horizontal' : 'vertical';
+  let speed = (2.5 + Math.random() * 2.5) + (level * 0.4);
+  let size = 15 + Math.random() * 10;
+
+  if (type === 'horizontal') {
+    hazards.push({
+      type: type,
+      y: Math.random() * (canvas.height - 100) + 50,
+      x: -60,
+      vx: speed,
+      vy: (Math.random() - 0.5) * 2,
+      size: size
+    });
+  } else {
+    hazards.push({
+      type: type,
+      x: Math.random() * (canvas.width - 100) + 50,
+      y: -60,
+      vx: (Math.random() - 0.5) * 2,
+      vy: speed,
+      size: size
+    });
+  }
+}
+
+function update(){
+  // Decay screen shake
+  if (screenShake > 0) screenShake -= 1;
+
+  // Stability Mechanics
+  if (isHolding) {
+    currentHoldTime += 0.03333;
+    document.getElementById("timeDisplay").textContent = formatTime(currentHoldTime);
+    
+    // Stabilizing restores integrity
+    if (integrity < 100) integrity = Math.min(100, integrity + 0.4);
+    level = Math.floor(currentHoldTime / 10) + 1;
+  } else {
+    // Left unheld, core slowly collapses
+    integrity = Math.max(0, integrity - 1.2);
+    if (integrity <= 0) {
+      gameOver("⚠️ Containment Failure! The Core destabilized due to lack of stabilization.");
+      return;
+    }
+  }
+  document.getElementById("integrityDisplay").textContent = Math.round(integrity) + "%";
+
+  // Ray Rotation & Core Pulsing
+  bgRayAngle += isHolding ? 0.025 : 0.008;
+  core.pulseAngle += 0.12;
+  let pulseOffset = Math.sin(core.pulseAngle) * 3;
+  core.targetRadius = isHolding ? 58 + pulseOffset : 65 + pulseOffset;
+  core.radius += (core.targetRadius - core.radius) * 0.25;
+
+  // Orbiting drone speeds
+  coreDrones.forEach(drone => {
+    drone.angle += isHolding ? 0.05 : 0.018;
+  });
+
+  // Slowly drift back to center when unheld
+  if (!isHolding) {
+    core.x += (canvas.width / 2 - core.x) * 0.06;
+    core.y += (canvas.height / 2 - core.y) * 0.06;
+  }
+
+  // Hazard spawning logic
+  spawnTimer++;
+  let spawnThreshold = Math.max(18, 55 - (level * 4));
+  if (spawnTimer >= spawnThreshold) {
+    spawnHazard();
+    spawnTimer = 0;
+  }
+
+  // Update & collide hazards
+  for (let i = hazards.length - 1; i >= 0; i--) {
+    let h = hazards[i];
+    h.x += h.vx;
+    h.y += h.vy;
+
+    if (h.x > canvas.width + 120 || h.y > canvas.height + 120 || h.x < -120 || h.y < -120) {
+      hazards.splice(i, 1);
+      continue;
+    }
+
+    // Checking Flare Overlap (Triggers whether holding or unholding!)
+    let distToCore = Math.hypot(h.x - core.x, h.y - core.y);
+    if (distToCore < core.radius + h.size * 0.4) {
+      integrity = Math.max(0, integrity - 25);
+      screenShake = 10; // Trigger impact shake
+
+      // Bounce/Repel the flare out
+      h.vx *= -1.5;
+      h.vy *= -1.5;
+      h.x += h.vx * 2;
+      h.y += h.vy * 2;
+
+      if (integrity <= 0) {
+        gameOver("💥 Vaporized! A stellar flare breached your shields.");
+        return;
+      }
+    }
+  }
+
+  draw();
+}
+
+// Function to draw organic flare paths
+function drawSolarFlare(ctx, x, y, vx, vy, size) {
+  ctx.save();
+  ctx.translate(x, y);
+  
+  let angle = Math.atan2(vy, vx);
+  ctx.rotate(angle);
+
+  ctx.beginPath();
+  ctx.moveTo(0, 0); 
+  
+  ctx.quadraticCurveTo(-size * 1.2, -size * 0.8, -size * 3.5, -size * 0.2);
+  ctx.quadraticCurveTo(-size * 4.5, 0, -size * 5.0, size * 0.1);
+  ctx.quadraticCurveTo(-size * 3.0, size * 0.9, -size * 0.8, size * 0.7);
+  ctx.closePath();
+
+  let flareGrad = ctx.createRadialGradient(0, 0, 1, -size * 1.5, 0, size * 4);
+  flareGrad.addColorStop(0, "#ffffff");
+  flareGrad.addColorStop(0.15, "#a0a5ff");
+  flareGrad.addColorStop(0.5, "rgba(107, 118, 255, 0.75)");
+  flareGrad.addColorStop(1, "rgba(77, 82, 224, 0)");
+
+  ctx.fillStyle = flareGrad;
+  ctx.shadowBlur = 15;
+  ctx.shadowColor = "#6b76ff";
+  ctx.fill();
+  
+  ctx.restore();
+}
+
+function draw(){
+  ctx.save();
+  
+  // Apply visual screen shake on hit
+  if (screenShake > 0) {
+    let dx = (Math.random() - 0.5) * screenShake * 1.5;
+    let dy = (Math.random() - 0.5) * screenShake * 1.5;
+    ctx.translate(dx, dy);
+  }
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // 1. Space Grid Background
+  ctx.strokeStyle = "rgba(107, 118, 255, 0.04)";
+  ctx.lineWidth = 1;
+  const gridSize = 40;
+  for (let x = 0; x < canvas.width; x += gridSize) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+  }
+  for (let y = 0; y < canvas.height; y += gridSize) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+  }
+
+  // 2. Cookie Clicker Rotating Ray Background (Locked to screen center)
+  ctx.save();
+  ctx.translate(canvas.width / 2, canvas.height / 2);
+  ctx.rotate(bgRayAngle);
+  ctx.fillStyle = "rgba(107, 118, 255, 0.035)";
+  const numRays = 16;
+  for (let i = 0; i < numRays; i++) {
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.arc(0, 0, 450, i * (Math.PI * 2 / numRays), (i + 0.5) * (Math.PI * 2 / numRays));
+    ctx.lineTo(0, 0);
+    ctx.fill();
+  }
+  ctx.restore();
+
+  // 3. Draw Actual Solar Flares
+  hazards.forEach(h => {
+    drawSolarFlare(ctx, h.x, h.y, h.vx, h.vy, h.size);
+  });
+
+  // 4. Outer Containment Ring (Integrity display)
+  ctx.strokeStyle = isHolding ? "rgba(160, 165, 255, 0.2)" : "rgba(255, 79, 121, 0.25)";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(core.x, core.y, core.radius + 18, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Arc meter indicating core integrity
+  ctx.strokeStyle = "#a0a5ff";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.arc(core.x, core.y, core.radius + 18, -Math.PI / 2, (-Math.PI / 2) + (Math.PI * 2 * (integrity / 100)));
+  ctx.stroke();
+
+  // 5. Orbiting subatomic drones
+  coreDrones.forEach(drone => {
+    let dx = core.x + Math.cos(drone.angle) * (core.radius + 18);
+    let dy = core.y + Math.sin(drone.angle) * (core.radius + 18);
+
+    ctx.fillStyle = "#a0a5ff";
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = "#6b76ff";
+    ctx.beginPath();
+    ctx.arc(dx, dy, drone.size, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.shadowBlur = 0;
+
+  // 6. Draw core gradient design (Matches Image 3)
+  let outerGlow = ctx.createRadialGradient(core.x, core.y, core.radius * 0.7, core.x, core.y, core.radius + 15);
+  outerGlow.addColorStop(0, "rgba(107, 118, 255, 0.35)");
+  outerGlow.addColorStop(1, "rgba(13, 13, 24, 0)");
+  ctx.fillStyle = outerGlow;
+  ctx.beginPath();
+  ctx.arc(core.x, core.y, core.radius + 15, 0, Math.PI * 2);
+  ctx.fill();
+
+  let coreGrad = ctx.createRadialGradient(core.x, core.y, 2, core.x, core.y, core.radius);
+  coreGrad.addColorStop(0, "#cbd0ff"); 
+  coreGrad.addColorStop(0.35, "#a0a5ff"); 
+  coreGrad.addColorStop(0.75, "#6b76ff"); 
+  coreGrad.addColorStop(1, "#4d52e0"); 
+
+  ctx.fillStyle = coreGrad;
+  ctx.beginPath();
+  ctx.arc(core.x, core.y, core.radius, 0, Math.PI * 2);
+  ctx.fill();
+
+  let glossGrad = ctx.createRadialGradient(core.x, core.y - core.radius * 0.2, 0, core.x, core.y - core.radius * 0.2, core.radius * 0.8);
+  glossGrad.addColorStop(0, "rgba(255, 255, 255, 0.45)");
+  glossGrad.addColorStop(1, "rgba(255, 255, 255, 0)");
+  ctx.fillStyle = glossGrad;
+  ctx.beginPath();
+  ctx.arc(core.x, core.y, core.radius - 2, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#0d0d18";
+  ctx.font = "bold 13px 'Lato', sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(isHolding ? "ANCHORED" : "HOLD TO START", core.x, core.y);
+
+  ctx.restore();
+}
+
+function gameOver(message){
+  clearInterval(gameLoop);
+  
+  const finalFormattedTime = formatTime(currentHoldTime);
+  alert(message + "\n\n⏱️ Continuous Hold Time: " + finalFormattedTime);
+  
+  startGame();
+}
+
+startGame();
+</script>
+
+</body>
+</html>
