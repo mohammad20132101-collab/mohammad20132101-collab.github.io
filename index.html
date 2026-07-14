@@ -879,6 +879,16 @@ a:hover { color: var(--accent); }
       </div>
     </div>
   </div>
+  <div class="game-card" data-name="holdit">
+    <div class="glass-card-inner">
+      <div class="glass-layer"></div>
+      <button class="fav-btn" onclick="toggleFavorite('holdit', 'Hold It!', 'holdit.html')">☆</button>
+      <div class="glass-content game-info">
+        <h3>Hold It!</h3>
+        <button onclick="openGame('holdit.html','Hold it!')">Play</button>
+      </div>
+    </div>
+  </div>
 </div>
 </section>
 
@@ -997,7 +1007,9 @@ const gamePool = [
   { id: "sudoku", name: "Sudoku", page: "sudoku.html" },
   { id: "stack", name: "Super Stack", page: "stack.html" },
   { id: "cookieclicker", name: "Cookie Clicker", page: "cookieclicker.html" },
-  { id: "crossyroad", name: "Crossy Road", page: "crossyroad.html" }
+  { id: "crossyroad", name: "Crossy Road", page: "crossyroad.html" },
+  { id: "holdit", name: "Hold It!", page: "holdit.html" }
+  
 ];
 
 /* THEME SYSTEM */
