@@ -889,6 +889,16 @@ a:hover { color: var(--accent); }
       </div>
     </div>
   </div>
+  <div class="game-card" data-name="ludo">
+    <div class="glass-card-inner">
+      <div class="glass-layer"></div>
+      <button class="fav-btn" onclick="toggleFavorite('ludo', 'Ludo', 'ludo.html')">☆</button>
+      <div class="glass-content game-info">
+        <h3>Ludo</h3>
+        <button onclick="openGame('ludo.html','Ludo')">Play</button>
+      </div>
+    </div>
+  </div>
 </div>
 </section>
 
@@ -1008,7 +1018,8 @@ const gamePool = [
   { id: "stack", name: "Super Stack", page: "stack.html" },
   { id: "cookieclicker", name: "Cookie Clicker", page: "cookieclicker.html" },
   { id: "crossyroad", name: "Crossy Road", page: "crossyroad.html" },
-  { id: "holdit", name: "Hold It!", page: "holdit.html" }
+  { id: "holdit", name: "Hold It!", page: "holdit.html" },
+  { id: "ludo", name: "Ludo", page: "ludo.html" }
   
 ];
 
