@@ -549,6 +549,358 @@ a {
 
 a:hover { color: var(--accent); }
 .section-title-container { text-align: center; margin-top: 40px; }
+
+/* ============ SKELETON LOADING STATES ============ */
+/* Shimmer placeholder cards shown while grids populate, matching the
+   glass-card shape so the swap-in feels seamless rather than jarring. */
+@keyframes skeleton-shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.skeleton-card {
+  position: relative;
+  border-radius: 24px;
+  width: calc(33.333% - 14px);
+  box-sizing: border-box;
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+  background: var(--bg-card);
+}
+
+.exclusives-list .skeleton-card { width: 100%; }
+
+.skeleton-shimmer-inner {
+  padding: 30px 25px;
+  height: 118px;
+  box-sizing: border-box;
+}
+
+.skeleton-line {
+  height: 21px;
+  width: 55%;
+  border-radius: 8px;
+  margin: 0 auto 20px auto;
+  background: linear-gradient(90deg,
+    rgba(148, 163, 184, 0.12) 0%,
+    rgba(148, 163, 184, 0.28) 50%,
+    rgba(148, 163, 184, 0.12) 100%);
+  background-size: 800px 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+.skeleton-line.skeleton-btn {
+  height: 40px;
+  width: 40%;
+  border-radius: 12px;
+  margin-bottom: 0;
+}
+
+body.light-theme .skeleton-line {
+  background: linear-gradient(90deg,
+    rgba(100, 116, 139, 0.08) 0%,
+    rgba(100, 116, 139, 0.2) 50%,
+    rgba(100, 116, 139, 0.08) 100%);
+  background-size: 800px 100%;
+}
+
+.grid-fade-in {
+  animation: gridFadeIn 0.35s ease both;
+}
+
+@keyframes gridFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============ SORT / FILTER BAR ============ */
+.controls-bar {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.controls-bar select {
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--input-bg);
+  color: var(--input-text);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+body.light-theme .controls-bar select {
+  border: 1px solid #cbd5e1;
+}
+
+.controls-bar select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+/* ============ GLASS MODAL (replaces alert()) ============ */
+.glass-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.glass-modal-overlay.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.glass-modal {
+  width: 90%;
+  max-width: 380px;
+  border-radius: 24px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+  transform: translateY(16px) scale(0.97);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-modal-overlay.is-open .glass-modal {
+  transform: translateY(0) scale(1);
+}
+
+.glass-modal .glass-content {
+  padding: 32px 28px 28px 28px;
+  text-align: center;
+}
+
+.glass-modal-icon {
+  font-size: 30px;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.glass-modal h3 {
+  margin: 0 0 10px 0;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.glass-modal p {
+  margin: 0 0 24px 0;
+  color: var(--text-muted);
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+
+.glass-modal button {
+  min-width: 120px;
+}
+
+.glass-modal.modal-locked .glass-card-inner::before {
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.55) 0%, rgba(239, 68, 68, 0.2) 45%, rgba(239, 68, 68, 0.12) 100%);
+}
+
+body.light-theme .glass-modal.modal-locked .glass-card-inner::before {
+  background: linear-gradient(180deg, rgba(220, 38, 38, 0.55) 0%, rgba(220, 38, 38, 0.22) 45%, rgba(220, 38, 38, 0.14) 100%);
+}
+
+/* ============ STATS BAR LAYOUT ============ */
+.stats-bar {
+  gap: 44px;
+  align-items: center;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.stat-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.01em;
+}
+
+.stat-value {
+  color: var(--accent);
+  font-size: 15px;
+}
+
+/* ============ STREAK CIRCLE ============ */
+/* A glass medallion with a living conic-gradient flame ring. The ring sits
+   in its own padded layer (not a border) so it reads as a continuous glow
+   rather than a flat stroke, and the inner disc gets the same blur/glass
+   treatment as every other surface in the hub so it doesn't feel bolted on. */
+.streak-circle {
+  position: relative;
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  padding: 3px;
+  background: conic-gradient(from 200deg,
+    rgba(255, 184, 0, 0.95) 0deg,
+    rgba(255, 122, 0, 0.85) 90deg,
+    rgba(239, 68, 68, 0.8) 180deg,
+    rgba(255, 122, 0, 0.85) 270deg,
+    rgba(255, 184, 0, 0.95) 360deg);
+  box-shadow:
+    0 6px 18px rgba(255, 140, 0, 0.18),
+    0 0 0 1px rgba(255, 255, 255, 0.06);
+  transition: box-shadow 0.4s ease, transform 0.3s ease;
+}
+
+.streak-circle-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: var(--bg-solid);
+  backdrop-filter: blur(20px) saturate(200%);
+  -webkit-backdrop-filter: blur(20px) saturate(200%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.18),
+    inset 0 -3px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Soft top gloss on the inner disc, echoing the main glass-card gloss */
+.streak-circle-inner::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 10%; right: 10%;
+  height: 45%;
+  border-radius: 50% 50% 60% 60% / 100% 100% 30% 30%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 100%);
+  pointer-events: none;
+}
+
+.streak-flame {
+  font-size: 15px;
+  line-height: 1;
+  filter: grayscale(0.85) opacity(0.55);
+  transition: filter 0.4s ease;
+  margin-bottom: 1px;
+}
+
+.streak-number {
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--text-main);
+}
+
+/* "Hot" state once a streak reaches 3+ days: the ring brightens, glows, and
+   gently breathes; the flame emoji loses its desaturated/dormant look. */
+.streak-circle.streak-hot {
+  box-shadow:
+    0 8px 26px rgba(255, 94, 0, 0.4),
+    0 0 22px rgba(255, 140, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+  animation: streakBreathe 2.4s ease-in-out infinite;
+}
+
+.streak-circle.streak-hot .streak-flame {
+  filter: none;
+}
+
+@keyframes streakBreathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.055); }
+}
+
+body.light-theme .streak-circle {
+  box-shadow: 0 6px 16px rgba(255, 140, 0, 0.14), 0 0 0 1px rgba(0, 0, 0, 0.04);
+}
+
+body.light-theme .streak-circle.streak-hot {
+  box-shadow:
+    0 8px 22px rgba(255, 94, 0, 0.28),
+    0 0 18px rgba(255, 140, 0, 0.2),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+/* ============ CONTROL SCHEME HINT CHIPS ============ */
+/* Small circular "how to play" indicators under each game title — same
+   glass DNA as the rest of the hub (blur + thin rim + soft gloss) shrunk
+   down to chip scale, with a bit of lift on hover to feel tactile. */
+.control-hints {
+  display: flex;
+  justify-content: center;
+  margin: -6px 0 18px 0;
+}
+
+.control-hint-circle {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.16),
+    0 3px 8px rgba(0, 0, 0, 0.25);
+  cursor: default;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.control-hint-icon {
+  font-size: 13px;
+  line-height: 1;
+  color: var(--text-muted);
+  transform: translateY(-0.5px);
+  transition: color 0.3s ease;
+}
+
+.game-card:hover:not(.locked-card) .control-hint-circle {
+  transform: translateY(-3px);
+  border-color: var(--accent);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.16),
+    0 6px 16px var(--accent-glow);
+}
+
+.game-card:hover:not(.locked-card) .control-hint-icon {
+  color: var(--accent);
+}
+
+body.light-theme .control-hint-circle {
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.7),
+    0 3px 8px rgba(30, 58, 110, 0.12);
+}
+
+body.light-theme .control-hint-icon {
+  color: #475569;
+}
 </style> 
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7292845069394911"
      crossorigin="anonymous"></script>
@@ -561,6 +913,20 @@ a:hover { color: var(--accent); }
 </audio>
 
 <button class="theme-toggle-btn" onclick="toggleTheme()">🌗 Theme</button>
+
+<div class="glass-modal-overlay" id="glassModalOverlay">
+  <div class="glass-modal" id="glassModal">
+    <div class="glass-card-inner">
+      <div class="glass-layer"></div>
+      <div class="glass-content">
+        <span class="glass-modal-icon" id="glassModalIcon">🔒</span>
+        <h3 id="glassModalTitle">Notice</h3>
+        <p id="glassModalMessage"></p>
+        <button onclick="closeGlassModal()">Got it</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div id="loginScreen">
   <h2>Rift Hub</h2>
@@ -580,10 +946,38 @@ a:hover { color: var(--accent); }
   <h1>🎮 Rift Hub 🎮</h1>
   <p style="color: var(--text-muted);">Welcome, <span id="username" style="color: var(--text-main); font-weight: 600;"></span> <button onclick="logout()" style="background: #e53e3e; margin-left: 15px; padding: 6px 12px; font-size: 12px;">Exit Session</button></p>
   <input type="text" id="search" class="search-input" placeholder="Search standard games...">
+  <div class="controls-bar">
+    <select id="sortSelect">
+      <option value="default">Sort: Default</option>
+      <option value="az">Sort: Name A–Z</option>
+      <option value="za">Sort: Name Z–A</option>
+      <option value="mostplayed">Sort: Most Played</option>
+    </select>
+    <select id="categorySelect">
+      <option value="all">Category: All</option>
+      <option value="arcade">Arcade</option>
+      <option value="puzzle">Puzzle</option>
+      <option value="strategy">Strategy</option>
+      <option value="board">Board</option>
+      <option value="word">Word</option>
+    </select>
+  </div>
 </header>
 
 <div class="stats-bar" id="statsBar" style="display: none;">
-  <span>📊 Games Played: <span id="gamesPlayedCount" style="color: var(--accent);">0</span></span>
+  <div class="stat-item">
+    <span class="stat-label">📊 Games Played</span>
+    <span id="gamesPlayedCount" class="stat-value">0</span>
+  </div>
+  <div class="stat-item">
+    <div class="streak-circle" id="streakCircle">
+      <div class="streak-circle-inner">
+        <span class="streak-flame">🔥</span>
+        <span id="streakCount" class="streak-number">0</span>
+      </div>
+    </div>
+    <span class="stat-label">Day Streak</span>
+  </div>
 </div>
 
 <div class="gotw-banner" id="gotwBanner">
@@ -605,6 +999,7 @@ a:hover { color: var(--accent); }
 <section>
 <h2 align="center">Games</h2>
 
+<div class="game-grid" id="mainGameGridSkeleton" style="display:none;"></div>
 <div class="game-grid" id="mainGameGrid">
   <div class="game-card" data-name="snake">
     <div class="glass-card-inner">
@@ -992,6 +1387,98 @@ const auth = getAuth(app);
 let isGuest = false;
 let currentGameOfDay = {};
 
+/* ============ CATEGORY MAP (for filter dropdown) ============ */
+const categoryMap = {
+  snake: "arcade", tetris: "puzzle", pong: "arcade", flappyblock: "arcade",
+  "2048": "puzzle", memorymatch: "puzzle", "pac-man": "arcade", wordle: "word",
+  connectfour: "strategy", tictactoe: "strategy", rockpaperscissors: "arcade",
+  "dots&boxes": "strategy", flowfree: "puzzle", chess: "strategy",
+  snakesandladders: "board", nonogram: "puzzle", hangman: "word",
+  simonsays: "arcade", checkers: "strategy", Utictactoe: "strategy",
+  hexes: "strategy", sudoku: "puzzle", stack: "arcade", cookieclicker: "arcade",
+  crossyroad: "arcade", holdit: "arcade", ludo: "board"
+};
+
+/* ============ CONTROL SCHEME MAP (for keyboard/mouse hint chips) ============ */
+const controlsMap = {
+  snake: "arrows", tetris: "arrows", pong: "arrows", flappyblock: "space",
+  "2048": "arrows", memorymatch: "click", "pac-man": "arrows", wordle: "keyboard",
+  connectfour: "click", tictactoe: "click", rockpaperscissors: "click",
+  "dots&boxes": "click", flowfree: "click", chess: "click",
+  snakesandladders: "click", nonogram: "click", hangman: "keyboard",
+  simonsays: "click", checkers: "click", Utictactoe: "click",
+  hexes: "click", sudoku: "keyboard", stack: "space", cookieclicker: "click",
+  crossyroad: "arrows", holdit: "space", ludo: "click"
+};
+
+const controlIconInfo = {
+  arrows: { icon: "⬆", label: "Arrow Keys" },
+  click: { icon: "🖱", label: "Mouse Click" },
+  keyboard: { icon: "⌨", label: "Keyboard" },
+  space: { icon: "␣", label: "Spacebar" }
+};
+
+document.querySelectorAll("#mainGameGrid .game-card").forEach(card => {
+  const name = card.getAttribute("data-name");
+  if (!name) return;
+
+  if (categoryMap[name]) {
+    card.setAttribute("data-category", categoryMap[name]);
+  }
+
+  const controlKey = controlsMap[name];
+  if (controlKey) {
+    const info = controlIconInfo[controlKey];
+    const h3 = card.querySelector(".game-info h3");
+    if (h3) {
+      const hintRow = document.createElement("div");
+      hintRow.className = "control-hints";
+      hintRow.innerHTML = `<span class="control-hint-circle" title="${info.label}"><span class="control-hint-icon">${info.icon}</span></span>`;
+      h3.insertAdjacentElement("afterend", hintRow);
+    }
+  }
+});
+
+/* ============ GLASS MODAL (replaces alert()) ============ */
+window.showGlassModal = function (message, opts = {}) {
+  const { title = "Notice", icon = "🔒", isError = false } = opts;
+  document.getElementById("glassModalTitle").textContent = title;
+  document.getElementById("glassModalMessage").textContent = message;
+  document.getElementById("glassModalIcon").textContent = icon;
+  const modal = document.getElementById("glassModal");
+  modal.classList.toggle("modal-locked", isError);
+  document.getElementById("glassModalOverlay").classList.add("is-open");
+};
+
+window.closeGlassModal = function () {
+  document.getElementById("glassModalOverlay").classList.remove("is-open");
+};
+
+document.getElementById("glassModalOverlay").addEventListener("click", (e) => {
+  if (e.target.id === "glassModalOverlay") window.closeGlassModal();
+});
+
+/* ============ SKELETON LOADING HELPERS ============ */
+function renderSkeletonCards(gridId, count) {
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  const isExclusiveList = grid.classList.contains("exclusives-list");
+  grid.innerHTML = Array.from({ length: count }).map(() => `
+    <div class="skeleton-card">
+      <div class="skeleton-shimmer-inner" style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:${isExclusiveList ? "90px" : "118px"};">
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line skeleton-btn"></div>
+      </div>
+    </div>`).join("");
+}
+
+function revealGrid(gridId) {
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  grid.classList.add("grid-fade-in");
+  setTimeout(() => grid.classList.remove("grid-fade-in"), 400);
+}
+
 const gamePool = [
   { id: "snake", name: "Snake", page: "snake.html" },
   { id: "tetris", name: "Tetris", page: "tetris.html" },
@@ -1023,7 +1510,56 @@ const gamePool = [
   
 ];
 
-/* THEME SYSTEM */
+/* ============ DAILY STREAK SYSTEM ============ */
+function dateStr(offsetDays = 0) {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  return d.toISOString().slice(0, 10);
+}
+
+function renderStreakBadge(streak) {
+  const countEl = document.getElementById("streakCount");
+  const circleEl = document.getElementById("streakCircle");
+  if (countEl) countEl.textContent = streak;
+  if (circleEl) circleEl.classList.toggle("streak-hot", streak >= 3);
+}
+
+/* Called on every hub load: reflects the stored streak, quietly resetting
+   it if more than a day was missed since the last play. */
+function updateStreak() {
+  if (isGuest) return;
+  const today = dateStr(0);
+  const yesterday = dateStr(-1);
+  const lastPlayed = localStorage.getItem("riftLastPlayed");
+  let streak = parseInt(localStorage.getItem("riftStreak")) || 0;
+
+  if (lastPlayed && lastPlayed !== today && lastPlayed !== yesterday) {
+    streak = 0;
+    localStorage.setItem("riftStreak", "0");
+  }
+  renderStreakBadge(streak);
+}
+
+/* Called whenever a game is actually opened: extends the streak once per
+   calendar day rather than on every single game launch. */
+function recordStreakPlay() {
+  if (isGuest) return;
+  const today = dateStr(0);
+  const yesterday = dateStr(-1);
+  const lastPlayed = localStorage.getItem("riftLastPlayed");
+  let streak = parseInt(localStorage.getItem("riftStreak")) || 0;
+
+  if (lastPlayed === today) {
+    // already counted today
+  } else if (lastPlayed === yesterday) {
+    streak += 1;
+  } else {
+    streak = 1;
+  }
+  localStorage.setItem("riftStreak", String(streak));
+  localStorage.setItem("riftLastPlayed", today);
+  renderStreakBadge(streak);
+}
 window.toggleTheme = function() {
   const isLight = document.body.classList.toggle("light-theme");
   localStorage.setItem("riftTheme", isLight ? "light" : "dark");
@@ -1049,7 +1585,7 @@ function setGameOfDay() {
 
 window.playGameOfDay = function() {
   if (isGuest) {
-    alert("Game of the Day content highlights require an account connection!");
+    showGlassModal("Game of the Day content highlights require an account connection!", { title: "Account Required", icon: "📅" });
     return;
   }
   window.openGame(currentGameOfDay.page, currentGameOfDay.name);
@@ -1070,7 +1606,7 @@ window.logout = function() {
   document.getElementById("email").value = "";
   document.getElementById("password").value = "";
   
-  auth.signOut().catch(err => alert(err.message));
+  auth.signOut().catch(err => showGlassModal(err.message, { title: "Sign Out Error", icon: "⚠️", isError: true }));
 };
 
 /* LOGIN */
@@ -1080,7 +1616,7 @@ window.login = function () {
 
   signInWithEmailAndPassword(auth, email, password)
     .then(u => loadUser(u.user.email, false))
-    .catch(err => alert(err.message));
+    .catch(err => showGlassModal(err.message, { title: "Login Failed", icon: "⚠️", isError: true }));
 };
 
 /* SIGN UP */
@@ -1090,7 +1626,7 @@ window.signup = function () {
 
   createUserWithEmailAndPassword(auth, email, password)
     .then(u => loadUser(u.user.email, false))
-    .catch(err => alert(err.message));
+    .catch(err => showGlassModal(err.message, { title: "Sign Up Failed", icon: "⚠️", isError: true }));
 };
 
 /* GUEST ENTER ENGINE */
@@ -1112,40 +1648,68 @@ function loadUser(email, guestModeStatus) {
 
   setGameOfDay();
 
+  /* Show skeleton placeholders immediately so the grids never appear to
+     "pop in" empty while favorites/history/stats are being assembled. */
+  renderSkeletonCards("favoritesGrid", 3);
+  renderSkeletonCards("historyGrid", 3);
+  renderSkeletonCards("mainGameGridSkeleton", 9);
+  document.getElementById("mainGameGridSkeleton").style.display = "flex";
+  document.getElementById("mainGameGrid").style.display = "none";
+
   if (isGuest) {
     document.getElementById("historySection").style.display = "none"; 
     document.getElementById("statsBar").style.display = "none";
     
     gotwBanner.classList.add("locked-banner");
-    gotwBtn.innerText = "🔒 Locked (Account Required)";
+    gotwBtn.textContent = "🔒 Locked (Account Required)";
 
     cards.forEach(card => {
       card.classList.add("locked-card");
       const title = card.querySelector(".ex-title");
-      if(!title.innerText.includes("🔒")) {
-         title.innerText = "🔒 " + title.innerText;
+      if(!title.textContent.includes("🔒")) {
+         title.textContent = "🔒 " + title.textContent;
       }
-      card.querySelector(".ex-btn").innerText = "Locked";
+      card.querySelector(".ex-btn").textContent = "Locked";
     });
   } else {
     document.getElementById("historySection").style.display = "block";
     document.getElementById("statsBar").style.display = "flex";
     
     gotwBanner.classList.remove("locked-banner");
-    gotwBtn.innerText = "Play Game of the Day";
+    gotwBtn.textContent = "Play Game of the Day";
 
     cards.forEach(card => {
       card.classList.remove("locked-card");
       const title = card.querySelector(".ex-title");
-      title.innerText = title.innerText.replace("🔒 ", "");
-      card.querySelector(".ex-btn").innerText = "Play";
+      title.textContent = title.textContent.replace("🔒 ", "");
+      card.querySelector(".ex-btn").textContent = "Play";
     });
-    renderHistory();
-    updateStats();
   }
 
-  renderFavorites();
-  fixLayout();
+  /* Small deliberate delay so the shimmer is perceptible, then swap in
+     the real grids with a soft fade rather than an instant snap.
+     Wrapped in try/finally so that even if one piece of rendering throws,
+     the grid still gets revealed and the sort/filter controls still work. */
+  setTimeout(() => {
+    try {
+      if (!isGuest) {
+        renderHistory();
+        updateStats();
+        updateStreak();
+      }
+      renderFavorites();
+    } catch (err) {
+      console.error("Rift Hub render error:", err);
+    } finally {
+      document.getElementById("mainGameGridSkeleton").style.display = "none";
+      document.getElementById("mainGameGrid").style.display = "flex";
+      revealGrid("mainGameGrid");
+      revealGrid("favoritesGrid");
+      revealGrid("historyGrid");
+      applyMainGridControls();
+      fixLayout();
+    }
+  }, 450);
 
   setTimeout(() => {
     const music = document.getElementById("bgMusic");
@@ -1170,6 +1734,15 @@ window.openGame = function (page, name) {
 
     let count = parseInt(localStorage.getItem("riftGamesPlayed")) || 0;
     localStorage.setItem("riftGamesPlayed", count + 1);
+
+    const poolEntry = gamePool.find(g => g.page === page);
+    if (poolEntry) {
+      const playCounts = JSON.parse(localStorage.getItem("riftPlayCounts")) || {};
+      playCounts[poolEntry.id] = (playCounts[poolEntry.id] || 0) + 1;
+      localStorage.setItem("riftPlayCounts", JSON.stringify(playCounts));
+    }
+
+    recordStreakPlay();
   }
   window.location.href = page;
 };
@@ -1177,7 +1750,7 @@ window.openGame = function (page, name) {
 /* LOCKED EXCLUSIVES LAUNCH GUARD */
 window.openExclusive = function (page, name) {
   if (isGuest) {
-    alert("This content is Premium Exclusive! Please sign up or login to play.");
+    showGlassModal("This content is Premium Exclusive! Please sign up or login to play.", { title: "Premium Exclusive", icon: "🔥" });
     return;
   }
   window.openGame(page, name);
@@ -1193,7 +1766,7 @@ function updateStats() {
 /* FAVORITES SYSTEM */
 window.toggleFavorite = function (id, name, page) {
   if (isGuest) {
-    alert("Favorites tracking requires a registered account!");
+    showGlassModal("Favorites tracking requires a registered account!", { title: "Account Required", icon: "⭐" });
     return;
   }
   let favs = JSON.parse(localStorage.getItem("riftFavs")) || [];
@@ -1355,17 +1928,51 @@ function filterFavoritesGrid(queryValue) {
   }
 }
 
-document.getElementById("search").addEventListener("input", function () {
-  const val = this.value.toLowerCase();
+/* ============ SORT / FILTER CONTROLS (main grid) ============ */
+function applyMainGridControls() {
+  const grid = document.getElementById("mainGameGrid");
+  if (!grid) return;
 
-  document.querySelectorAll("#mainGameGrid .game-card").forEach(card => {
-    const name = card.getAttribute("data-name");
-    if (!name) return;
-    card.style.display = name.toLowerCase().includes(val) ? "" : "none";
+  const searchVal = document.getElementById("search").value.toLowerCase();
+  const sortVal = document.getElementById("sortSelect").value;
+  const categoryVal = document.getElementById("categorySelect").value;
+  const playCounts = JSON.parse(localStorage.getItem("riftPlayCounts")) || {};
+
+  const cards = Array.from(grid.querySelectorAll(".game-card"));
+
+  cards.forEach(card => {
+    const name = card.getAttribute("data-name") || "";
+    const category = card.getAttribute("data-category") || "";
+    const matchesSearch = name.toLowerCase().includes(searchVal);
+    const matchesCategory = categoryVal === "all" || category === categoryVal;
+    card.style.display = (matchesSearch && matchesCategory) ? "" : "none";
   });
 
-  filterFavoritesGrid(val);
+  if (sortVal === "az" || sortVal === "za") {
+    cards.sort((a, b) => {
+      const titleA = a.querySelector("h3").textContent.trim().toLowerCase();
+      const titleB = b.querySelector("h3").textContent.trim().toLowerCase();
+      return sortVal === "az" ? titleA.localeCompare(titleB) : titleB.localeCompare(titleA);
+    });
+    cards.forEach(card => grid.appendChild(card));
+  } else if (sortVal === "mostplayed") {
+    cards.sort((a, b) => {
+      const idA = a.getAttribute("data-name");
+      const idB = b.getAttribute("data-name");
+      return (playCounts[idB] || 0) - (playCounts[idA] || 0);
+    });
+    cards.forEach(card => grid.appendChild(card));
+  }
+
+  filterFavoritesGrid(searchVal);
   fixLayout();
+}
+
+document.getElementById("sortSelect").addEventListener("change", applyMainGridControls);
+document.getElementById("categorySelect").addEventListener("change", applyMainGridControls);
+
+document.getElementById("search").addEventListener("input", function () {
+  applyMainGridControls();
 });
 
 document.getElementById("exclusiveSearch").addEventListener("input", function () {
