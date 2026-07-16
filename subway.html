@@ -262,22 +262,21 @@ let frame;
 let loop;
 let paused = false;
 
-// Safe generation variables (prevents impossible stack generations)
+// Safe generation variables
 let lastSpawnFrame = 0;
-let activeLanesThisWave = [];
 
 // Tutorial state manager
 let inTutorial = false;
 let tutorialStep = 0; // 1=dodge train, 2=jump hurdle, 3=slide laser
 
-// 3D Setup
-const horizonY = 160; 
-const playerBaseY = 430;
+// NEW 3D Setup (Shifted Horizon down/up for higher camera angle perspective)
+const horizonY = 120; // Lowered horizon creates a steeper, higher looking perspective angle
+const playerBaseY = 440;
 
-const horizonLanes = [210, 250, 290];
+const horizonLanes = [225, 250, 275];
 const baseLanes = [80, 250, 420];
 
-// Default start immediately loads tutorial automatically!
+// Default start loads tutorial automatically
 function startTutorial() {
   player = {
     targetLane: 1, 
@@ -316,11 +315,6 @@ function startTutorial() {
 }
 
 function startGame(skipTutorial = false){
-  if (!skipTutorial) {
-    startTutorial();
-    return;
-  }
-  
   player = {
     targetLane: 1, 
     currentX: 250,  
@@ -339,8 +333,16 @@ function startGame(skipTutorial = false){
   gameSpeed = 0.012; 
   frame = 0;
   paused = false;
-  inTutorial = false;
-  hideTutorialUI();
+  
+  if (skipTutorial) {
+    inTutorial = false;
+    hideTutorialUI();
+    // Reset spawn timer immediately so spawn occurs without standard wave delay
+    lastSpawnFrame = -100; 
+  } else {
+    startTutorial();
+    return;
+  }
   
   updateHUD();
   clearInterval(loop);
@@ -376,7 +378,6 @@ function hideTutorialUI() {
 
 // Controls with scroll prevention
 document.addEventListener("keydown", e => {
-  // CRITICAL: Stop Arrow keys and Spacebar from scrolling/shaking the webpage container
   if(["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) {
     e.preventDefault();
   }
@@ -460,17 +461,15 @@ function advanceTutorial() {
 function spawnObstacle() {
   if (inTutorial) return; 
   
-  // Ensure we don't spam obstacles too close together in frames
+  // Dynamic spawn buffer rate check (prevents spamming or layout lockouts)
   if (frame - lastSpawnFrame < 30) return;
 
   const lane = Math.floor(Math.random() * 3);
   
-  // Clean waves system: If we are creating a new obstacle near current ones, 
-  // do not block all 3 lanes completely. Always leave at least one lane completely open.
+  // Clean waves system
   if (obstacles.length > 0) {
     const closeObstacles = obstacles.filter(o => o.z < 0.35);
     if (closeObstacles.length >= 2) {
-      // 2 lanes are already blocked in this depth wave, do not spawn a 3rd!
       return;
     }
   }
@@ -493,7 +492,6 @@ function spawnGoldBar() {
   
   const lane = Math.floor(Math.random() * 3);
   
-  // Avoid placing gold coins inside a lane already occupied by a train or a barrier at the horizon
   const laneOccupied = obstacles.some(o => o.lane === lane && o.z < 0.2);
   if (laneOccupied) return;
 
@@ -509,7 +507,7 @@ function getPerspectiveProjection(lane, z) {
   const endX = baseLanes[lane];
   const screenX = startX + (endX - startX) * z;
   const screenY = horizonY + (canvas.height - horizonY) * z;
-  const scale = 0.15 + 0.85 * z; 
+  const scale = 0.12 + 0.88 * z; 
   return { x: screenX, y: screenY, scale: scale };
 }
 
@@ -523,7 +521,7 @@ function drawPerspectiveTracks() {
   ctx.fillStyle = "#0c0a21";
   ctx.fillRect(0, 0, canvas.width, horizonY);
   
-  // Stars / Neon Dust
+  // Stars
   ctx.fillStyle = "#ffffff";
   for (let i = 0; i < 15; i++) {
     let starX = (Math.sin(i * 123) * 0.5 + 0.5) * canvas.width;
@@ -539,12 +537,12 @@ function drawPerspectiveTracks() {
   for (let i = 0; i < 3; i++) {
     ctx.strokeStyle = "rgba(76, 111, 255, 0.15)";
     ctx.beginPath();
-    ctx.moveTo(horizonLanes[i] - 15, horizonY);
+    ctx.moveTo(horizonLanes[i] - 10, horizonY);
     ctx.lineTo(baseLanes[i] - 60, canvas.height);
     ctx.stroke();
 
     ctx.beginPath();
-    ctx.moveTo(horizonLanes[i] + 15, horizonY);
+    ctx.moveTo(horizonLanes[i] + 10, horizonY);
     ctx.lineTo(baseLanes[i] + 60, canvas.height);
     ctx.stroke();
 
@@ -643,11 +641,11 @@ function update(){
   const targetX = baseLanes[player.targetLane];
   player.currentX += (targetX - player.currentX) * 0.25;
 
-  // 3. Spawners (Dynamic rate checks)
-  if (frame % 45 === 0) {
+  // 3. Spawners (Guaranteed Immediate Spawns)
+  if (frame % 45 === 0 || (frame < 5 && !inTutorial)) {
     spawnObstacle();
   }
-  if (frame % 30 === 0) {
+  if (frame % 30 === 0 || (frame < 5 && !inTutorial)) {
     spawnGoldBar();
   }
 
@@ -678,9 +676,8 @@ function update(){
   for (let i = obstacles.length - 1; i >= 0; i--) {
     let obs = obstacles[i];
     
-    // Freeze movement in tutorial if obstacle is right in front of the player (Z=0.7)
     if (inTutorial && obs.z >= 0.7) {
-      // Do not increment depth.
+      // Freeze depth in tutorial
     } else {
       obs.z += gameSpeed;
     }
@@ -690,7 +687,6 @@ function update(){
 
     if (obs.z < 1) {
       if (obs.type === "hurdle") {
-        // Red Barrier (JUMP)
         ctx.fillStyle = "#ff4500"; 
         ctx.strokeStyle = "#8b0000";
         ctx.lineWidth = 2;
@@ -702,7 +698,6 @@ function update(){
         ctx.fillRect(proj.x + size/12, proj.y - size * 0.45, size/8, size * 0.4);
 
       } else if (obs.type === "laser") {
-        // Neon Laser Gate (SLIDE)
         ctx.fillStyle = "rgba(0, 255, 255, 0.15)";
         ctx.fillRect(proj.x - size/1.8, proj.y - 4, size * 1.1, 8);
 
@@ -723,7 +718,6 @@ function update(){
         ctx.shadowBlur = 0; 
 
       } else if (obs.type === "train") {
-        // Train (DODGE LANE)
         ctx.fillStyle = "#4b5563"; 
         ctx.strokeStyle = "#1f2937";
         ctx.lineWidth = 3;
@@ -741,7 +735,7 @@ function update(){
       }
     }
 
-    // Hitbox collision check zone tuned carefully
+    // Hitbox collision check
     if (!obs.passed && obs.z > 0.78 && obs.z < 0.86) {
       if (obs.lane === player.targetLane) {
         if (obs.type === "hurdle" && !player.isJumping) {
