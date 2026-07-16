@@ -1,1 +1,816 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Subway Blocks</title>
+<style>
+body{
+  margin:0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background:#0f0f1a;
+  color:white;
+  overflow-x: hidden; /* Prevent horizontal scroll page shakes */
+}
+header{
+  background:#1a1a2e;
+  border-bottom:2px solid #4c6fff;
+  text-align:center;
+  padding:15px;
+}
+.wrapper{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:20px;
+}
 
+/* COMPACT PANEL GRID */
+.panel{
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 20px;
+  background: rgba(26, 26, 46, 0.8);
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(76, 111, 255, 0.3);
+}
+
+button{
+  background:#4c6fff;
+  color:white;
+  border:none;
+  padding:10px 18px;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight: bold;
+  transition: background 0.2s, transform 0.1s;
+}
+button:hover{
+  background:#3556d6;
+  transform: translateY(-1px);
+}
+button:active{
+  transform: translateY(1px);
+}
+
+.color-label {
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #8a8ab0;
+}
+
+input[type="color"] {
+  -webkit-appearance: none;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  background: none;
+}
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+input[type="color"]::-webkit-color-swatch {
+  border: 2px solid #4c6fff;
+  border-radius: 50%;
+}
+
+/* CONTAINER */
+.canvas-container {
+  position: relative;
+  width: 500px;
+  height: 500px;
+}
+canvas{
+  background:#050814;
+  border:3px solid #4c6fff;
+  border-radius:12px;
+  box-shadow: 0 10px 30px rgba(76, 111, 255, 0.25);
+  display: block;
+}
+
+/* FLOATING SIDE-HUD */
+.hud-overlay {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none;
+  font-family: monospace;
+}
+.hud-box {
+  background: rgba(13, 14, 29, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 8px 14px;
+  border-radius: 10px;
+  backdrop-filter: blur(6px);
+  text-align: right;
+  min-width: 110px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+}
+.hud-label {
+  display: block;
+  font-size: 10px;
+  color: #8a8ab0;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+.hud-value {
+  font-size: 20px;
+  font-weight: 900;
+  color: #fff;
+}
+.hud-box.multiplier {
+  background: rgba(247, 37, 133, 0.2);
+  border-color: rgba(247, 37, 133, 0.5);
+}
+.hud-box.multiplier .hud-value {
+  color: #f72585;
+}
+.hud-box.bars {
+  border-color: rgba(255, 215, 0, 0.4);
+}
+.hud-box.bars .hud-value {
+  color: #ffd700;
+}
+
+/* INTERACTIVE TUTORIAL BANNER OVERLAY */
+.tutorial-banner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(10, 10, 30, 0.95);
+  border: 2px solid #4c6fff;
+  border-radius: 16px;
+  padding: 20px 30px;
+  text-align: center;
+  max-width: 320px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+  pointer-events: none;
+  display: none;
+  z-index: 10;
+  animation: pulseBorder 1.5s infinite alternate;
+}
+@keyframes pulseBorder {
+  0% { border-color: #4c6fff; box-shadow: 0 0 10px rgba(76,111,255,0.5); }
+  100% { border-color: #00ffff; box-shadow: 0 0 25px rgba(0,255,255,0.8); }
+}
+.tut-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #00ffff;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+.tut-desc {
+  font-size: 14px;
+  color: #ffffff;
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+.tut-action {
+  font-size: 13px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 6px 10px;
+  border-radius: 6px;
+  color: #ffd700;
+  font-weight: bold;
+}
+
+.instructions {
+  margin-top: 15px;
+  color: #8a8ab0;
+  text-align: center;
+  font-size: 14px;
+  max-width: 450px;
+  line-height: 1.4;
+}
+</style>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7292845069394911"
+     crossorigin="anonymous"></script>
+</head>
+<body>
+<header>
+  <h1>Subway Blocks</h1>
+  <p>Learn the rifts, dodge obstacles, and grab the gold!</p>
+</header>
+<div class="wrapper">
+  <div class="panel">
+    <button onclick="startGame(true)">Skip to Run</button>
+    <button onclick="window.location.href='index.html'">Back</button>
+    <label class="color-label">
+      Color:
+      <input type="color" id="colorPicker" value="#4c6fff"
+        onfocus="paused = true"
+        onblur="paused = false">
+    </label>
+  </div>
+
+  <div class="canvas-container">
+    <canvas id="game" width="500" height="500"></canvas>
+    
+    <div id="tutorial-banner" class="tutorial-banner">
+      <div id="tut-title" class="tut-title">Tutorial</div>
+      <div id="tut-desc" class="tut-desc">Learn the controls!</div>
+      <div id="tut-action" class="tut-action">PRESS KEY</div>
+    </div>
+
+    <div class="hud-overlay">
+      <div class="hud-box">
+        <span class="hud-label">SCORE</span>
+        <span id="score-val" class="hud-value">000000</span>
+      </div>
+      <div class="hud-box multiplier">
+        <span class="hud-label">MULTIPLIER</span>
+        <span id="mult-val" class="hud-value">x1</span>
+      </div>
+      <div class="hud-box bars">
+        <span class="hud-label">GOLD BARS</span>
+        <span id="bars-val" class="hud-value">0000</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="instructions">
+    <strong>Controls:</strong> Arrow keys or WASD.<br>
+    <strong>⬅️ ➡️ / A D</strong> - Switch Lanes | <strong>⬆️ / W / Space</strong> - Jump | <strong>⬇️ / S</strong> - Slide
+  </div>
+</div>
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let player;
+let obstacles;
+let goldBars;
+let score;
+let multiplier;
+let barsCollected;
+let gameSpeed;
+let frame;
+let loop;
+let paused = false;
+
+// Safe generation variables (prevents impossible stack generations)
+let lastSpawnFrame = 0;
+let activeLanesThisWave = [];
+
+// Tutorial state manager
+let inTutorial = false;
+let tutorialStep = 0; // 1=dodge train, 2=jump hurdle, 3=slide laser
+
+// 3D Setup
+const horizonY = 160; 
+const playerBaseY = 430;
+
+const horizonLanes = [210, 250, 290];
+const baseLanes = [80, 250, 420];
+
+// Default start immediately loads tutorial automatically!
+function startTutorial() {
+  player = {
+    targetLane: 1, 
+    currentX: 250,  
+    yOffset: 0,    
+    gravity: 0.6,
+    jumpVelocity: 0,
+    isJumping: false,
+    isSliding: false,
+    slideTimer: 0
+  };
+  obstacles = [];
+  goldBars = [];
+  score = 0;
+  multiplier = 1;
+  barsCollected = 0;
+  gameSpeed = 0.012; 
+  frame = 0;
+  paused = false;
+
+  inTutorial = true;
+  tutorialStep = 1; 
+  showTutorialUI();
+  
+  // Spawn Step 1: Train in Center Lane (Forces left/right dodge)
+  obstacles = [{
+    lane: 1,
+    z: 0.1,
+    type: "train",
+    passed: false
+  }];
+
+  updateHUD();
+  clearInterval(loop);
+  loop = setInterval(update, 20);
+}
+
+function startGame(skipTutorial = false){
+  if (!skipTutorial) {
+    startTutorial();
+    return;
+  }
+  
+  player = {
+    targetLane: 1, 
+    currentX: 250,  
+    yOffset: 0,    
+    gravity: 0.6,
+    jumpVelocity: 0,
+    isJumping: false,
+    isSliding: false,
+    slideTimer: 0
+  };
+  obstacles = [];
+  goldBars = [];
+  score = 0;
+  multiplier = 1;
+  barsCollected = 0;
+  gameSpeed = 0.012; 
+  frame = 0;
+  paused = false;
+  inTutorial = false;
+  hideTutorialUI();
+  
+  updateHUD();
+  clearInterval(loop);
+  loop = setInterval(update, 20);
+}
+
+function showTutorialUI() {
+  const banner = document.getElementById("tutorial-banner");
+  const title = document.getElementById("tut-title");
+  const desc = document.getElementById("tut-desc");
+  const action = document.getElementById("tut-action");
+  
+  banner.style.display = "block";
+  
+  if (tutorialStep === 1) {
+    title.innerText = "Step 1: Dodge Trains!";
+    desc.innerText = "A massive train blocks your lane! Change lanes to avoid a crash.";
+    action.innerText = "Press LEFT ⬅️ or RIGHT ➡️";
+  } else if (tutorialStep === 2) {
+    title.innerText = "Step 2: Jump Barriers!";
+    desc.innerText = "Orange hurdles block the tracks. Leap clean over them!";
+    action.innerText = "Press UP ⬆️, W, or Space";
+  } else if (tutorialStep === 3) {
+    title.innerText = "Step 3: Duck Lasers!";
+    desc.innerText = "High neon lasers bar the way. Slide underneath them!";
+    action.innerText = "Press DOWN ⬇️ or S";
+  }
+}
+
+function hideTutorialUI() {
+  document.getElementById("tutorial-banner").style.display = "none";
+}
+
+// Controls with scroll prevention
+document.addEventListener("keydown", e => {
+  // CRITICAL: Stop Arrow keys and Spacebar from scrolling/shaking the webpage container
+  if(["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) {
+    e.preventDefault();
+  }
+
+  if (paused) return;
+
+  let actionTaken = false;
+
+  // Jump
+  if ((e.code === "ArrowUp" || e.code === "KeyW" || e.code === "Space") && !player.isJumping && !player.isSliding) {
+    player.isJumping = true;
+    player.jumpVelocity = -10;
+    
+    if (inTutorial && tutorialStep === 2) {
+      actionTaken = true;
+    }
+  }
+  // Slide
+  if ((e.code === "ArrowDown" || e.code === "KeyS") && !player.isJumping && !player.isSliding) {
+    player.isSliding = true;
+    player.slideTimer = 25; 
+    
+    if (inTutorial && tutorialStep === 3) {
+      actionTaken = true;
+    }
+  }
+  // Move Left
+  if ((e.code === "ArrowLeft" || e.code === "KeyA") && player.targetLane > 0) {
+    player.targetLane--;
+    
+    if (inTutorial && tutorialStep === 1) {
+      actionTaken = true;
+    }
+  }
+  // Move Right
+  if ((e.code === "ArrowRight" || e.code === "KeyD") && player.targetLane < 2) {
+    player.targetLane++;
+    
+    if (inTutorial && tutorialStep === 1) {
+      actionTaken = true;
+    }
+  }
+
+  // Handle tutorial progression
+  if (inTutorial && actionTaken) {
+    advanceTutorial();
+  }
+});
+
+function advanceTutorial() {
+  if (tutorialStep === 1) {
+    obstacles = [{
+      lane: player.targetLane, 
+      z: 0.1,
+      type: "hurdle",
+      passed: false
+    }];
+    tutorialStep = 2;
+    showTutorialUI();
+  } else if (tutorialStep === 2) {
+    obstacles = [{
+      lane: player.targetLane, 
+      z: 0.1,
+      type: "laser",
+      passed: false
+    }];
+    tutorialStep = 3;
+    showTutorialUI();
+  } else if (tutorialStep === 3) {
+    inTutorial = false;
+    tutorialStep = 0;
+    hideTutorialUI();
+    score += 500;
+    barsCollected += 5;
+    updateHUD();
+    alert("🎉 Tutorial Complete!\nNow, brace yourself for the real run!");
+  }
+}
+
+// SAFELY SPOTS OBSTACLES TO PREVENT "IMPOSSIBLE STACKS"
+function spawnObstacle() {
+  if (inTutorial) return; 
+  
+  // Ensure we don't spam obstacles too close together in frames
+  if (frame - lastSpawnFrame < 30) return;
+
+  const lane = Math.floor(Math.random() * 3);
+  
+  // Clean waves system: If we are creating a new obstacle near current ones, 
+  // do not block all 3 lanes completely. Always leave at least one lane completely open.
+  if (obstacles.length > 0) {
+    const closeObstacles = obstacles.filter(o => o.z < 0.35);
+    if (closeObstacles.length >= 2) {
+      // 2 lanes are already blocked in this depth wave, do not spawn a 3rd!
+      return;
+    }
+  }
+
+  const types = ["hurdle", "laser", "train"];
+  const type = types[Math.floor(Math.random() * types.length)];
+  
+  obstacles.push({
+    lane: lane,
+    z: 0, 
+    type: type,
+    passed: false
+  });
+  
+  lastSpawnFrame = frame;
+}
+
+function spawnGoldBar() {
+  if (inTutorial) return; 
+  
+  const lane = Math.floor(Math.random() * 3);
+  
+  // Avoid placing gold coins inside a lane already occupied by a train or a barrier at the horizon
+  const laneOccupied = obstacles.some(o => o.lane === lane && o.z < 0.2);
+  if (laneOccupied) return;
+
+  goldBars.push({
+    lane: lane,
+    z: 0,
+    collected: false
+  });
+}
+
+function getPerspectiveProjection(lane, z) {
+  const startX = horizonLanes[lane];
+  const endX = baseLanes[lane];
+  const screenX = startX + (endX - startX) * z;
+  const screenY = horizonY + (canvas.height - horizonY) * z;
+  const scale = 0.15 + 0.85 * z; 
+  return { x: screenX, y: screenY, scale: scale };
+}
+
+function updateHUD() {
+  document.getElementById("score-val").innerText = String(Math.floor(score)).padStart(6, '0');
+  document.getElementById("mult-val").innerText = `x${multiplier}`;
+  document.getElementById("bars-val").innerText = String(barsCollected).padStart(4, '0');
+}
+
+function drawPerspectiveTracks() {
+  ctx.fillStyle = "#0c0a21";
+  ctx.fillRect(0, 0, canvas.width, horizonY);
+  
+  // Stars / Neon Dust
+  ctx.fillStyle = "#ffffff";
+  for (let i = 0; i < 15; i++) {
+    let starX = (Math.sin(i * 123) * 0.5 + 0.5) * canvas.width;
+    let starY = (Math.cos(i * 456) * 0.5 + 0.5) * horizonY;
+    ctx.fillRect(starX, starY, 1.5, 1.5);
+  }
+
+  ctx.fillStyle = "#050814";
+  ctx.fillRect(0, horizonY, canvas.width, canvas.height - horizonY);
+
+  // Lanes
+  ctx.lineWidth = 3;
+  for (let i = 0; i < 3; i++) {
+    ctx.strokeStyle = "rgba(76, 111, 255, 0.15)";
+    ctx.beginPath();
+    ctx.moveTo(horizonLanes[i] - 15, horizonY);
+    ctx.lineTo(baseLanes[i] - 60, canvas.height);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(horizonLanes[i] + 15, horizonY);
+    ctx.lineTo(baseLanes[i] + 60, canvas.height);
+    ctx.stroke();
+
+    // Rails
+    ctx.strokeStyle = "rgba(218, 165, 32, 0.35)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(horizonLanes[i], horizonY);
+    ctx.lineTo(baseLanes[i], canvas.height);
+    ctx.stroke();
+  }
+
+  // Segment lines
+  ctx.strokeStyle = "rgba(76, 111, 255, 0.08)";
+  ctx.lineWidth = 2;
+  const speedFactor = (frame * 1.5) % 40;
+  for (let y = horizonY; y < canvas.height; y += 40) {
+    const adjustedY = y + speedFactor;
+    if (adjustedY < canvas.height && adjustedY > horizonY) {
+      ctx.beginPath();
+      ctx.moveTo(0, adjustedY);
+      ctx.lineTo(canvas.width, adjustedY);
+      ctx.stroke();
+    }
+  }
+}
+
+function drawGoldBar(proj) {
+  const w = 18 * proj.scale;
+  const h = 7 * proj.scale;
+  const offY = 15 * proj.scale; 
+
+  ctx.fillStyle = "#9a6e00"; 
+  ctx.beginPath();
+  ctx.moveTo(proj.x - w, proj.y - offY + h);
+  ctx.lineTo(proj.x + w, proj.y - offY + h);
+  ctx.lineTo(proj.x + w * 0.7, proj.y - offY - h);
+  ctx.lineTo(proj.x - w * 0.7, proj.y - offY - h);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = "#ffd700"; 
+  ctx.beginPath();
+  ctx.moveTo(proj.x - w * 0.8, proj.y - offY + h * 0.3);
+  ctx.lineTo(proj.x + w * 0.8, proj.y - offY + h * 0.3);
+  ctx.lineTo(proj.x + w * 0.55, proj.y - offY - h * 0.75);
+  ctx.lineTo(proj.x - w * 0.55, proj.y - offY - h * 0.75);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = "#fff7c2"; 
+  ctx.beginPath();
+  ctx.moveTo(proj.x - w * 0.45, proj.y - offY - h * 0.1);
+  ctx.lineTo(proj.x + w * 0.45, proj.y - offY - h * 0.1);
+  ctx.lineTo(proj.x + w * 0.35, proj.y - offY - h * 0.6);
+  ctx.lineTo(proj.x - w * 0.35, proj.y - offY - h * 0.6);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function update(){
+  if(paused) return;
+  frame++;
+
+  // 1. Score & Physics Progression
+  if (!inTutorial) {
+    score += 0.15 * multiplier; 
+    if (frame % 500 === 0) {
+      multiplier++; 
+    }
+    if (frame % 350 === 0 && gameSpeed < 0.025) {
+      gameSpeed += 0.001;
+    }
+  }
+  updateHUD();
+
+  drawPerspectiveTracks();
+
+  // 2. Handle Jumps & Slides
+  if (player.isJumping) {
+    player.yOffset += player.jumpVelocity;
+    player.jumpVelocity += player.gravity;
+    if (player.yOffset >= 0) {
+      player.yOffset = 0;
+      player.isJumping = false;
+    }
+  }
+
+  if (player.isSliding) {
+    player.slideTimer--;
+    if (player.slideTimer <= 0) {
+      player.isSliding = false;
+    }
+  }
+
+  const targetX = baseLanes[player.targetLane];
+  player.currentX += (targetX - player.currentX) * 0.25;
+
+  // 3. Spawners (Dynamic rate checks)
+  if (frame % 45 === 0) {
+    spawnObstacle();
+  }
+  if (frame % 30 === 0) {
+    spawnGoldBar();
+  }
+
+  // 4. Update & Draw Gold Bars
+  for (let i = goldBars.length - 1; i >= 0; i--) {
+    let bar = goldBars[i];
+    bar.z += gameSpeed;
+
+    const proj = getPerspectiveProjection(bar.lane, bar.z);
+    
+    if (!bar.collected && bar.z < 1) {
+      drawGoldBar(proj);
+    }
+
+    // Capture Zone
+    if (!bar.collected && bar.z > 0.78 && bar.z < 0.88 && bar.lane === player.targetLane && !player.isSliding) {
+      if (player.yOffset > -40) { 
+        bar.collected = true;
+        barsCollected++;
+        score += 150; 
+        updateHUD();
+      }
+    }
+  }
+  goldBars = goldBars.filter(b => b.z < 1 && !b.collected);
+
+  // 5. Draw Obstacles
+  for (let i = obstacles.length - 1; i >= 0; i--) {
+    let obs = obstacles[i];
+    
+    // Freeze movement in tutorial if obstacle is right in front of the player (Z=0.7)
+    if (inTutorial && obs.z >= 0.7) {
+      // Do not increment depth.
+    } else {
+      obs.z += gameSpeed;
+    }
+
+    const proj = getPerspectiveProjection(obs.lane, obs.z);
+    const size = 50 * proj.scale;
+
+    if (obs.z < 1) {
+      if (obs.type === "hurdle") {
+        // Red Barrier (JUMP)
+        ctx.fillStyle = "#ff4500"; 
+        ctx.strokeStyle = "#8b0000";
+        ctx.lineWidth = 2;
+        ctx.fillRect(proj.x - size/2, proj.y - size * 0.5, size, size * 0.5);
+        ctx.strokeRect(proj.x - size/2, proj.y - size * 0.5, size, size * 0.5);
+        
+        ctx.fillStyle = "#ffd700";
+        ctx.fillRect(proj.x - size/3, proj.y - size * 0.45, size/8, size * 0.4);
+        ctx.fillRect(proj.x + size/12, proj.y - size * 0.45, size/8, size * 0.4);
+
+      } else if (obs.type === "laser") {
+        // Neon Laser Gate (SLIDE)
+        ctx.fillStyle = "rgba(0, 255, 255, 0.15)";
+        ctx.fillRect(proj.x - size/1.8, proj.y - 4, size * 1.1, 8);
+
+        ctx.strokeStyle = "#00ffff";
+        ctx.lineWidth = 4 * proj.scale;
+        
+        ctx.fillStyle = "#334155";
+        ctx.fillRect(proj.x - size/1.8, proj.y - size * 1.5, size/6, size * 1.5);
+        ctx.fillRect(proj.x + size/2.5, proj.y - size * 1.5, size/6, size * 1.5);
+        
+        ctx.shadowBlur = 12 * proj.scale;
+        ctx.shadowColor = "#00ffff";
+        ctx.strokeStyle = "rgba(0, 255, 255, 1)";
+        ctx.beginPath();
+        ctx.moveTo(proj.x - size/1.8, proj.y - size * 1.1);
+        ctx.lineTo(proj.x + size/2.5, proj.y - size * 1.1);
+        ctx.stroke();
+        ctx.shadowBlur = 0; 
+
+      } else if (obs.type === "train") {
+        // Train (DODGE LANE)
+        ctx.fillStyle = "#4b5563"; 
+        ctx.strokeStyle = "#1f2937";
+        ctx.lineWidth = 3;
+        ctx.fillRect(proj.x - size/1.6, proj.y - size * 1.8, size * 1.25, size * 1.8);
+        ctx.strokeRect(proj.x - size/1.6, proj.y - size * 1.8, size * 1.25, size * 1.8);
+
+        ctx.fillStyle = "#1d4ed8";
+        ctx.fillRect(proj.x - size/2, proj.y - size * 1.6, size, size * 0.55);
+
+        ctx.fillStyle = "#ffeb3b";
+        ctx.beginPath();
+        ctx.arc(proj.x - size/3.2, proj.y - size * 0.4, size * 0.18, 0, Math.PI*2);
+        ctx.arc(proj.x + size/3.2, proj.y - size * 0.4, size * 0.18, 0, Math.PI*2);
+        ctx.fill();
+      }
+    }
+
+    // Hitbox collision check zone tuned carefully
+    if (!obs.passed && obs.z > 0.78 && obs.z < 0.86) {
+      if (obs.lane === player.targetLane) {
+        if (obs.type === "hurdle" && !player.isJumping) {
+          gameOver();
+        } 
+        else if (obs.type === "laser" && !player.isSliding) {
+          gameOver();
+        } 
+        else if (obs.type === "train") {
+          gameOver();
+        }
+      }
+    }
+
+    if (obs.z >= 0.86 && !obs.passed) {
+      obs.passed = true;
+      score += 50; 
+      updateHUD();
+    }
+  }
+  obstacles = obstacles.filter(o => o.z < 1);
+
+  // 6. Draw Player
+  const playerColor = document.getElementById("colorPicker").value;
+  ctx.save();
+  
+  let renderW = 34;
+  let renderH = 45;
+  let drawY = playerBaseY + player.yOffset;
+
+  if (player.isSliding) {
+    renderH = 20; 
+    drawY += 25;  
+  }
+
+  // Shadow
+  ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
+  ctx.beginPath();
+  ctx.ellipse(player.currentX, playerBaseY + 5, 20, 6, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // Block Body
+  ctx.fillStyle = playerColor;
+  ctx.strokeStyle = "white";
+  ctx.lineWidth = 3;
+  ctx.fillRect(player.currentX - renderW/2, drawY - renderH, renderW, renderH);
+  ctx.strokeRect(player.currentX - renderW/2, drawY - renderH, renderW, renderH);
+
+  // Visor
+  ctx.fillStyle = "#ffffff";
+  if (player.isSliding) {
+    ctx.fillRect(player.currentX - renderW/3, drawY - renderH + 4, renderW * 0.66, 4);
+  } else {
+    ctx.fillRect(player.currentX - renderW/3, drawY - renderH + 10, renderW * 0.66, 8);
+  }
+
+  ctx.restore();
+}
+
+function gameOver(){
+  clearInterval(loop);
+  hideTutorialUI();
+  setTimeout(()=>{
+    alert("🚀 Run Finished!\nTotal Score: " + Math.floor(score) + "\nGold Bars Collected: " + barsCollected);
+  },50);
+}
+
+// Start with Interactive Tutorial immediately on load
+startTutorial();
+</script>
+</body>
+</html>
