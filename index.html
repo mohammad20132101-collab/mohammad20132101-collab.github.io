@@ -1,1987 +1,2018 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rift Hub</title>
-
-<style>
-/* THEME VARIABLES - DARK MODE (DEFAULT) */
-:root {
-  --bg-main: #06070d;
-  --bg-card: rgba(255, 255, 255, 0.06);
-  --bg-solid: #0d0e15;
-  --text-main: #ffffff;
-  --text-muted: #94a3b8;
-  --accent: #3b82f6;
-  --accent-glow: rgba(59, 130, 246, 0.25);
-  --border-locked: rgba(239, 68, 68, 0.4);
-  --bg-locked: rgba(20, 20, 35, 0.45);
-  --banner-bg: rgba(30, 30, 55, 0.4);
-  --star-active: #ffb800;
-  --star-inactive: #64748b;
-  --input-bg: rgba(255, 255, 255, 0.05);
-  --input-text: #ffffff;
-  --glass-blur: blur(25px) saturate(210%);
-  --card-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
-  --glass-highlight: inset 0 1px 1px 0 rgba(255, 255, 255, 0.15);
-  --card-border: rgba(255, 255, 255, 0.08);
-}
-
-/* PREMIUM SILVER & BLUE LIGHT MODE */
-body.light-theme {
-  --bg-main: #eef1f7;
-  --bg-card: rgba(219, 234, 254, 0.45);
-  --bg-solid: rgba(255, 255, 255, 0.8);
-  --text-main: #0f172a;
-  --text-muted: #475569;
-  --accent: #0066ff;
-  --accent-glow: rgba(0, 102, 255, 0.15);
-  --border-locked: rgba(220, 38, 38, 0.35);
-  --bg-locked: rgba(241, 245, 249, 0.5);
-  --banner-bg: rgba(255, 255, 255, 0.6);
-  --star-active: #f59e0b;
-  --star-inactive: #94a3b8;
-  --input-bg: rgba(0, 0, 0, 0.05);
-  --input-text: #0f172a;
-  --glass-blur: blur(25px) saturate(190%);
-  --card-shadow: 0 16px 40px rgba(30, 58, 110, 0.16), 0 3px 10px rgba(30, 58, 110, 0.12);
-  --glass-highlight: inset 0 1px 1px 0 rgba(255, 255, 255, 0.7);
-  --card-border: rgba(0, 0, 0, 0.08);
-}
-
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  background: var(--bg-main);
-  color: var(--text-main);
-  transition: background 0.3s ease, color 0.3s ease;
-  min-height: 100vh;
-}
-
-/* Light mode gets a soft directional gradient instead of a flat slab of
-   grey — a single flat colour next to bright white glass cards is what was
-   reading as dull/"puke". A gentle white-to-silver-blue sweep gives it the
-   same premium depth the dark theme gets for free from its near-black base. */
-body.light-theme {
-  background: linear-gradient(160deg, #fbfcfe 0%, #eef1f8 45%, #dfe6f2 100%);
-  background-attachment: fixed;
-}
-
-/* INNER CONTAINMENT MASK TO SHIELD EDGES FROM FILTER DISPLACEMENT RIPS */
-.glass-card-inner {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  border-radius: 24px;
-  overflow: hidden;
-  /* clip-path forces correct rounded clipping of the backdrop-filter layer.
-     Combining filter + backdrop-filter + border-radius is a known trigger
-     for browsers to silently stop clipping to the radius (square/jagged
-     corners) — clip-path sidesteps that bug entirely. */
-  clip-path: inset(0 round 24px);
-  transform: translateZ(0);
-  -webkit-transform: translateZ(0);
-  isolation: isolate;
-}
-
-/* LIQUID GLASS LAYER — blur + saturation only. The previous version ran an
-   SVG turbulence/displacement filter here, which is what caused the square
-   corners (filter + backdrop-filter + border-radius clipping is buggy
-   cross-browser) and also read as woven fabric rather than glass. Real
-   glass sells itself through blur, saturation, and light (the rim +
-   gloss pseudo-elements below), not through a noise texture. */
-.glass-layer {
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  z-index: 1;
-  background: var(--bg-card);
-  backdrop-filter: blur(30px) saturate(220%);
-  -webkit-backdrop-filter: blur(30px) saturate(220%);
-  pointer-events: none;
-}
-
-.glass-content {
-  position: relative;
-  z-index: 2;
-  pointer-events: auto;
-}
-
-/* GLASS RIM — a thin gradient ring: brightest at the top, tapering down,
-   but never fading fully to zero — the ring stays closed all the way
-   around instead of leaving a borderless gap at the bottom. Built with the
-   padding+mask-composite trick so only the ring itself (not the fill)
-   picks up the gradient. Light mode uses a blue-tinted version instead of
-   white, since a white highlight is invisible against a light background —
-   the same reason it needs to be white against the dark theme's near-black
-   base. */
-.glass-card-inner::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  border-radius: 24px;
-  padding: 1.5px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.22) 45%, rgba(255, 255, 255, 0.1) 100%);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-}
-
-body.light-theme .glass-card-inner::before {
-  background: linear-gradient(180deg, rgba(59, 130, 246, 0.6) 0%, rgba(59, 130, 246, 0.25) 45%, rgba(59, 130, 246, 0.12) 100%);
-}
-
-/* GLOSS — a very soft, even sheen rather than a bright spotlight. Light
-   mode leans on the same blue tint as the rim (instead of white-on-white)
-   so the glass character actually shows up. */
-.glass-card-inner::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background:
-    linear-gradient(160deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0) 40%),
-    radial-gradient(90% 70% at 100% 100%, rgba(120, 170, 255, 0.1) 0%, rgba(120, 170, 255, 0) 60%);
-  mix-blend-mode: overlay;
-}
-
-body.light-theme .glass-card-inner::after {
-  background:
-    linear-gradient(160deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 45%),
-    radial-gradient(90% 70% at 100% 100%, rgba(59, 130, 246, 0.14) 0%, rgba(59, 130, 246, 0) 60%);
-  mix-blend-mode: soft-light;
-}
-
-/* LOGIN SCREEN GLASS RECOGNITION PANEL */
-#loginScreen {
-  max-width: 360px;
-  margin: 120px auto;
-  padding: 40px 30px;
-  border-radius: 24px;
-  background: var(--bg-solid);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  text-align: center;
-}
-
-body.light-theme #loginScreen {
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(20px);
-}
-
-#loginScreen h2 {
-  font-size: 28px;
-  font-weight: 700;
-  margin: 0 0 24px 0;
-  letter-spacing: -0.02em;
-}
-
-#loginScreen input {
-  padding: 12px 16px;
-  width: 100%;
-  margin: 6px 0;
-  box-sizing: border-box;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: var(--input-bg);
-  color: var(--input-text);
-  font-family: inherit;
-  font-size: 15px;
-  transition: all 0.2s ease;
-}
-
-body.light-theme #loginScreen input {
-  border: 1px solid #cbd5e1;
-}
-
-#loginScreen input:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-glow);
-}
-
-button {
-  padding: 12px 28px;
-  border: none;
-  background: var(--accent);
-  color: white;
-  border-radius: 12px;
-  cursor: pointer;
-  font-weight: 600;
-  font-family: inherit;
-  font-size: 14px;
-  transition: all 0.2s ease;
-  display: inline-block;
-}
-
-button:hover {
-  transform: translateY(-1px);
-  opacity: 0.95;
-}
-
-.guest-btn {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text-main);
-  margin-top: 12px;
-  width: 100%;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-body.light-theme .guest-btn {
-  background: rgba(0, 0, 0, 0.05);
-  border: 1px solid rgba(0, 0, 0, 0.02);
-}
-
-header {
-  padding: 40px 20px;
-  text-align: center;
-  background: var(--bg-solid);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  position: relative;
-}
-
-body.light-theme header {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  background: rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(10px);
-}
-
-header h1 {
-  font-weight: 700;
-  font-size: 34px;
-  margin: 0 0 8px 0;
-  letter-spacing: -0.03em;
-}
-
-/* OUTLINED DYNAMIC THEME TOGGLE BUTTON — fixed to the viewport so the
-   same button/markup works both in the header and on the login screen. */
-.theme-toggle-btn {
-  position: fixed;
-  top: 25px;
-  right: 25px;
-  z-index: 100;
-  padding: 8px 14px;
-  font-size: 13px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: var(--text-main);
-  border-radius: 20px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: background 0.2s, border-color 0.2s;
-}
-
-body.light-theme .theme-toggle-btn {
-  background: rgba(255, 255, 255, 0.6);
-  border: 1px solid rgba(0, 0, 0, 0.15);
-}
-
-.theme-toggle-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-}
-
-body.light-theme .theme-toggle-btn:hover {
-  background: rgba(0, 0, 0, 0.04);
-}
-
-.search-input {
-  margin-top: 15px;
-  padding: 12px 20px;
-  width: 100%;
-  max-width: 500px;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: var(--input-bg);
-  color: var(--input-text);
-  font-family: inherit;
-  font-size: 15px;
-  transition: all 0.2s ease;
-}
-
-.search-input:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-glow);
-}
-
-/* GAME OF THE DAY BANNER — now uses the same glass-card-inner/glass-layer
-   system as the game cards (rim ring + gloss + clip-path rounding) instead
-   of its own separate flat-glass style, so it visually matches. */
-.gotw-banner {
-  position: relative;
-  margin: 30px 20px;
-  border-radius: 24px;
-  box-shadow: var(--card-shadow);
-}
-
-.gotw-banner .glass-content {
-  padding: 40px 35px;
-  text-align: center;
-}
-
-.gotw-banner h2 {
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  color: var(--accent);
-  margin: 0 0 16px 0;
-}
-
-.gotw-banner h3 {
-  font-size: 28px;
-  font-weight: 700;
-  margin: 0 0 24px 0;
-  letter-spacing: -0.02em;
-}
-
-/* Locked state recolors the fill/rim/gloss to red, same treatment as
-   locked game cards, instead of leaving default white/blue glass on a red
-   background. */
-.gotw-banner.locked-banner .glass-layer {
-  background: rgba(239, 68, 68, 0.06);
-}
-
-.gotw-banner.locked-banner .glass-card-inner::before {
-  background: linear-gradient(180deg, rgba(239, 68, 68, 0.55) 0%, rgba(239, 68, 68, 0.2) 45%, rgba(239, 68, 68, 0.12) 100%);
-}
-
-.gotw-banner.locked-banner .glass-card-inner::after {
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0) 40%);
-  mix-blend-mode: overlay;
-}
-
-body.light-theme .gotw-banner.locked-banner .glass-layer {
-  background: rgba(220, 38, 38, 0.05);
-}
-
-body.light-theme .gotw-banner.locked-banner .glass-card-inner::before {
-  background: linear-gradient(180deg, rgba(220, 38, 38, 0.55) 0%, rgba(220, 38, 38, 0.22) 45%, rgba(220, 38, 38, 0.14) 100%);
-}
-
-body.light-theme .gotw-banner.locked-banner .glass-card-inner::after {
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 40%);
-  mix-blend-mode: soft-light;
-}
-
-.stats-bar {
-  background: var(--bg-solid);
-  margin: 20px;
-  padding: 16px;
-  border-radius: 16px;
-  display: flex;
-  justify-content: space-around;
-  font-weight: 600;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-/* GRIDS AND TRANSLUCENT GAME CARDS */
-.game-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  padding: 20px;
-  justify-content: flex-start;
-}
-
-/* The card itself owns the crisp, unfiltered border + highlight + shadow.
-   This is the shape the eye reads as "the edge" — it never passes through
-   the SVG turbulence filter, so it stays perfectly straight/round, exactly
-   like the theme toggle button. */
-.game-card {
-  position: relative;
-  border-radius: 24px;
-  text-align: center;
-  width: calc(33.333% - 14px);
-  box-sizing: border-box;
-  border: 1px solid transparent;
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease, border-color 0.4s ease;
-  box-shadow: var(--card-shadow);
-  background: transparent;
-}
-
-.game-card:hover:not(.locked-card) {
-  transform: translateY(-6px);
-  border-color: var(--accent);
-  box-shadow: 0 15px 30px var(--accent-glow);
-}
-
-.fav-btn {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--star-inactive);
-  border-radius: 50%;
-  width: 36px;
-  height: 36px;
-  cursor: pointer;
-  font-size: 20px;
-  line-height: 34px;
-  padding: 0;
-  z-index: 10;
-  transition: all 0.2s ease;
-}
-
-/* The dark circle + medium-grey star combo (tuned for dark mode, where it
-   reads clearly against a bright photo background) was nearly invisible in
-   light mode: a mid-grey star on a mostly-transparent dark circle, sitting
-   on an already-light card. Light mode gets a light circle with a clearly
-   dark star instead. */
-body.light-theme .fav-btn {
-  background: rgba(255, 255, 255, 0.65);
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  color: #475569;
-  box-shadow: 0 2px 6px rgba(30, 58, 110, 0.12);
-}
-
-body.light-theme .fav-btn.is-active {
-  background: rgba(255, 255, 255, 0.85) !important;
-  border-color: var(--star-active);
-}
-
-.fav-btn.is-active {
-  color: var(--star-active) !important;
-  background: rgba(0, 0, 0, 0.5) !important;
-  border-color: var(--star-active);
-}
-
-.exclusives-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 20px;
-}
-
-.exclusives-list .game-card {
-  width: 100%;
-}
-
-/* LOCK CARD OVERHAUL - INTEGRATES INTO LIQUID GLASS ARCHITECTURE */
-.game-card.locked-card {
-  background: var(--bg-locked) !important;
-  border: 1px solid var(--border-locked) !important;
-}
-
-/* Locked cards recolor the glass fill/rim/gloss to match the red locked
-   theme instead of leaving the default white/blue glass on top of a red
-   card — that mismatch was what read as color bleeding into a muddy mess. */
-.game-card.locked-card .glass-layer {
-  background: rgba(239, 68, 68, 0.06);
-}
-
-.game-card.locked-card .glass-card-inner::before {
-  background: linear-gradient(180deg, rgba(239, 68, 68, 0.55) 0%, rgba(239, 68, 68, 0.2) 45%, rgba(239, 68, 68, 0.12) 100%);
-}
-
-.game-card.locked-card .glass-card-inner::after {
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0) 40%);
-  mix-blend-mode: overlay;
-}
-
-body.light-theme .game-card.locked-card .glass-layer {
-  background: rgba(220, 38, 38, 0.05);
-}
-
-body.light-theme .game-card.locked-card .glass-card-inner::before {
-  background: linear-gradient(180deg, rgba(220, 38, 38, 0.55) 0%, rgba(220, 38, 38, 0.22) 45%, rgba(220, 38, 38, 0.14) 100%);
-}
-
-body.light-theme .game-card.locked-card .glass-card-inner::after {
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 40%);
-  mix-blend-mode: soft-light;
-}
-
-.game-card.locked-card button:not(.fav-btn) {
-  background: rgba(100, 116, 139, 0.2);
-  color: var(--text-muted);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  cursor: not-allowed;
-}
-
-body.light-theme .game-card.locked-card button:not(.fav-btn) {
-  background: rgba(0, 0, 0, 0.05);
-}
-
-.game-info {
-  padding: 30px 25px;
-}
-
-.game-info h3 {
-  margin: 0 0 16px 0;
-  font-size: 21px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-
-.game-info button {
-  width: auto;
-  min-width: 120px;
-}
-
-section h2 {
-  font-size: 24px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  margin-top: 40px;
-}
-
-footer {
-  margin-top: 80px;
-  padding: 40px 20px;
-  background: var(--bg-solid);
-  text-align: center;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-a {
-  color: var(--text-muted);
-  margin: 0 12px;
-  cursor: pointer;
-  text-decoration: none;
-  font-size: 14px;
-}
-
-a:hover { color: var(--accent); }
-.section-title-container { text-align: center; margin-top: 40px; }
-
-/* ============ SKELETON LOADING STATES ============ */
-/* Shimmer placeholder cards shown while grids populate, matching the
-   glass-card shape so the swap-in feels seamless rather than jarring. */
-@keyframes skeleton-shimmer {
-  0% { background-position: -400px 0; }
-  100% { background-position: 400px 0; }
-}
-
-.skeleton-card {
-  position: relative;
-  border-radius: 24px;
-  width: calc(33.333% - 14px);
-  box-sizing: border-box;
-  box-shadow: var(--card-shadow);
-  overflow: hidden;
-  background: var(--bg-card);
-}
-
-.exclusives-list .skeleton-card { width: 100%; }
-
-.skeleton-shimmer-inner {
-  padding: 30px 25px;
-  height: 118px;
-  box-sizing: border-box;
-}
-
-.skeleton-line {
-  height: 21px;
-  width: 55%;
-  border-radius: 8px;
-  margin: 0 auto 20px auto;
-  background: linear-gradient(90deg,
-    rgba(148, 163, 184, 0.12) 0%,
-    rgba(148, 163, 184, 0.28) 50%,
-    rgba(148, 163, 184, 0.12) 100%);
-  background-size: 800px 100%;
-  animation: skeleton-shimmer 1.4s ease-in-out infinite;
-}
-
-.skeleton-line.skeleton-btn {
-  height: 40px;
-  width: 40%;
-  border-radius: 12px;
-  margin-bottom: 0;
-}
-
-body.light-theme .skeleton-line {
-  background: linear-gradient(90deg,
-    rgba(100, 116, 139, 0.08) 0%,
-    rgba(100, 116, 139, 0.2) 50%,
-    rgba(100, 116, 139, 0.08) 100%);
-  background-size: 800px 100%;
-}
-
-.grid-fade-in {
-  animation: gridFadeIn 0.35s ease both;
-}
-
-@keyframes gridFadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* ============ SORT / FILTER BAR ============ */
-.controls-bar {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-top: 14px;
-}
-
-.controls-bar select {
-  padding: 10px 16px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: var(--input-bg);
-  color: var(--input-text);
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  -webkit-appearance: none;
-  appearance: none;
-}
-
-body.light-theme .controls-bar select {
-  border: 1px solid #cbd5e1;
-}
-
-.controls-bar select:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-glow);
-}
-
-/* ============ GLASS MODAL (replaces alert()) ============ */
-./* ============ GLASS MODAL (replaces alert()) ============ */
-.glass-modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  background: rgba(0, 0, 0, 0.45);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  
-  /* CHANGE THESE LINES */
-  pointer-events: none;
-  visibility: hidden; /* Keeps it completely hidden from mouse clicks */
-  
-  transition: opacity 0.25s ease, visibility 0.25s ease;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-}
-
-.glass-modal-overlay.is-open {
-  opacity: 1;
-  
-  /* ADD THIS LINE */
-  visibility: visible; /* Brings it back when active */
-  
-  pointer-events: auto;
-}
-.glass-modal {
-  width: 90%;
-  max-width: 380px;
-  border-radius: 24px;
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
-  transform: translateY(16px) scale(0.97);
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.glass-modal-overlay.is-open .glass-modal {
-  transform: translateY(0) scale(1);
-}
-
-.glass-modal .glass-content {
-  padding: 32px 28px 28px 28px;
-  text-align: center;
-}
-
-.glass-modal-icon {
-  font-size: 30px;
-  margin-bottom: 12px;
-  display: block;
-}
-
-.glass-modal h3 {
-  margin: 0 0 10px 0;
-  font-size: 19px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
-
-.glass-modal p {
-  margin: 0 0 24px 0;
-  color: var(--text-muted);
-  font-size: 14.5px;
-  line-height: 1.5;
-}
-
-.glass-modal button {
-  min-width: 120px;
-}
-
-.glass-modal.modal-locked .glass-card-inner::before {
-  background: linear-gradient(180deg, rgba(239, 68, 68, 0.55) 0%, rgba(239, 68, 68, 0.2) 45%, rgba(239, 68, 68, 0.12) 100%);
-}
-
-body.light-theme .glass-modal.modal-locked .glass-card-inner::before {
-  background: linear-gradient(180deg, rgba(220, 38, 38, 0.55) 0%, rgba(220, 38, 38, 0.22) 45%, rgba(220, 38, 38, 0.14) 100%);
-}
-
-/* ============ STATS BAR LAYOUT ============ */
-.stats-bar {
-  gap: 44px;
-  align-items: center;
-}
-
-.stat-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-
-.stat-label {
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--text-muted);
-  letter-spacing: 0.01em;
-}
-
-.stat-value {
-  color: var(--accent);
-  font-size: 15px;
-}
-
-/* ============ STREAK CIRCLE ============ */
-/* A glass medallion with a living conic-gradient flame ring. The ring sits
-   in its own padded layer (not a border) so it reads as a continuous glow
-   rather than a flat stroke, and the inner disc gets the same blur/glass
-   treatment as every other surface in the hub so it doesn't feel bolted on. */
-.streak-circle {
-  position: relative;
-  width: 62px;
-  height: 62px;
-  border-radius: 50%;
-  padding: 3px;
-  background: conic-gradient(from 200deg,
-    rgba(255, 184, 0, 0.95) 0deg,
-    rgba(255, 122, 0, 0.85) 90deg,
-    rgba(239, 68, 68, 0.8) 180deg,
-    rgba(255, 122, 0, 0.85) 270deg,
-    rgba(255, 184, 0, 0.95) 360deg);
-  box-shadow:
-    0 6px 18px rgba(255, 140, 0, 0.18),
-    0 0 0 1px rgba(255, 255, 255, 0.06);
-  transition: box-shadow 0.4s ease, transform 0.3s ease;
-}
-
-.streak-circle-inner {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  background: var(--bg-solid);
-  backdrop-filter: blur(20px) saturate(200%);
-  -webkit-backdrop-filter: blur(20px) saturate(200%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.18),
-    inset 0 -3px 8px rgba(0, 0, 0, 0.3);
-}
-
-/* Soft top gloss on the inner disc, echoing the main glass-card gloss */
-.streak-circle-inner::before {
-  content: "";
-  position: absolute;
-  top: 0; left: 10%; right: 10%;
-  height: 45%;
-  border-radius: 50% 50% 60% 60% / 100% 100% 30% 30%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 100%);
-  pointer-events: none;
-}
-
-.streak-flame {
-  font-size: 15px;
-  line-height: 1;
-  filter: grayscale(0.85) opacity(0.55);
-  transition: filter 0.4s ease;
-  margin-bottom: 1px;
-}
-
-.streak-number {
-  font-size: 17px;
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: -0.02em;
-  color: var(--text-main);
-}
-
-/* "Hot" state once a streak reaches 3+ days: the ring brightens, glows, and
-   gently breathes; the flame emoji loses its desaturated/dormant look. */
-.streak-circle.streak-hot {
-  box-shadow:
-    0 8px 26px rgba(255, 94, 0, 0.4),
-    0 0 22px rgba(255, 140, 0, 0.3),
-    0 0 0 1px rgba(255, 255, 255, 0.1);
-  animation: streakBreathe 2.4s ease-in-out infinite;
-}
-
-.streak-circle.streak-hot .streak-flame {
-  filter: none;
-}
-
-@keyframes streakBreathe {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.055); }
-}
-
-body.light-theme .streak-circle {
-  box-shadow: 0 6px 16px rgba(255, 140, 0, 0.14), 0 0 0 1px rgba(0, 0, 0, 0.04);
-}
-
-body.light-theme .streak-circle.streak-hot {
-  box-shadow:
-    0 8px 22px rgba(255, 94, 0, 0.28),
-    0 0 18px rgba(255, 140, 0, 0.2),
-    0 0 0 1px rgba(0, 0, 0, 0.05);
-}
-
-/* ============ CONTROL SCHEME HINT CHIPS ============ */
-/* Small circular "how to play" indicators under each game title — same
-   glass DNA as the rest of the hub (blur + thin rim + soft gloss) shrunk
-   down to chip scale, with a bit of lift on hover to feel tactile. */
-.control-hints {
-  display: flex;
-  justify-content: center;
-  margin: -6px 0 18px 0;
-}
-
-.control-hint-circle {
-  position: relative;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.055);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  backdrop-filter: blur(14px) saturate(180%);
-  -webkit-backdrop-filter: blur(14px) saturate(180%);
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.16),
-    0 3px 8px rgba(0, 0, 0, 0.25);
-  cursor: default;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease;
-}
-
-.control-hint-icon {
-  font-size: 13px;
-  line-height: 1;
-  color: var(--text-muted);
-  transform: translateY(-0.5px);
-  transition: color 0.3s ease;
-}
-
-.game-card:hover:not(.locked-card) .control-hint-circle {
-  transform: translateY(-3px);
-  border-color: var(--accent);
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.16),
-    0 6px 16px var(--accent-glow);
-}
-
-.game-card:hover:not(.locked-card) .control-hint-icon {
-  color: var(--accent);
-}
-
-body.light-theme .control-hint-circle {
-  background: rgba(255, 255, 255, 0.6);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.7),
-    0 3px 8px rgba(30, 58, 110, 0.12);
-}
-
-body.light-theme .control-hint-icon {
-  color: #475569;
-}
-</style> 
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7292845069394911"
-     crossorigin="anonymous"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rift Hub</title>
+  <style>
+    /* THEME VARIABLES - DARK MODE (DEFAULT) */
+    :root {
+      --bg-main: #06070d;
+      --bg-card: rgba(255, 255, 255, 0.06);
+      --bg-solid: #0d0e15;
+      --text-main: #ffffff;
+      --text-muted: #94a3b8;
+      --accent: #3b82f6;
+      --accent-glow: rgba(59, 130, 246, 0.25);
+      --border-locked: rgba(239, 68, 68, 0.4);
+      --bg-locked: rgba(20, 20, 35, 0.45);
+      --banner-bg: rgba(30, 30, 55, 0.4);
+      --star-active: #ffb800;
+      --star-inactive: #64748b;
+      --input-bg: rgba(255, 255, 255, 0.05);
+      --input-text: #ffffff;
+      --glass-blur: blur(25px) saturate(210%);
+      --card-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+      --glass-highlight: inset 0 1px 1px 0 rgba(255, 255, 255, 0.15);
+      --card-border: rgba(255, 255, 255, 0.08);
+    }
+
+    /* PREMIUM SILVER & BLUE LIGHT MODE */
+    body.light-theme {
+      --bg-main: #eef1f7;
+      --bg-card: rgba(219, 234, 254, 0.45);
+      --bg-solid: rgba(255, 255, 255, 0.8);
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --accent: #0066ff;
+      --accent-glow: rgba(0, 102, 255, 0.15);
+      --border-locked: rgba(220, 38, 38, 0.35);
+      --bg-locked: rgba(241, 245, 249, 0.5);
+      --banner-bg: rgba(255, 255, 255, 0.6);
+      --star-active: #f59e0b;
+      --star-inactive: #94a3b8;
+      --input-bg: rgba(0, 0, 0, 0.05);
+      --input-text: #0f172a;
+      --glass-blur: blur(25px) saturate(190%);
+      --card-shadow: 0 16px 40px rgba(30, 58, 110, 0.16), 0 3px 10px rgba(30, 58, 110, 0.12);
+      --glass-highlight: inset 0 1px 1px 0 rgba(255, 255, 255, 0.7);
+      --card-border: rgba(0, 0, 0, 0.08);
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg-main);
+      color: var(--text-main);
+      transition: background 0.3s ease, color 0.3s ease;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    body.light-theme {
+      background: linear-gradient(160deg, #fbfcfe 0%, #eef1f8 45%, #dfe6f2 100%);
+      background-attachment: fixed;
+    }
+
+    /* INNER CONTAINMENT MASK FOR CORRECT CORNER RENDER */
+    .glass-card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 24px;
+      overflow: hidden;
+      clip-path: inset(0 round 24px);
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
+      isolation: isolate;
+    }
+
+    /* LIQUID GLASS LAYER */
+    .glass-layer {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 1;
+      background: var(--bg-card);
+      backdrop-filter: blur(30px) saturate(220%);
+      -webkit-backdrop-filter: blur(30px) saturate(220%);
+      pointer-events: none;
+    }
+
+    .glass-content {
+      position: relative;
+      z-index: 2;
+      pointer-events: auto;
+    }
+
+    /* GLASS RIM */
+    .glass-card-inner::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      border-radius: 24px;
+      padding: 1.5px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.22) 45%, rgba(255, 255, 255, 0.1) 100%);
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+
+    body.light-theme .glass-card-inner::before {
+      background: linear-gradient(180deg, rgba(59, 130, 246, 0.6) 0%, rgba(59, 130, 246, 0.25) 45%, rgba(59, 130, 246, 0.12) 100%);
+    }
+
+    /* GLOSS EFFECT */
+    .glass-card-inner::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background:
+        linear-gradient(160deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0) 40%),
+        radial-gradient(90% 70% at 100% 100%, rgba(120, 170, 255, 0.1) 0%, rgba(120, 170, 255, 0) 60%);
+      mix-blend-mode: overlay;
+    }
+
+    body.light-theme .glass-card-inner::after {
+      background:
+        linear-gradient(160deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 45%),
+        radial-gradient(90% 70% at 100% 100%, rgba(59, 130, 246, 0.14) 0%, rgba(59, 130, 246, 0) 60%);
+      mix-blend-mode: soft-light;
+    }
+
+    /* LOGIN SCREEN GLASS CONTAINER */
+    #loginScreen {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      flex-grow: 1;
+      padding: 40px 20px;
+    }
+
+    .login-container {
+      background: var(--bg-solid);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 24px;
+      padding: 40px 30px;
+      width: 100%;
+      max-width: 380px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+
+    body.light-theme .login-container {
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(20px);
+    }
+
+    .login-container h2 {
+      font-size: 28px;
+      font-weight: 700;
+      margin: 0 0 24px 0;
+      letter-spacing: -0.02em;
+    }
+
+    .input-group {
+      margin-bottom: 12px;
+      text-align: left;
+    }
+
+    .input-group input {
+      padding: 12px 16px;
+      width: 100%;
+      box-sizing: border-box;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: var(--input-bg);
+      color: var(--input-text);
+      font-family: inherit;
+      font-size: 15px;
+      transition: all 0.2s ease;
+      outline: none;
+    }
+
+    body.light-theme .input-group input {
+      border: 1px solid #cbd5e1;
+    }
+
+    .input-group input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .button-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    button {
+      padding: 12px 28px;
+      border: none;
+      background: var(--accent);
+      color: white;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 600;
+      font-family: inherit;
+      font-size: 14px;
+      transition: all 0.2s ease;
+      display: inline-block;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      opacity: 0.95;
+    }
+
+    .btn-login, .btn-signup {
+      flex: 1;
+    }
+
+    .btn-signup {
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--text-main);
+    }
+
+    .guest-btn {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    body.light-theme .guest-btn {
+      background: rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(0, 0, 0, 0.02);
+    }
+
+    /* PORTAL VIEW */
+    #site {
+      display: none;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    header {
+      padding: 30px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-solid);
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      margin-bottom: 30px;
+    }
+
+    body.light-theme header {
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      background: rgba(255, 255, 255, 0.5);
+      backdrop-filter: blur(10px);
+    }
+
+    header h1 {
+      font-weight: 700;
+      font-size: 34px;
+      margin: 0;
+      letter-spacing: -0.03em;
+    }
+
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logout-btn {
+      background: none;
+      border: none;
+      color: #ef4444;
+      cursor: pointer;
+      font-weight: 600;
+      padding: 0;
+    }
+
+    .logout-btn:hover {
+      text-decoration: underline;
+    }
+
+    /* THEME PILL */
+    .theme-toggle-btn {
+      position: fixed;
+      top: 25px;
+      right: 25px;
+      z-index: 100;
+      padding: 8px 14px;
+      font-size: 13px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--text-main);
+      border-radius: 20px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    body.light-theme .theme-toggle-btn {
+      background: rgba(255, 255, 255, 0.6);
+      border: 1px solid rgba(0, 0, 0, 0.15);
+    }
+
+    .theme-toggle-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    body.light-theme .theme-toggle-btn:hover {
+      background: rgba(0, 0, 0, 0.04);
+    }
+
+    .search-input {
+      margin-top: 15px;
+      padding: 12px 20px;
+      width: 100%;
+      max-width: 500px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: var(--input-bg);
+      color: var(--input-text);
+      font-family: inherit;
+      font-size: 15px;
+      transition: all 0.2s ease;
+    }
+
+    body.light-theme .search-input {
+      border: 1px solid #cbd5e1;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    /* GAME OF THE DAY BANNER */
+    .gotw-banner {
+      position: relative;
+      margin: 30px 0;
+      border-radius: 24px;
+      box-shadow: var(--card-shadow);
+    }
+
+    .gotw-banner .glass-content {
+      padding: 40px 35px;
+      text-align: center;
+    }
+
+    .gotw-banner h2 {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--accent);
+      margin: 0 0 16px 0;
+    }
+
+    .gotw-banner h3 {
+      font-size: 28px;
+      font-weight: 700;
+      margin: 0 0 24px 0;
+      letter-spacing: -0.02em;
+    }
+
+    .gotw-banner.locked-banner .glass-layer {
+      background: rgba(239, 68, 68, 0.06);
+    }
+
+    .gotw-banner.locked-banner .glass-card-inner::before {
+      background: linear-gradient(180deg, rgba(239, 68, 68, 0.55) 0%, rgba(239, 68, 68, 0.2) 45%, rgba(239, 68, 68, 0.12) 100%);
+    }
+
+    .gotw-banner.locked-banner .glass-card-inner::after {
+      background: linear-gradient(160deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0) 40%);
+      mix-blend-mode: overlay;
+    }
+
+    body.light-theme .gotw-banner.locked-banner .glass-layer {
+      background: rgba(220, 38, 38, 0.05);
+    }
+
+    body.light-theme .gotw-banner.locked-banner .glass-card-inner::before {
+      background: linear-gradient(180deg, rgba(220, 38, 38, 0.55) 0%, rgba(220, 38, 38, 0.22) 45%, rgba(220, 38, 38, 0.14) 100%);
+    }
+
+    body.light-theme .gotw-banner.locked-banner .glass-card-inner::after {
+      background: linear-gradient(160deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 40%);
+      mix-blend-mode: soft-light;
+    }
+
+    /* STATS BAR LAYOUT */
+    .stats-bar {
+      background: var(--bg-solid);
+      margin: 20px 0;
+      padding: 16px;
+      border-radius: 16px;
+      display: flex;
+      justify-content: center;
+      gap: 44px;
+      align-items: center;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    body.light-theme .stats-bar {
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .stat-label {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.01em;
+    }
+
+    .stat-value {
+      color: var(--accent);
+      font-size: 15px;
+    }
+
+    /* STREAK CIRCLE */
+    .streak-circle {
+      position: relative;
+      width: 62px;
+      height: 62px;
+      border-radius: 50%;
+      padding: 3px;
+      background: conic-gradient(from 200deg,
+        rgba(255, 184, 0, 0.95) 0deg,
+        rgba(255, 122, 0, 0.85) 90deg,
+        rgba(239, 68, 68, 0.8) 180deg,
+        rgba(255, 122, 0, 0.85) 270deg,
+        rgba(255, 184, 0, 0.95) 360deg);
+      box-shadow:
+        0 6px 18px rgba(255, 140, 0, 0.18),
+        0 0 0 1px rgba(255, 255, 255, 0.06);
+      transition: box-shadow 0.4s ease, transform 0.3s ease;
+    }
+
+    .streak-circle-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: var(--bg-solid);
+      backdrop-filter: blur(20px) saturate(200%);
+      -webkit-backdrop-filter: blur(20px) saturate(200%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, 0.18),
+        inset 0 -3px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .streak-circle-inner::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 10%; right: 10%;
+      height: 45%;
+      border-radius: 50% 50% 60% 60% / 100% 100% 30% 30%;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 100%);
+      pointer-events: none;
+    }
+
+    .streak-flame {
+      font-size: 15px;
+      line-height: 1;
+      filter: grayscale(0.85) opacity(0.55);
+      transition: filter 0.4s ease;
+      margin-bottom: 1px;
+    }
+
+    .streak-number {
+      font-size: 17px;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.02em;
+      color: var(--text-main);
+    }
+
+    .streak-circle.streak-hot {
+      box-shadow:
+        0 8px 26px rgba(255, 94, 0, 0.4),
+        0 0 22px rgba(255, 140, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.1);
+      animation: streakBreathe 2.4s ease-in-out infinite;
+    }
+
+    .streak-circle.streak-hot .streak-flame {
+      filter: none;
+    }
+
+    @keyframes streakBreathe {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.055); }
+    }
+
+    body.light-theme .streak-circle {
+      box-shadow: 0 6px 16px rgba(255, 140, 0, 0.14), 0 0 0 1px rgba(0, 0, 0, 0.04);
+    }
+
+    body.light-theme .streak-circle.streak-hot {
+      box-shadow:
+        0 8px 22px rgba(255, 94, 0, 0.28),
+        0 0 18px rgba(255, 140, 0, 0.2),
+        0 0 0 1px rgba(0, 0, 0, 0.05);
+    }
+
+    /* SORT BAR CONTROLS */
+    .controls-bar {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 14px;
+      margin-bottom: 30px;
+    }
+
+    .controls-bar select {
+      padding: 10px 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: var(--input-bg);
+      color: var(--input-text);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    body.light-theme .controls-bar select {
+      border: 1px solid #cbd5e1;
+    }
+
+    .controls-bar select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    /* GRID AND CARDS */
+    .game-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      padding: 20px 0;
+      justify-content: flex-start;
+    }
+
+    .game-card {
+      position: relative;
+      border-radius: 24px;
+      text-align: center;
+      width: calc(33.333% - 14px);
+      box-sizing: border-box;
+      border: 1px solid transparent;
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease, border-color 0.4s ease;
+      box-shadow: var(--card-shadow);
+      background: transparent;
+    }
+
+    .game-card:hover:not(.locked-card) {
+      transform: translateY(-6px);
+      border-color: var(--accent);
+      box-shadow: 0 15px 30px var(--accent-glow);
+    }
+
+    .fav-btn {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--star-inactive);
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      cursor: pointer;
+      font-size: 20px;
+      line-height: 34px;
+      padding: 0;
+      z-index: 10;
+      transition: all 0.2s ease;
+    }
+
+    body.light-theme .fav-btn {
+      background: rgba(255, 255, 255, 0.65);
+      border: 1px solid rgba(0, 0, 0, 0.15);
+      color: #475569;
+      box-shadow: 0 2px 6px rgba(30, 58, 110, 0.12);
+    }
+
+    body.light-theme .fav-btn.is-active {
+      background: rgba(255, 255, 255, 0.85) !important;
+      border-color: var(--star-active);
+    }
+
+    .fav-btn.is-active {
+      color: var(--star-active) !important;
+      background: rgba(0, 0, 0, 0.5) !important;
+      border-color: var(--star-active);
+    }
+
+    /* EXCLUSIVES LIST VIEW */
+    .exclusives-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 20px 0;
+    }
+
+    .exclusives-list .game-card {
+      width: 100%;
+    }
+
+    /* LOCKED CARD STYLINGS */
+    .game-card.locked-card {
+      background: var(--bg-locked) !important;
+      border: 1px solid var(--border-locked) !important;
+    }
+
+    .game-card.locked-card .glass-layer {
+      background: rgba(239, 68, 68, 0.06);
+    }
+
+    .game-card.locked-card .glass-card-inner::before {
+      background: linear-gradient(180deg, rgba(239, 68, 68, 0.55) 0%, rgba(239, 68, 68, 0.2) 45%, rgba(239, 68, 68, 0.12) 100%);
+    }
+
+    .game-card.locked-card .glass-card-inner::after {
+      background: linear-gradient(160deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0) 40%);
+      mix-blend-mode: overlay;
+    }
+
+    body.light-theme .game-card.locked-card .glass-layer {
+      background: rgba(220, 38, 38, 0.05);
+    }
+
+    body.light-theme .game-card.locked-card .glass-card-inner::before {
+      background: linear-gradient(180deg, rgba(220, 38, 38, 0.55) 0%, rgba(220, 38, 38, 0.22) 45%, rgba(220, 38, 38, 0.14) 100%);
+    }
+
+    body.light-theme .game-card.locked-card .glass-card-inner::after {
+      background: linear-gradient(160deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 40%);
+      mix-blend-mode: soft-light;
+    }
+
+    .game-card.locked-card button:not(.fav-btn) {
+      background: rgba(100, 116, 139, 0.2);
+      color: var(--text-muted);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      cursor: not-allowed;
+    }
+
+    body.light-theme .game-card.locked-card button:not(.fav-btn) {
+      background: rgba(0, 0, 0, 0.05);
+    }
+
+    .game-info {
+      padding: 30px 25px;
+    }
+
+    .game-info h3 {
+      margin: 0 0 16px 0;
+      font-size: 21px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    .game-info button {
+      width: auto;
+      min-width: 120px;
+    }
+
+    section h2 {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-top: 40px;
+    }
+
+    .section-title-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 40px;
+      margin-bottom: 20px;
+    }
+
+    .section-title-container h2 {
+      margin: 0;
+    }
+
+    /* CONTROL SCHEME HINT CHIPS */
+    .control-hints {
+      display: flex;
+      justify-content: center;
+      margin: -6px 0 18px 0;
+    }
+
+    .control-hint-circle {
+      position: relative;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.055);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      backdrop-filter: blur(14px) saturate(180%);
+      -webkit-backdrop-filter: blur(14px) saturate(180%);
+      box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, 0.16),
+        0 3px 8px rgba(0, 0, 0, 0.25);
+      cursor: default;
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+    }
+
+    .control-hint-icon {
+      font-size: 13px;
+      line-height: 1;
+      color: var(--text-muted);
+      transform: translateY(-0.5px);
+      transition: color 0.3s ease;
+    }
+
+    .game-card:hover:not(.locked-card) .control-hint-circle {
+      transform: translateY(-3px);
+      border-color: var(--accent);
+      box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, 0.16),
+        0 6px 16px var(--accent-glow);
+    }
+
+    .game-card:hover:not(.locked-card) .control-hint-icon {
+      color: var(--accent);
+    }
+
+    body.light-theme .control-hint-circle {
+      background: rgba(255, 255, 255, 0.6);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, 0.7),
+        0 3px 8px rgba(30, 58, 110, 0.12);
+    }
+
+    body.light-theme .control-hint-icon {
+      color: #475569;
+    }
+
+    /* SKELETON LOADERS */
+    @keyframes skeleton-shimmer {
+      0% { background-position: -400px 0; }
+      100% { background-position: 400px 0; }
+    }
+
+    .skeleton-card {
+      position: relative;
+      border-radius: 24px;
+      width: calc(33.333% - 14px);
+      box-sizing: border-box;
+      box-shadow: var(--card-shadow);
+      overflow: hidden;
+      background: var(--bg-card);
+    }
+
+    .exclusives-list .skeleton-card { width: 100%; }
+
+    .skeleton-shimmer-inner {
+      padding: 30px 25px;
+      height: 118px;
+      box-sizing: border-box;
+    }
+
+    .skeleton-line {
+      height: 21px;
+      width: 55%;
+      border-radius: 8px;
+      margin: 0 auto 20px auto;
+      background: linear-gradient(90deg,
+        rgba(148, 163, 184, 0.12) 0%,
+        rgba(148, 163, 184, 0.28) 50%,
+        rgba(148, 163, 184, 0.12) 100%);
+      background-size: 800px 100%;
+      animation: skeleton-shimmer 1.4s ease-in-out infinite;
+    }
+
+    .skeleton-line.skeleton-btn {
+      height: 40px;
+      width: 40%;
+      border-radius: 12px;
+      margin-bottom: 0;
+    }
+
+    body.light-theme .skeleton-line {
+      background: linear-gradient(90deg,
+        rgba(100, 116, 139, 0.08) 0%,
+        rgba(100, 116, 139, 0.2) 50%,
+        rgba(100, 116, 139, 0.08) 100%);
+      background-size: 800px 100%;
+    }
+
+    .grid-fade-in {
+      animation: gridFadeIn 0.35s ease both;
+    }
+
+    @keyframes gridFadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* MODALS */
+    .glass-modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(0, 0, 0, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      visibility: hidden;
+      transition: opacity 0.25s ease, visibility 0.25s ease;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+
+    .glass-modal-overlay.is-open {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    .glass-modal {
+      width: 90%;
+      max-width: 380px;
+      border-radius: 24px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+      transform: translateY(16px) scale(0.97);
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .glass-modal-overlay.is-open .glass-modal {
+      transform: translateY(0) scale(1);
+    }
+
+    .glass-modal .glass-content {
+      padding: 32px 28px 28px 28px;
+      text-align: center;
+    }
+
+    .glass-modal-icon {
+      font-size: 30px;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .glass-modal h3 {
+      margin: 0 0 10px 0;
+      font-size: 19px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .glass-modal p {
+      margin: 0 0 24px 0;
+      color: var(--text-muted);
+      font-size: 14.5px;
+      line-height: 1.5;
+    }
+
+    .glass-modal button {
+      min-width: 120px;
+    }
+
+    .glass-modal.modal-locked .glass-card-inner::before {
+      background: linear-gradient(180deg, rgba(239, 68, 68, 0.55) 0%, rgba(239, 68, 68, 0.2) 45%, rgba(239, 68, 68, 0.12) 100%);
+    }
+
+    body.light-theme .glass-modal.modal-locked .glass-card-inner::before {
+      background: linear-gradient(180deg, rgba(220, 38, 38, 0.55) 0%, rgba(220, 38, 38, 0.22) 45%, rgba(220, 38, 38, 0.14) 100%);
+    }
+
+    footer {
+      margin-top: 80px;
+      padding: 40px 20px;
+      background: var(--bg-solid);
+      text-align: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    footer h3 {
+      margin: 0 0 8px 0;
+      font-size: 1.25rem;
+    }
+
+    footer p {
+      color: var(--text-muted);
+      margin: 0 0 16px 0;
+      font-size: 0.9rem;
+    }
+
+    a {
+      color: var(--text-muted);
+      margin: 0 12px;
+      cursor: pointer;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    a:hover { color: var(--accent); }
+
+    /* LAYOUT HELPER FOR BALANCING GRID SIZES */
+    @media (max-width: 900px) {
+      .game-card {
+        width: calc(50% - 10px);
+      }
+    }
+    @media (max-width: 600px) {
+      .game-card {
+        width: 100%;
+      }
+    }
+  </style>
 </head>
-
 <body>
 
-<audio id="bgMusic" loop>
-  <source src="magpiemusic-action-trailer-promo-rock-513687.mp3" type="audio/mpeg">
-</audio>
+  <button onclick="window.toggleTheme()" class="theme-toggle-btn">🌓 Theme</button>
 
-<button class="theme-toggle-btn" onclick="toggleTheme()">🌗 Theme</button>
-
-
-<div id="loginScreen">
-  <h2>Rift Hub</h2>
-  <input id="email" placeholder="Email Address" autofocus><br>
-  <input id="password" type="password" placeholder="Password"><br>
-
-  <div style="display: flex; gap: 10px; margin-top: 12px;">
-    <button onclick="login()" style="flex: 1;">Login</button>
-    <button onclick="signup()" style="flex: 1; background: transparent; border: 1px solid var(--accent); color: var(--text-main);">Sign Up</button>
-  </div>
-  <button class="guest-btn" onclick="loginAsGuest()">Play as Guest</button>
-</div>
-
-<div id="site" style="display:none;">
-
-<header>
-  <h1>🎮 Rift Hub 🎮</h1>
-  <p style="color: var(--text-muted);">Welcome, <span id="username" style="color: var(--text-main); font-weight: 600;"></span> <button onclick="logout()" style="background: #e53e3e; margin-left: 15px; padding: 6px 12px; font-size: 12px;">Exit Session</button></p>
-  <input type="text" id="search" class="search-input" placeholder="Search standard games...">
-  <div class="controls-bar">
-    <select id="sortSelect">
-      <option value="default">Sort: Default</option>
-      <option value="az">Sort: Name A–Z</option>
-      <option value="za">Sort: Name Z–A</option>
-      <option value="mostplayed">Sort: Most Played</option>
-    </select>
-    <select id="categorySelect">
-      <option value="all">Category: All</option>
-      <option value="arcade">Arcade</option>
-      <option value="puzzle">Puzzle</option>
-      <option value="strategy">Strategy</option>
-      <option value="board">Board</option>
-      <option value="word">Word</option>
-    </select>
-  </div>
-</header>
-
-<div class="stats-bar" id="statsBar" style="display: none;">
-  <div class="stat-item">
-    <span class="stat-label">📊 Games Played</span>
-    <span id="gamesPlayedCount" class="stat-value">0</span>
-  </div>
-  <div class="stat-item">
-    <div class="streak-circle" id="streakCircle">
-      <div class="streak-circle-inner">
-        <span class="streak-flame">🔥</span>
-        <span id="streakCount" class="streak-number">0</span>
+  <div id="loginScreen">
+    <div class="login-container">
+      <h2>Rift Hub</h2>
+      <div class="input-group">
+        <input type="email" id="email" placeholder="Email Address">
       </div>
-    </div>
-    <span class="stat-label">Day Streak</span>
-  </div>
-</div>
-
-<div class="gotw-banner" id="gotwBanner">
-  <div class="glass-card-inner">
-    <div class="glass-layer"></div>
-    <div class="glass-content">
-      <h2>📅 Game of the Day</h2>
-      <h3 id="gotwTitle">Loading Game...</h3>
-      <button id="gotwBtn" onclick="playGameOfDay()">Play Game of the Day</button>
-    </div>
-  </div>
-</div>
-
-<section id="favoritesSection">
-  <h2 align="center">⭐ Your Favorites</h2>
-  <div class="game-grid" id="favoritesGrid"></div>
-</section>
-
-<section>
-<h2 align="center">Games</h2>
-
-<div class="game-grid" id="mainGameGridSkeleton" style="display:none;"></div>
-<div class="game-grid" id="mainGameGrid">
-  <div class="game-card" data-name="snake">
-    <div class="glass-card-inner">
-      <div class="glass-layer"></div>
-      <button class="fav-btn" onclick="toggleFavorite('snake', 'Snake', 'snake.html')">☆</button>
-      <div class="glass-content game-info">
-        <h3>Snake</h3>
-        <button onclick="openGame('snake.html','Snake')">Play</button>
+      <div class="input-group">
+        <input type="password" id="password" placeholder="Password">
       </div>
+      <div class="button-row">
+        <button class="btn-login" onclick="window.login()">Login</button>
+        <button class="btn-signup" onclick="window.signup()">Sign Up</button>
+      </div>
+      <button class="guest-btn" onclick="window.loginAsGuest()">Play as Guest</button>
     </div>
   </div>
 
-  <div class="game-card" data-name="tetris">
-    <div class="glass-card-inner">
-      <div class="glass-layer"></div>
-      <button class="fav-btn" onclick="toggleFavorite('tetris', 'Tetris', 'tetris.html')">☆</button>
-      <div class="glass-content game-info">
-        <h3>Tetris</h3>
-        <button onclick="openGame('tetris.html','Tetris')">Play</button>
+  <div id="site">
+    <header>
+      <div class="brand">
+        <h1 style="background: linear-gradient(to right, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Rift Hub</h1>
+        <input type="text" id="search" class="search-input" placeholder="Search across all games...">
       </div>
-    </div>
-  </div>
-
-  <div class="game-card" data-name="pong">
-    <div class="glass-card-inner">
-      <div class="glass-layer"></div>
-      <button class="fav-btn" onclick="toggleFavorite('pong', 'Pong', 'pong.html')">☆</button>
-      <div class="glass-content game-info">
-        <h3>Pong</h3>
-        <button onclick="openGame('pong.html','Pong')">Play</button>
+      <div class="user-profile">
+        <span id="username" style="font-weight: 600; font-size: 0.95rem;"></span>
+        <button onclick="window.logout()" class="logout-btn">Log Out</button>
       </div>
-    </div>
-  </div>
-
-  <div class="game-card" data-name="flappyblock">
-    <div class="glass-card-inner">
-      <div class="glass-layer"></div>
-      <button class="fav-btn" onclick="toggleFavorite('flappyblock', 'Flappy Block', 'flappyblock.html')">☆</button>
-      <div class="glass-content game-info">
-        <h3>Flappy Block</h3>
-        <button onclick="openGame('flappyblock.html','Flappy Block')">Play</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="game-card" data-name="2048">
-    <div class="glass-card-inner">
-      <div class="glass-layer"></div>
-      <button class="fav-btn" onclick="toggleFavorite('2048', '2048', '2048.html')">☆</button>
-      <div class="glass-content game-info">
-        <h3>2048</h3>
-        <button onclick="openGame('2048.html','2048')">Play</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="game-card" data-name="memorymatch">
-    <div class="glass-card-inner">
-      <div class="glass-layer"></div>
-      <button class="fav-btn" onclick="toggleFavorite('memorymatch', 'Memory Match', 'memorymatch.html')">☆</button>
-      <div class="glass-content game-info">
-        <h3>Memory Match</h3>
-        <button onclick="openGame('memorymatch.html','Memory Match')">Play</button>
-      </div>
-    </div>
-  </div>
-     
-  <div class="game-card" data-name="pac-man">
-    <div class="glass-card-inner">
-      <div class="glass-layer"></div>
-      <button class="fav-btn" onclick="toggleFavorite('pac-man', 'Pac-Man', 'pacman.html')">☆</button>
-      <div class="glass-content game-info">
-        <h3>Pac-Man</h3>
-        <button onclick="openGame('pacman.html','Pac-Man')">Play</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="game-card" data-name="wordle">
-    <div class="glass-card-inner">
-      <div class="glass-layer"></div>
-      <button class="fav-btn" onclick="toggleFavorite('wordle', 'Wordle', 'wordle.html')">☆</button>
-      <div class="glass-content game-info">
-        <h3>Wordle</h3>
-        <button onclick="openGame('wordle.html','Wordle')">Play</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="game-card" data-name="connectfour">
-    <div class="glass-card-inner">
-      <div class="glass-layer"></div>
-      <button class="fav-btn" onclick="toggleFavorite('connectfour', 'Connect Four', 'connectfour.html')">☆</button>
-      <div class="glass-content game-info">
-        <h3>Connect Four</h3>
-        <button onclick="openGame('connectfour.html','Connect Four')">Play</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="game-card" data-name="tictactoe">
-    <div class="glass-card-inner">
-      <div class="glass-layer"></div>
-      <button class="fav-btn" onclick="toggleFavorite('tictactoe', 'Tic-Tac-Toe', 'tictactoe.html')">☆</button>
-      <div class="glass-content game-info">
-        <h3>Tic-Tac-Toe</h3>
-        <button onclick="openGame('tictactoe.html','Tic-Tac-Toe')">Play</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="game-card" data-name="rockpaperscissors">
-    <div class="glass-card-inner">
-      <div class="glass-layer"></div>
-      <button class="fav-btn" onclick="toggleFavorite('rockpaperscissors', 'Rock, Paper, Scissors', 'rockpaperscissors.html')">☆</button>
-      <div class="glass-content game-info">
-        <h3>Rock, Paper, Scissors</h3>
-        <button onclick="openGame('rockpaperscissors.html','Rock, Paper, Scissors')">Play</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="game-card" data-name="dots&boxes">
-    <div class="glass-card-inner">
-      <div class="glass-layer"></div>
-      <button class="fav-btn" onclick="toggleFavorite('dots&boxes', 'Dots & Boxes', 'dotsandboxes.html')">☆</button>
-      <div class="glass-content game-info">
-        <h3>Dots & Boxes</h3>
-        <button onclick="openGame('dotsandboxes.html','Dots & Boxes')">Play</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="game-card" data-name="flowfree">
-    <div class="glass-card-inner">
-      <div class="glass-layer"></div>
-      <button class="fav-btn" onclick="toggleFavorite('flowfree', 'Flow Free', 'flowfree.html')">☆</button>
-      <div class="glass-content game-info">
-        <h3>Flow Free</h3>
-        <button onclick="openGame('flowfree.html','Flow Free')">Play</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="game-card" data-name="chess">
-    <div class="glass-card-inner">
-      <div class="glass-layer"></div>
-      <button class="fav-btn" onclick="toggleFavorite('chess', 'Chess', 'chess.html')">☆</button>
-      <div class="glass-content game-info">
-        <h3>Chess</h3>
-        <button onclick="openGame('chess.html','Chess')">Play</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="game-card" data-name="snakesandladders">
-    <div class="glass-card-inner">
-      <div class="glass-layer"></div>
-      <button class="fav-btn" onclick="toggleFavorite('snakesandladders', 'Portals and Rift Holes', 'snakesandladders.html')">☆</button>
-      <div class="glass-content game-info">
-        <h3>Portals and Rift Holes</h3>
-        <button onclick="openGame('snakesandladders.html','Portals and Rift Holes')">Play</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="game-card" data-name="nonogram">
-    <div class="glass-card-inner">
-      <div class="glass-layer"></div>
-      <button class="fav-btn" onclick="toggleFavorite('nonogram', 'Nonogram', 'nonogram.html')">☆</button>
-      <div class="glass-content game-info">
-        <h3>Nonogram</h3>
-        <button onclick="openGame('nonogram.html','Nonogram')">Play</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="game-card" data-name="hangman">
-    <div class="glass-card-inner">
-      <div class="glass-layer"></div>
-      <button class="fav-btn" onclick="toggleFavorite('hangman', 'Hangman', 'hangman.html')">☆</button>
-      <div class="glass-content game-info">
-        <h3>Hangman</h3>
-        <button onclick="openGame('hangman.html','Hangman')">Play</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="game-card" data-name="simonsays">
-    <div class="glass-card-inner">
-      <div class="glass-layer"></div>
-      <button class="fav-btn" onclick="toggleFavorite('simonsays', 'Simon Says', 'simonsays.html')">☆</button>
-      <div class="glass-content game-info">
-        <h3>Simon Says</h3>
-        <button onclick="openGame('simonsays.html','Simon Says')">Play</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="game-card" data-name="checkers">
-    <div class="glass-card-inner">
-      <div class="glass-layer"></div>
-      <button class="fav-btn" onclick="toggleFavorite('checkers', 'Checkers', 'checkers.html')">☆</button>
-      <div class="glass-content game-info">
-        <h3>Checkers</h3>
-        <button onclick="openGame('checkers.html','Checkers')">Play</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="game-card" data-name="Utictactoe">
-    <div class="glass-card-inner">
-      <div class="glass-layer"></div>
-      <button class="fav-btn" onclick="toggleFavorite('Utictactoe', 'Ultimate Tic-Tac-Toe', 'Utictactoe.html')">☆</button>
-      <div class="glass-content game-info">
-        <h3>Ultimate Tic-Tac-Toe</h3>
-        <button onclick="openGame('Utictactoe.html','Ultimate Tic-Tac-Toe')">Play</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="game-card" data-name="hexes">
-    <div class="glass-card-inner">
-      <div class="glass-layer"></div>
-      <button class="fav-btn" onclick="toggleFavorite('hexes', 'Hexes', 'hexes.html')">☆</button>
-      <div class="glass-content game-info">
-        <h3>Hexes</h3>
-        <button onclick="openGame('hexes.html','Hexes')">Play</button>
-      </div>
-    </div>
-  </div>
-     
-  <div class="game-card" data-name="sudoku">
-    <div class="glass-card-inner">
-      <div class="glass-layer"></div>
-      <button class="fav-btn" onclick="toggleFavorite('sudoku', 'Sudoku', 'sudoku.html')">☆</button>
-      <div class="glass-content game-info">
-        <h3>Sudoku</h3>
-        <button onclick="openGame('sudoku.html','Sudoku')">Play</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="game-card" data-name="stack">
-    <div class="glass-card-inner">
-      <div class="glass-layer"></div>
-      <button class="fav-btn" onclick="toggleFavorite('stack', 'Super Stack', 'stack.html')">☆</button>
-      <div class="glass-content game-info">
-        <h3>Super Stack</h3>
-        <button onclick="openGame('stack.html','Super Stack')">Play</button>
-      </div>
-    </div>
-  </div>
-  
-  <div class="game-card" data-name="cookieclicker">
-    <div class="glass-card-inner">
-      <div class="glass-layer"></div>
-      <button class="fav-btn" onclick="toggleFavorite('cookieclicker', 'Cookie Clicker', 'cookieclicker.html')">☆</button>
-      <div class="glass-content game-info">
-        <h3>Cookie Clicker</h3>
-        <button onclick="openGame('cookieclicker.html','Cookie Clicker')">Play</button>
-      </div>
-    </div>
-  </div>
-  <div class="game-card" data-name="crossyroad">
-    <div class="glass-card-inner">
-      <div class="glass-layer"></div>
-      <button class="fav-btn" onclick="toggleFavorite('crossyroad', 'Crossy Road', 'crossyroad.html')">☆</button>
-      <div class="glass-content game-info">
-        <h3>Crossy Road</h3>
-        <button onclick="openGame('crossyroad.html','Crossy Road')">Play</button>
-      </div>
-    </div>
-  </div>
-  <div class="game-card" data-name="holdit">
-    <div class="glass-card-inner">
-      <div class="glass-layer"></div>
-      <button class="fav-btn" onclick="toggleFavorite('holdit', 'Hold It!', 'holdit.html')">☆</button>
-      <div class="glass-content game-info">
-        <h3>Hold It!</h3>
-        <button onclick="openGame('holdit.html','Hold it!')">Play</button>
-      </div>
-    </div>
-  </div>
-  <div class="game-card" data-name="ludo">
-    <div class="glass-card-inner">
-      <div class="glass-layer"></div>
-      <button class="fav-btn" onclick="toggleFavorite('ludo', 'Ludo', 'ludo.html')">☆</button>
-      <div class="glass-content game-info">
-        <h3>Ludo</h3>
-        <button onclick="openGame('ludo.html','Ludo')">Play</button>
-      </div>
-    </div>
-  </div>
-</div>
-</section>
-
-<section>
-<div class="section-title-container">
-  <h2>🔥 Exclusives 🔥</h2>
-  <input type="text" id="exclusiveSearch" class="search-input" placeholder="Search exclusive games...">
-</div>
-
-<div class="exclusives-list" id="exclusivesContainer">
-  <div class="game-card" data-exclusive-name="rift runner">
-    <div class="glass-card-inner">
-      <div class="glass-layer"></div>
-      <div class="glass-content game-info">
-        <h3 class="ex-title">Rift Runner</h3>
-        <button class="ex-btn" onclick="openExclusive('riftrunner.html','Rift Runner')">Play</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="game-card" data-exclusive-name="rift defense">
-    <div class="glass-card-inner">
-      <div class="glass-layer"></div>
-      <div class="glass-content game-info">
-        <h3 class="ex-title">Rift Defense</h3>
-        <button class="ex-btn" onclick="openExclusive('riftdefense.html','Rift Defense')">Play</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="game-card" data-exclusive-name="rift breaker">
-    <div class="glass-card-inner">
-      <div class="glass-layer"></div>
-      <div class="glass-content game-info">
-        <h3 class="ex-title">Rift Breaker</h3>
-        <button class="ex-btn" onclick="openExclusive('riftbreaker.html','Rift Breaker')">Play</button>
-      </div>
-    </div>
-  </div>
-     
-  <div class="game-card" data-exclusive-name="rift whacker">
-    <div class="glass-card-inner">
-      <div class="glass-layer"></div>
-      <div class="glass-content game-info">
-        <h3 class="ex-title">Rift Whacker</h3>
-        <button class="ex-btn" onclick="openExclusive('riftwhacker.html','Rift Whacker')">Play</button>
-      </div>
-    </div>
-  </div>
-</div>
-</section>
-
-<section id="historySection">
-<h2 align="center">🕘 Recently Played</h2>
-<div class="game-grid" id="historyGrid"></div>
-</section>
-
-</div>
-
-<footer>
-  <h3>Rift Hub</h3>
-  <p>Free browser game platform.</p>
-  <div>
-    <a href="about.html">About</a>
-    <a href="contact.html">Contact</a>
-    <a href="privacy.html">Privacy Policy</a>
-    <a href="creators.html">Creators</a>
-  </div>
-</footer>
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-import {
-  getAuth,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyD2XQWUKM4SQO8azXkm2XwG_e9ZQWpYJi0",
-  authDomain: "rifthub-4275a.firebaseapp.com",
-  projectId: "rifthub-4275a",
-  storageBucket: "rifthub-4275a.firebasestorage.app",
-  messagingSenderId: "56609352786",
-  appId: "1:56609352786:web:55dc5d3b32412bf1e3838b"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-let isGuest = false;
-let currentGameOfDay = {};
-
-/* ============ CATEGORY MAP (for filter dropdown) ============ */
-const categoryMap = {
-  snake: "arcade", tetris: "puzzle", pong: "arcade", flappyblock: "arcade",
-  "2048": "puzzle", memorymatch: "puzzle", "pac-man": "arcade", wordle: "word",
-  connectfour: "strategy", tictactoe: "strategy", rockpaperscissors: "arcade",
-  "dots&boxes": "strategy", flowfree: "puzzle", chess: "strategy",
-  snakesandladders: "board", nonogram: "puzzle", hangman: "word",
-  simonsays: "arcade", checkers: "strategy", Utictactoe: "strategy",
-  hexes: "strategy", sudoku: "puzzle", stack: "arcade", cookieclicker: "arcade",
-  crossyroad: "arcade", holdit: "arcade", ludo: "board"
-};
-
-/* ============ CONTROL SCHEME MAP (for keyboard/mouse hint chips) ============ */
-const controlsMap = {
-  snake: "arrows", tetris: "arrows", pong: "arrows", flappyblock: "space",
-  "2048": "arrows", memorymatch: "click", "pac-man": "arrows", wordle: "keyboard",
-  connectfour: "click", tictactoe: "click", rockpaperscissors: "click",
-  "dots&boxes": "click", flowfree: "click", chess: "click",
-  snakesandladders: "click", nonogram: "click", hangman: "keyboard",
-  simonsays: "click", checkers: "click", Utictactoe: "click",
-  hexes: "click", sudoku: "keyboard", stack: "space", cookieclicker: "click",
-  crossyroad: "arrows", holdit: "space", ludo: "click"
-};
-
-const controlIconInfo = {
-  arrows: { icon: "⬆", label: "Arrow Keys" },
-  click: { icon: "🖱", label: "Mouse Click" },
-  keyboard: { icon: "⌨", label: "Keyboard" },
-  space: { icon: "␣", label: "Spacebar" }
-};
-
-document.querySelectorAll("#mainGameGrid .game-card").forEach(card => {
-  const name = card.getAttribute("data-name");
-  if (!name) return;
-
-  if (categoryMap[name]) {
-    card.setAttribute("data-category", categoryMap[name]);
-  }
-
-  const controlKey = controlsMap[name];
-  if (controlKey) {
-    const info = controlIconInfo[controlKey];
-    const h3 = card.querySelector(".game-info h3");
-    if (h3) {
-      const hintRow = document.createElement("div");
-      hintRow.className = "control-hints";
-      hintRow.innerHTML = `<span class="control-hint-circle" title="${info.label}"><span class="control-hint-icon">${info.icon}</span></span>`;
-      h3.insertAdjacentElement("afterend", hintRow);
-    }
-  }
-});
-
-/* ============ GLASS MODAL (replaces alert()) ============ */
-window.showGlassModal = function (message, opts = {}) {
-  const { title = "Notice", icon = "🔒", isError = false } = opts;
-  document.getElementById("glassModalTitle").textContent = title;
-  document.getElementById("glassModalMessage").textContent = message;
-  document.getElementById("glassModalIcon").textContent = icon;
-  const modal = document.getElementById("glassModal");
-  modal.classList.toggle("modal-locked", isError);
-  document.getElementById("glassModalOverlay").classList.add("is-open");
-};
-
-window.closeGlassModal = function () {
-  document.getElementById("glassModalOverlay").classList.remove("is-open");
-};
-
-document.getElementById("glassModalOverlay").addEventListener("click", (e) => {
-  if (e.target.id === "glassModalOverlay") window.closeGlassModal();
-});
-
-/* ============ SKELETON LOADING HELPERS ============ */
-function renderSkeletonCards(gridId, count) {
-  const grid = document.getElementById(gridId);
-  if (!grid) return;
-  const isExclusiveList = grid.classList.contains("exclusives-list");
-  grid.innerHTML = Array.from({ length: count }).map(() => `
-    <div class="skeleton-card">
-      <div class="skeleton-shimmer-inner" style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:${isExclusiveList ? "90px" : "118px"};">
-        <div class="skeleton-line"></div>
-        <div class="skeleton-line skeleton-btn"></div>
-      </div>
-    </div>`).join("");
-}
-
-function revealGrid(gridId) {
-  const grid = document.getElementById(gridId);
-  if (!grid) return;
-  grid.classList.add("grid-fade-in");
-  setTimeout(() => grid.classList.remove("grid-fade-in"), 400);
-}
-
-const gamePool = [
-  { id: "snake", name: "Snake", page: "snake.html" },
-  { id: "tetris", name: "Tetris", page: "tetris.html" },
-  { id: "pong", name: "Pong", page: "pong.html" },
-  { id: "flappyblock", name: "Flappy Block", page: "flappyblock.html" },
-  { id: "2048", name: "2048", page: "2048.html" },
-  { id: "memorymatch", name: "Memory Match", page: "memorymatch.html" },
-  { id: "pac-man", name: "Pac-Man", page: "pacman.html" },
-  { id: "wordle", name: "Wordle", page: "wordle.html" },
-  { id: "connectfour", name: "Connect Four", page: "connectfour.html" },
-  { id: "tictactoe", name: "Tic-Tac-Toe", page: "tictactoe.html" },
-  { id: "rockpaperscissors", name: "Rock, Paper, Scissors", page: "rockpaperscissors.html" },
-  { id: "dotsandboxes", name: "Dots & Boxes", page: "dotsandboxes.html" },
-  { id: "chess", name: "Chess", page: "chess.html" },
-  { id: "snakesandladders", name: "Portals and Rift Holes", page: "snakesandladders.html" },
-  { id: "flowfree", name: "Flow Free", page: "flowfree.html" },
-  { id: "nonogram", name: "Nonogram", page: "nonogram.html" },
-  { id: "hangman", name: "Hangman", page: "hangman.html" },
-  { id: "simonsays", name: "Simon Says", page: "simonsays.html" },
-  { id: "checkers", name: "Checkers", page: "checkers.html" },
-  { id: "Utictactoe", name: "Ultimate Tic-Tac-Toe", page: "Utictactoe.html" },
-  { id: "hexes", name: "Hexes", page: "hexes.html" },
-  { id: "sudoku", name: "Sudoku", page: "sudoku.html" },
-  { id: "stack", name: "Super Stack", page: "stack.html" },
-  { id: "cookieclicker", name: "Cookie Clicker", page: "cookieclicker.html" },
-  { id: "crossyroad", name: "Crossy Road", page: "crossyroad.html" },
-  { id: "holdit", name: "Hold It!", page: "holdit.html" },
-  { id: "ludo", name: "Ludo", page: "ludo.html" }
-  
-];
-
-/* ============ DAILY STREAK SYSTEM ============ */
-function dateStr(offsetDays = 0) {
-  const d = new Date();
-  d.setDate(d.getDate() + offsetDays);
-  return d.toISOString().slice(0, 10);
-}
-
-function renderStreakBadge(streak) {
-  const countEl = document.getElementById("streakCount");
-  const circleEl = document.getElementById("streakCircle");
-  if (countEl) countEl.textContent = streak;
-  if (circleEl) circleEl.classList.toggle("streak-hot", streak >= 3);
-}
-
-/* Called on every hub load: reflects the stored streak, quietly resetting
-   it if more than a day was missed since the last play. */
-function updateStreak() {
-  if (isGuest) return;
-  const today = dateStr(0);
-  const yesterday = dateStr(-1);
-  const lastPlayed = localStorage.getItem("riftLastPlayed");
-  let streak = parseInt(localStorage.getItem("riftStreak")) || 0;
-
-  if (lastPlayed && lastPlayed !== today && lastPlayed !== yesterday) {
-    streak = 0;
-    localStorage.setItem("riftStreak", "0");
-  }
-  renderStreakBadge(streak);
-}
-
-/* Called whenever a game is actually opened: extends the streak once per
-   calendar day rather than on every single game launch. */
-function recordStreakPlay() {
-  if (isGuest) return;
-  const today = dateStr(0);
-  const yesterday = dateStr(-1);
-  const lastPlayed = localStorage.getItem("riftLastPlayed");
-  let streak = parseInt(localStorage.getItem("riftStreak")) || 0;
-
-  if (lastPlayed === today) {
-    // already counted today
-  } else if (lastPlayed === yesterday) {
-    streak += 1;
-  } else {
-    streak = 1;
-  }
-  localStorage.setItem("riftStreak", String(streak));
-  localStorage.setItem("riftLastPlayed", today);
-  renderStreakBadge(streak);
-}
-window.toggleTheme = function() {
-  const isLight = document.body.classList.toggle("light-theme");
-  localStorage.setItem("riftTheme", isLight ? "light" : "dark");
-};
-
-if (localStorage.getItem("riftTheme") === "light") {
-  document.body.classList.add("light-theme");
-}
-
-/* DETERMINISTIC RANDOM GAME OF THE DAY */
-function setGameOfDay() {
-  const today = new Date();
-  const dayId = today.getFullYear() * 1000 + (today.getMonth() + 1) * 100 + today.getDate();
-  const index = dayId % gamePool.length;
-  currentGameOfDay = gamePool[index];
-  
-  if (isGuest) {
-    document.getElementById("gotwTitle").textContent = "🔒 Locked Content";
-  } else {
-    document.getElementById("gotwTitle").textContent = currentGameOfDay.name;
-  }
-}
-
-window.playGameOfDay = function() {
-  if (isGuest) {
-    showGlassModal("Game of the Day content highlights require an account connection!", { title: "Account Required", icon: "📅" });
-    return;
-  }
-  window.openGame(currentGameOfDay.page, currentGameOfDay.name);
-};
-
-/* ENTER KEY FORM CAPTURE SHORTCUT */
-document.getElementById("password").addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
-    window.login();
-  }
-});
-
-/* DUAL SESSION LOGOUT CONTROLLER */
-window.logout = function() {
-  isGuest = false;
-  document.getElementById("site").style.display = "none";
-  document.getElementById("loginScreen").style.display = "block";
-  document.getElementById("email").value = "";
-  document.getElementById("password").value = "";
-  
-  auth.signOut().catch(err => showGlassModal(err.message, { title: "Sign Out Error", icon: "⚠️", isError: true }));
-};
-
-/* LOGIN */
-window.login = function () {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-
-  signInWithEmailAndPassword(auth, email, password)
-    .then(u => loadUser(u.user.email, false))
-    .catch(err => showGlassModal(err.message, { title: "Login Failed", icon: "⚠️", isError: true }));
-};
-
-/* SIGN UP */
-window.signup = function () {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-
-  createUserWithEmailAndPassword(auth, email, password)
-    .then(u => loadUser(u.user.email, false))
-    .catch(err => showGlassModal(err.message, { title: "Sign Up Failed", icon: "⚠️", isError: true }));
-};
-
-/* GUEST ENTER ENGINE */
-window.loginAsGuest = function () {
-  loadUser("Guest Player", true);
-};
-
-function loadUser(email, guestModeStatus) {
-  isGuest = guestModeStatus;
-  
-  document.getElementById("loginScreen").style.display = "none";
-  document.getElementById("site").style.display = "block";
-  document.getElementById("username").textContent = email;
-
-  const exclusivesContainer = document.getElementById("exclusivesContainer");
-  const cards = exclusivesContainer.querySelectorAll(".game-card");
-  const gotwBanner = document.getElementById("gotwBanner");
-  const gotwBtn = document.getElementById("gotwBtn");
-
-  setGameOfDay();
-
-  /* Show skeleton placeholders immediately so the grids never appear to
-     "pop in" empty while favorites/history/stats are being assembled. */
-  renderSkeletonCards("favoritesGrid", 3);
-  renderSkeletonCards("historyGrid", 3);
-  renderSkeletonCards("mainGameGridSkeleton", 9);
-  document.getElementById("mainGameGridSkeleton").style.display = "flex";
-  document.getElementById("mainGameGrid").style.display = "none";
-
-  if (isGuest) {
-    document.getElementById("historySection").style.display = "none"; 
-    document.getElementById("statsBar").style.display = "none";
-    
-    gotwBanner.classList.add("locked-banner");
-    gotwBtn.textContent = "🔒 Locked (Account Required)";
-
-    cards.forEach(card => {
-      card.classList.add("locked-card");
-      const title = card.querySelector(".ex-title");
-      if(!title.textContent.includes("🔒")) {
-         title.textContent = "🔒 " + title.textContent;
-      }
-      card.querySelector(".ex-btn").textContent = "Locked";
-    });
-  } else {
-    document.getElementById("historySection").style.display = "block";
-    document.getElementById("statsBar").style.display = "flex";
-    
-    gotwBanner.classList.remove("locked-banner");
-    gotwBtn.textContent = "Play Game of the Day";
-
-    cards.forEach(card => {
-      card.classList.remove("locked-card");
-      const title = card.querySelector(".ex-title");
-      title.textContent = title.textContent.replace("🔒 ", "");
-      card.querySelector(".ex-btn").textContent = "Play";
-    });
-  }
-
-  /* Small deliberate delay so the shimmer is perceptible, then swap in
-     the real grids with a soft fade rather than an instant snap.
-     Wrapped in try/finally so that even if one piece of rendering throws,
-     the grid still gets revealed and the sort/filter controls still work. */
-  setTimeout(() => {
-    try {
-      if (!isGuest) {
-        renderHistory();
-        updateStats();
-        updateStreak();
-      }
-      renderFavorites();
-    } catch (err) {
-      console.error("Rift Hub render error:", err);
-    } finally {
-      document.getElementById("mainGameGridSkeleton").style.display = "none";
-      document.getElementById("mainGameGrid").style.display = "flex";
-      revealGrid("mainGameGrid");
-      revealGrid("favoritesGrid");
-      revealGrid("historyGrid");
-      applyMainGridControls();
-      fixLayout();
-    }
-  }, 450);
-
-  setTimeout(() => {
-    const music = document.getElementById("bgMusic");
-    if (music) {
-      music.play().catch(() => console.log("Autoplay block captured."));
-    }
-  }, 100);
-}
-
-onAuthStateChanged(auth, (user) => {
-  if (user) loadUser(user.email, false);
-});
-
-/* STANDARD GAME OPEN ENGINE */
-window.openGame = function (page, name) {
-  if (!isGuest) {
-    let history = JSON.parse(localStorage.getItem("riftHistory")) || [];
-    history = history.filter(g => g.name !== name);
-    history.unshift({ name, page });
-    history = history.slice(0, 3);
-    localStorage.setItem("riftHistory", JSON.stringify(history));
-
-    let count = parseInt(localStorage.getItem("riftGamesPlayed")) || 0;
-    localStorage.setItem("riftGamesPlayed", count + 1);
-
-    const poolEntry = gamePool.find(g => g.page === page);
-    if (poolEntry) {
-      const playCounts = JSON.parse(localStorage.getItem("riftPlayCounts")) || {};
-      playCounts[poolEntry.id] = (playCounts[poolEntry.id] || 0) + 1;
-      localStorage.setItem("riftPlayCounts", JSON.stringify(playCounts));
-    }
-
-    recordStreakPlay();
-  }
-  window.location.href = page;
-};
-
-/* LOCKED EXCLUSIVES LAUNCH GUARD */
-window.openExclusive = function (page, name) {
-  if (isGuest) {
-    showGlassModal("This content is Premium Exclusive! Please sign up or login to play.", { title: "Premium Exclusive", icon: "🔥" });
-    return;
-  }
-  window.openGame(page, name);
-};
-
-/* UPDATE STATS INTERFACE */
-function updateStats() {
-  if (isGuest) return;
-  const count = localStorage.getItem("riftGamesPlayed") || 0;
-  document.getElementById("gamesPlayedCount").textContent = count;
-}
-
-/* FAVORITES SYSTEM */
-window.toggleFavorite = function (id, name, page) {
-  if (isGuest) {
-    showGlassModal("Favorites tracking requires a registered account!", { title: "Account Required", icon: "⭐" });
-    return;
-  }
-  let favs = JSON.parse(localStorage.getItem("riftFavs")) || [];
-  const exists = favs.find(f => f.id === id);
-
-  if (exists) {
-    favs = favs.filter(f => f.id !== id);
-  } else {
-    favs.push({ id, name, page });
-  }
-  localStorage.setItem("riftFavs", JSON.stringify(favs));
-  renderFavorites();
-};
-
-function renderFavorites() {
-  const grid = document.getElementById("favoritesGrid");
-  const section = document.getElementById("favoritesSection");
-  
-  if (isGuest) {
-    grid.innerHTML = `
-      <div class="game-card locked-card" style="width: 100%; max-width: 400px; margin: 0 auto;">
-        <div class="glass-card-inner">
-          <div class="glass-layer"></div>
-          <div class="game-info">
-            <h3>🔒 Favorites Grid Is Locked</h3>
-            <p>Create an account to build your personal dashboard panel.</p>
+    </header>
+
+    <div class="stats-bar" id="statsBar">
+      <div class="stat-item">
+        <div class="streak-circle" id="streakCircle">
+          <div class="streak-circle-inner">
+            <span class="streak-flame">🔥</span>
+            <span class="streak-number" id="streakCount">0</span>
           </div>
         </div>
-      </div>`;
-    section.style.display = "block";
-    return;
-  }
+        <span class="stat-label">Day Streak</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-value" id="gamesPlayedCount">0</span>
+        <span class="stat-label">Played Games 🎮</span>
+      </div>
+    </div>
 
-  let favs = JSON.parse(localStorage.getItem("riftFavs")) || [];
-  
-  document.querySelectorAll("#mainGameGrid .game-card").forEach(card => {
-    const button = card.querySelector(".fav-btn");
-    const clickHandlerString = button.getAttribute("onclick");
-    const targetFav = favs.find(f => clickHandlerString.includes(`'${f.id}'`));
-    
-    if (targetFav) {
-      button.textContent = "★";
-      button.classList.add("is-active");
-    } else {
-      button.textContent = "☆";
-      button.classList.remove("is-active");
-    }
-  });
-
-  if (favs.length === 0) {
-    grid.innerHTML = `<p id="noFavsMsg" style="text-align:center; width:100%; color: var(--text-muted); padding: 20px;">No favorite games marked yet. Click the star on any game card!</p>`;
-    return;
-  }
-
-  grid.innerHTML = favs.map(g => `
-    <div class="game-card" data-fav-id="${g.id}">
+    <div class="gotw-banner" id="gotwBanner">
       <div class="glass-card-inner">
         <div class="glass-layer"></div>
-        <button class="fav-btn is-active" onclick="toggleFavorite('${g.id}','${g.name}','${g.page}')">★</button>
-        <div class="glass-content game-info">
-          <h3>${g.name}</h3>
-          <button onclick="openGame('${g.page}','${g.name}')">Play</button>
+        <div class="glass-content">
+          <h2>⭐ Game of the Day</h2>
+          <h3 id="gotwTitle">Finding active match...</h3>
+          <button onclick="window.playGameOfDay()" id="gotwBtn">Play Game of the Day</button>
         </div>
       </div>
     </div>
-      `).join("");
-  
-  filterFavoritesGrid(document.getElementById("search").value.toLowerCase());
-  fixLayout();
-}
 
-function renderHistory() {
-  if (isGuest) return;
-  const grid = document.getElementById("historyGrid");
-  let history = JSON.parse(localStorage.getItem("riftHistory")) || [];
+    <div class="controls-bar">
+      <select id="categorySelect">
+        <option value="all">All Genres</option>
+        <option value="arcade">Arcade</option>
+        <option value="puzzle">Puzzle</option>
+        <option value="strategy">Strategy</option>
+        <option value="board">Board Games</option>
+        <option value="word">Word Games</option>
+      </select>
+      <select id="sortSelect">
+        <option value="az">A-Z Name Sort</option>
+        <option value="za">Z-A Name Sort</option>
+        <option value="mostplayed">My Most Played</option>
+      </select>
+    </div>
 
-  grid.innerHTML = history.map(g => `
-    <div class="game-card">
+    <section id="favoritesSection">
+      <h2>⭐ Your Dashboard Favorites</h2>
+      <div class="game-grid" id="favoritesGrid"></div>
+    </section>
+
+    <div class="game-grid" id="mainGameGridSkeleton"></div>
+
+    <section>
+      <h2>🎮 Multiverse Game Grid</h2>
+      <div class="game-grid" id="mainGameGrid" style="display:none;">
+
+        <div class="game-card" data-name="snake">
+          <div class="glass-card-inner">
+            <div class="glass-layer"></div>
+            <button class="fav-btn" onclick="window.toggleFavorite('snake', 'Snake', 'snake.html')">☆</button>
+            <div class="glass-content game-info">
+              <h3>Snake</h3>
+              <button onclick="window.openGame('snake.html','Snake')">Play</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-card" data-name="tetris">
+          <div class="glass-card-inner">
+            <div class="glass-layer"></div>
+            <button class="fav-btn" onclick="window.toggleFavorite('tetris', 'Tetris', 'tetris.html')">☆</button>
+            <div class="glass-content game-info">
+              <h3>Tetris</h3>
+              <button onclick="window.openGame('tetris.html','Tetris')">Play</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-card" data-name="pong">
+          <div class="glass-card-inner">
+            <div class="glass-layer"></div>
+            <button class="fav-btn" onclick="window.toggleFavorite('pong', 'Pong', 'pong.html')">☆</button>
+            <div class="glass-content game-info">
+              <h3>Pong</h3>
+              <button onclick="window.openGame('pong.html','Pong')">Play</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-card" data-name="flappyblock">
+          <div class="glass-card-inner">
+            <div class="glass-layer"></div>
+            <button class="fav-btn" onclick="window.toggleFavorite('flappyblock', 'Flappy Block', 'flappyblock.html')">☆</button>
+            <div class="glass-content game-info">
+              <h3>Flappy Block</h3>
+              <button onclick="window.openGame('flappyblock.html','Flappy Block')">Play</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-card" data-name="2048">
+          <div class="glass-card-inner">
+            <div class="glass-layer"></div>
+            <button class="fav-btn" onclick="window.toggleFavorite('2048', '2048', '2048.html')">☆</button>
+            <div class="glass-content game-info">
+              <h3>2048</h3>
+              <button onclick="window.openGame('2048.html','2048')">Play</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-card" data-name="memorymatch">
+          <div class="glass-card-inner">
+            <div class="glass-layer"></div>
+            <button class="fav-btn" onclick="window.toggleFavorite('memorymatch', 'Memory Match', 'memorymatch.html')">☆</button>
+            <div class="glass-content game-info">
+              <h3>Memory Match</h3>
+              <button onclick="window.openGame('memorymatch.html','Memory Match')">Play</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-card" data-name="pac-man">
+          <div class="glass-card-inner">
+            <div class="glass-layer"></div>
+            <button class="fav-btn" onclick="window.toggleFavorite('pac-man', 'Pac-Man', 'pacman.html')">☆</button>
+            <div class="glass-content game-info">
+              <h3>Pac-Man</h3>
+              <button onclick="window.openGame('pacman.html','Pac-Man')">Play</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-card" data-name="wordle">
+          <div class="glass-card-inner">
+            <div class="glass-layer"></div>
+            <button class="fav-btn" onclick="window.toggleFavorite('wordle', 'Wordle', 'wordle.html')">☆</button>
+            <div class="glass-content game-info">
+              <h3>Wordle</h3>
+              <button onclick="window.openGame('wordle.html','Wordle')">Play</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-card" data-name="connectfour">
+          <div class="glass-card-inner">
+            <div class="glass-layer"></div>
+            <button class="fav-btn" onclick="window.toggleFavorite('connectfour', 'Connect Four', 'connectfour.html')">☆</button>
+            <div class="glass-content game-info">
+              <h3>Connect Four</h3>
+              <button onclick="window.openGame('connectfour.html','Connect Four')">Play</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-card" data-name="tictactoe">
+          <div class="glass-card-inner">
+            <div class="glass-layer"></div>
+            <button class="fav-btn" onclick="window.toggleFavorite('tictactoe', 'Tic-Tac-Toe', 'tictactoe.html')">☆</button>
+            <div class="glass-content game-info">
+              <h3>Tic-Tac-Toe</h3>
+              <button onclick="window.openGame('tictactoe.html','Tic-Tac-Toe')">Play</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-card" data-name="rockpaperscissors">
+          <div class="glass-card-inner">
+            <div class="glass-layer"></div>
+            <button class="fav-btn" onclick="window.toggleFavorite('rockpaperscissors', 'Rock, Paper, Scissors', 'rockpaperscissors.html')">☆</button>
+            <div class="glass-content game-info">
+              <h3>Rock, Paper, Scissors</h3>
+              <button onclick="window.openGame('rockpaperscissors.html','Rock, Paper, Scissors')">Play</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-card" data-name="dots&boxes">
+          <div class="glass-card-inner">
+            <div class="glass-layer"></div>
+            <button class="fav-btn" onclick="window.toggleFavorite('dots&boxes', 'Dots & Boxes', 'dotsandboxes.html')">☆</button>
+            <div class="glass-content game-info">
+              <h3>Dots & Boxes</h3>
+              <button onclick="window.openGame('dotsandboxes.html','Dots & Boxes')">Play</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-card" data-name="flowfree">
+          <div class="glass-card-inner">
+            <div class="glass-layer"></div>
+            <button class="fav-btn" onclick="window.toggleFavorite('flowfree', 'Flow Free', 'flowfree.html')">☆</button>
+            <div class="glass-content game-info">
+              <h3>Flow Free</h3>
+              <button onclick="window.openGame('flowfree.html','Flow Free')">Play</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-card" data-name="chess">
+          <div class="glass-card-inner">
+            <div class="glass-layer"></div>
+            <button class="fav-btn" onclick="window.toggleFavorite('chess', 'Chess', 'chess.html')">☆</button>
+            <div class="glass-content game-info">
+              <h3>Chess</h3>
+              <button onclick="window.openGame('chess.html','Chess')">Play</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-card" data-name="snakesandladders">
+          <div class="glass-card-inner">
+            <div class="glass-layer"></div>
+            <button class="fav-btn" onclick="window.toggleFavorite('snakesandladders', 'Portals and Rift Holes', 'snakesandladders.html')">☆</button>
+            <div class="glass-content game-info">
+              <h3>Portals and Rift Holes</h3>
+              <button onclick="window.openGame('snakesandladders.html','Portals and Rift Holes')">Play</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-card" data-name="nonogram">
+          <div class="glass-card-inner">
+            <div class="glass-layer"></div>
+            <button class="fav-btn" onclick="window.toggleFavorite('nonogram', 'Nonogram', 'nonogram.html')">☆</button>
+            <div class="glass-content game-info">
+              <h3>Nonogram</h3>
+              <button onclick="window.openGame('nonogram.html','Nonogram')">Play</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-card" data-name="hangman">
+          <div class="glass-card-inner">
+            <div class="glass-layer"></div>
+            <button class="fav-btn" onclick="window.toggleFavorite('hangman', 'Hangman', 'hangman.html')">☆</button>
+            <div class="glass-content game-info">
+              <h3>Hangman</h3>
+              <button onclick="window.openGame('hangman.html','Hangman')">Play</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-card" data-name="simonsays">
+          <div class="glass-card-inner">
+            <div class="glass-layer"></div>
+            <button class="fav-btn" onclick="window.toggleFavorite('simonsays', 'Simon Says', 'simonsays.html')">☆</button>
+            <div class="glass-content game-info">
+              <h3>Simon Says</h3>
+              <button onclick="window.openGame('simonsays.html','Simon Says')">Play</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-card" data-name="checkers">
+          <div class="glass-card-inner">
+            <div class="glass-layer"></div>
+            <button class="fav-btn" onclick="window.toggleFavorite('checkers', 'Checkers', 'checkers.html')">☆</button>
+            <div class="glass-content game-info">
+              <h3>Checkers</h3>
+              <button onclick="window.openGame('checkers.html','Checkers')">Play</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-card" data-name="Utictactoe">
+          <div class="glass-card-inner">
+            <div class="glass-layer"></div>
+            <button class="fav-btn" onclick="window.toggleFavorite('Utictactoe', 'Ultimate Tic-Tac-Toe', 'Utictactoe.html')">☆</button>
+            <div class="glass-content game-info">
+              <h3>Ultimate Tic-Tac-Toe</h3>
+              <button onclick="window.openGame('Utictactoe.html','Ultimate Tic-Tac-Toe')">Play</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-card" data-name="hexes">
+          <div class="glass-card-inner">
+            <div class="glass-layer"></div>
+            <button class="fav-btn" onclick="window.toggleFavorite('hexes', 'Hexes', 'hexes.html')">☆</button>
+            <div class="glass-content game-info">
+              <h3>Hexes</h3>
+              <button onclick="window.openGame('hexes.html','Hexes')">Play</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-card" data-name="sudoku">
+          <div class="glass-card-inner">
+            <div class="glass-layer"></div>
+            <button class="fav-btn" onclick="window.toggleFavorite('sudoku', 'Sudoku', 'sudoku.html')">☆</button>
+            <div class="glass-content game-info">
+              <h3>Sudoku</h3>
+              <button onclick="window.openGame('sudoku.html','Sudoku')">Play</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-card" data-name="stack">
+          <div class="glass-card-inner">
+            <div class="glass-layer"></div>
+            <button class="fav-btn" onclick="window.toggleFavorite('stack', 'Super Stack', 'stack.html')">☆</button>
+            <div class="glass-content game-info">
+              <h3>Super Stack</h3>
+              <button onclick="window.openGame('stack.html','Super Stack')">Play</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-card" data-name="cookieclicker">
+          <div class="glass-card-inner">
+            <div class="glass-layer"></div>
+            <button class="fav-btn" onclick="window.toggleFavorite('cookieclicker', 'Cookie Clicker', 'cookieclicker.html')">☆</button>
+            <div class="glass-content game-info">
+              <h3>Cookie Clicker</h3>
+              <button onclick="window.openGame('cookieclicker.html','Cookie Clicker')">Play</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-card" data-name="crossyroad">
+          <div class="glass-card-inner">
+            <div class="glass-layer"></div>
+            <button class="fav-btn" onclick="window.toggleFavorite('crossyroad', 'Crossy Road', 'crossyroad.html')">☆</button>
+            <div class="glass-content game-info">
+              <h3>Crossy Road</h3>
+              <button onclick="window.openGame('crossyroad.html','Crossy Road')">Play</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-card" data-name="holdit">
+          <div class="glass-card-inner">
+            <div class="glass-layer"></div>
+            <button class="fav-btn" onclick="window.toggleFavorite('holdit', 'Hold It!', 'holdit.html')">☆</button>
+            <div class="glass-content game-info">
+              <h3>Hold It!</h3>
+              <button onclick="window.openGame('holdit.html','Hold It!')">Play</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-card" data-name="ludo">
+          <div class="glass-card-inner">
+            <div class="glass-layer"></div>
+            <button class="fav-btn" onclick="window.toggleFavorite('ludo', 'Ludo', 'ludo.html')">☆</button>
+            <div class="glass-content game-info">
+              <h3>Ludo</h3>
+              <button onclick="window.openGame('ludo.html','Ludo')">Play</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title-container">
+        <h2>🔥 Exclusives 🔥</h2>
+        <input type="text" id="exclusiveSearch" class="search-input" style="max-width: 250px; margin-top: 0;" placeholder="Filter exclusives...">
+      </div>
+      <div class="exclusives-list" id="exclusivesContainer">
+        
+        <div class="game-card" data-exclusive-name="rift runner">
+          <div class="glass-card-inner">
+            <div class="glass-layer"></div>
+            <div class="glass-content game-info">
+              <h3 class="ex-title">Rift Runner</h3>
+              <button class="ex-btn" onclick="window.openExclusive('riftrunner.html','Rift Runner')">Play</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-card" data-exclusive-name="rift defense">
+          <div class="glass-card-inner">
+            <div class="glass-layer"></div>
+            <div class="glass-content game-info">
+              <h3 class="ex-title">Rift Defense</h3>
+              <button class="ex-btn" onclick="window.openExclusive('riftdefense.html','Rift Defense')">Play</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-card" data-exclusive-name="rift breaker">
+          <div class="glass-card-inner">
+            <div class="glass-layer"></div>
+            <div class="glass-content game-info">
+              <h3 class="ex-title">Rift Breaker</h3>
+              <button class="ex-btn" onclick="window.openExclusive('riftbreaker.html','Rift Breaker')">Play</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-card" data-exclusive-name="rift whacker">
+          <div class="glass-card-inner">
+            <div class="glass-layer"></div>
+            <div class="glass-content game-info">
+              <h3 class="ex-title">Rift Whacker</h3>
+              <button class="ex-btn" onclick="window.openExclusive('riftwhacker.html','Rift Whacker')">Play</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <section id="historySection">
+      <h2 style="text-align: center; margin-top:60px;">🕘 Recently Played</h2>
+      <div class="game-grid" id="historyGrid"></div>
+    </section>
+  </div>
+
+  <div class="glass-modal-overlay" id="glassModalOverlay">
+    <div class="glass-modal" id="glassModal">
       <div class="glass-card-inner">
         <div class="glass-layer"></div>
-        <div class="glass-content game-info">
-          <h3>${g.name}</h3>
-          <button onclick="openGame('${g.page}','${g.name}')">Play</button>
+        <div class="glass-content">
+          <span class="glass-modal-icon" id="glassModalIcon">🔒</span>
+          <h3 id="glassModalTitle">Notice</h3>
+          <p id="glassModalMessage"></p>
+          <button onclick="window.closeGlassModal()">Got it</button>
         </div>
       </div>
     </div>
-      `).join("");
-  fixLayout();
-}
+  </div>
 
-/* DYNAMIC LAST-ROW GRIDS ENGINE */
-function fixLayout() {
-  const gridIds = ["mainGameGrid", "favoritesGrid", "historyGrid"];
+  <footer>
+    <h3>Rift Hub</h3>
+    <p>Free browser game platform.</p>
+    <div>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+      <a href="privacy.html">Privacy Policy</a>
+      <a href="creators.html">Creators</a>
+    </div>
+  </footer>
 
-  gridIds.forEach(id => {
-    const grid = document.getElementById(id);
-    if (!grid) return;
-    
-    const visibleCards = Array.from(grid.querySelectorAll(".game-card")).filter(card => {
-      return card.style.display !== "none" && !card.classList.contains("locked-card");
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+    import {
+      getAuth,
+      signInWithEmailAndPassword,
+      createUserWithEmailAndPassword,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyD2XQWUKM4SQO8azXkm2XwG_e9ZQWpYJi0",
+      authDomain: "rifthub-4275a.firebaseapp.com",
+      projectId: "rifthub-4275a",
+      storageBucket: "rifthub-4275a.firebasestorage.app",
+      messagingSenderId: "56609352786",
+      appId: "1:56609352786:web:55dc5d3b32412bf1e3838b"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    let isGuest = false;
+    let currentGameOfDay = {};
+
+    /* CATEGORY & HARDWARE SCHEME ASSIGNMENT MATRIX */
+    const categoryMap = {
+      snake: "arcade", tetris: "puzzle", pong: "arcade", flappyblock: "arcade",
+      "2048": "puzzle", memorymatch: "puzzle", "pac-man": "arcade", wordle: "word",
+      connectfour: "strategy", tictactoe: "strategy", rockpaperscissors: "arcade",
+      "dots&boxes": "strategy", flowfree: "puzzle", chess: "strategy",
+      snakesandladders: "board", nonogram: "puzzle", hangman: "word",
+      simonsays: "arcade", checkers: "strategy", Utictactoe: "strategy",
+      hexes: "strategy", sudoku: "puzzle", stack: "arcade", cookieclicker: "arcade",
+      crossyroad: "arcade", holdit: "arcade", ludo: "board"
+    };
+
+    const controlsMap = {
+      snake: "arrows", tetris: "arrows", pong: "arrows", flappyblock: "space",
+      "2048": "arrows", memorymatch: "click", "pac-man": "arrows", wordle: "keyboard",
+      connectfour: "click", tictactoe: "click", rockpaperscissors: "click",
+      "dots&boxes": "click", flowfree: "click", chess: "click",
+      snakesandladders: "click", nonogram: "click", hangman: "keyboard",
+      simonsays: "click", checkers: "click", Utictactoe: "click",
+      hexes: "click", sudoku: "keyboard", stack: "space", cookieclicker: "click",
+      crossyroad: "arrows", holdit: "space", ludo: "click"
+    };
+
+    const controlIconInfo = {
+      arrows: { icon: "⬆", label: "Arrow Keys" },
+      click: { icon: "🖱", label: "Mouse Click" },
+      keyboard: { icon: "⌨", label: "Keyboard" },
+      space: { icon: "␣", label: "Spacebar" }
+    };
+
+    // Inject categories and controller hint pills
+    document.querySelectorAll("#mainGameGrid .game-card").forEach(card => {
+      const name = card.getAttribute("data-name");
+      if (!name) return;
+
+      if (categoryMap[name]) {
+        card.setAttribute("data-category", categoryMap[name]);
+      }
+
+      const controlKey = controlsMap[name];
+      if (controlKey) {
+        const info = controlIconInfo[controlKey];
+        const h3 = card.querySelector(".game-info h3");
+        if (h3) {
+          const hintRow = document.createElement("div");
+          hintRow.className = "control-hints";
+          hintRow.innerHTML = `<span class="control-hint-circle" title="${info.label}"><span class="control-hint-icon">${info.icon}</span></span>`;
+          h3.insertAdjacentElement("afterend", hintRow);
+        }
+      }
     });
 
-    visibleCards.forEach(card => {
-      card.style.marginLeft = "0";
-      card.style.marginRight = "0";
+    /* DIALOG MODAL HANDLERS */
+    window.showGlassModal = function (message, opts = {}) {
+      const { title = "Notice", icon = "🔒" } = opts;
+      const titleEl = document.getElementById("glassModalTitle");
+      const msgEl = document.getElementById("glassModalMessage");
+      const iconEl = document.getElementById("glassModalIcon");
+      const overlay = document.getElementById("glassModalOverlay");
+
+      if (titleEl) titleEl.textContent = title;
+      if (msgEl) msgEl.textContent = message;
+      if (iconEl) iconEl.textContent = icon;
+      if (overlay) overlay.classList.add("is-open");
+    };
+
+    window.closeGlassModal = function () {
+      const overlay = document.getElementById("glassModalOverlay");
+      if (overlay) overlay.classList.remove("is-open");
+    };
+
+    document.getElementById("glassModalOverlay").addEventListener("click", (e) => {
+      if (e.target.id === "glassModalOverlay") window.closeGlassModal();
     });
 
-    const count = visibleCards.length;
-    if (count === 0) return;
-
-    if (count % 3 === 1) {
-      const lastCard = visibleCards[count - 1];
-      lastCard.style.marginLeft = "auto";
-      lastCard.style.marginRight = "auto";
-    } 
-    else if (count % 3 === 2) {
-      const secondToLast = visibleCards[count - 2];
-      const lastCard = visibleCards[count - 1];
-      secondToLast.style.marginRight = "auto";
-      lastCard.style.marginLeft = "auto";
+    /* SKELETON PLACEHOLDER RENDERING */
+    function renderSkeletonCards(gridId, count) {
+      const grid = document.getElementById(gridId);
+      if (!grid) return;
+      const isExclusiveList = grid.classList.contains("exclusives-list");
+      grid.innerHTML = Array.from({ length: count }).map(() => `
+        <div class="skeleton-card">
+          <div class="skeleton-shimmer-inner" style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:${isExclusiveList ? "90px" : "118px"};">
+            <div class="skeleton-line"></div>
+            <div class="skeleton-line skeleton-btn"></div>
+          </div>
+        </div>`).join("");
     }
-  });
-}
 
-/* SEARCH FUNCTIONS */
-function filterFavoritesGrid(queryValue) {
-  const grid = document.getElementById("favoritesGrid");
-  if (!grid || isGuest) return;
-
-  const cards = grid.querySelectorAll(".game-card");
-  let visibleCount = 0;
-
-  const oldSearchMsg = document.getElementById("emptyFavSearchMsg");
-  if (oldSearchMsg) oldSearchMsg.remove();
-  
-  const baseNoFavsMsg = document.getElementById("noFavsMsg");
-  if (baseNoFavsMsg) baseNoFavsMsg.style.display = "block";
-
-  cards.forEach(card => {
-    const favId = card.getAttribute("data-fav-id");
-    if (!favId) return;
-    
-    if (favId.includes(queryValue)) {
-      card.style.display = "";
-      visibleCount++;
-    } else {
-      card.style.display = "none";
+    function revealGrid(gridId) {
+      const grid = document.getElementById(gridId);
+      if (!grid) return;
+      grid.classList.add("grid-fade-in");
+      setTimeout(() => grid.classList.remove("grid-fade-in"), 400);
     }
-  });
 
-  if (cards.length > 0 && visibleCount === 0) {
-    if (baseNoFavsMsg) baseNoFavsMsg.style.display = "none";
-    
-    const msg = document.createElement("p");
-    msg.id = "emptyFavSearchMsg";
-    msg.style.cssText = "text-align: center; width: 100%; color: var(--text-muted); padding: 20px;";
-    msg.textContent = "🔍 No matching favorites found.";
-    grid.appendChild(msg);
-  }
-}
+    const gamePool = [
+      { id: "snake", name: "Snake", page: "snake.html" },
+      { id: "tetris", name: "Tetris", page: "tetris.html" },
+      { id: "pong", name: "Pong", page: "pong.html" },
+      { id: "flappyblock", name: "Flappy Block", page: "flappyblock.html" },
+      { id: "2048", name: "2048", page: "2048.html" },
+      { id: "memorymatch", name: "Memory Match", page: "memorymatch.html" },
+      { id: "pac-man", name: "Pac-Man", page: "pacman.html" },
+      { id: "wordle", name: "Wordle", page: "wordle.html" },
+      { id: "connectfour", name: "Connect Four", page: "connectfour.html" },
+      { id: "tictactoe", name: "Tic-Tac-Toe", page: "tictactoe.html" },
+      { id: "rockpaperscissors", name: "Rock, Paper, Scissors", page: "rockpaperscissors.html" },
+      { id: "dots&boxes", name: "Dots & Boxes", page: "dotsandboxes.html" },
+      { id: "chess", name: "Chess", page: "chess.html" },
+      { id: "snakesandladders", name: "Portals and Rift Holes", page: "snakesandladders.html" },
+      { id: "flowfree", name: "Flow Free", page: "flowfree.html" },
+      { id: "nonogram", name: "Nonogram", page: "nonogram.html" },
+      { id: "hangman", name: "Hangman", page: "hangman.html" },
+      { id: "simonsays", name: "Simon Says", page: "simonsays.html" },
+      { id: "checkers", name: "Checkers", page: "checkers.html" },
+      { id: "Utictactoe", name: "Ultimate Tic-Tac-Toe", page: "Utictactoe.html" },
+      { id: "hexes", name: "Hexes", page: "hexes.html" },
+      { id: "sudoku", name: "Sudoku", page: "sudoku.html" },
+      { id: "stack", name: "Super Stack", page: "stack.html" },
+      { id: "cookieclicker", name: "Cookie Clicker", page: "cookieclicker.html" },
+      { id: "crossyroad", name: "Crossy Road", page: "crossyroad.html" },
+      { id: "holdit", name: "Hold It!", page: "holdit.html" },
+      { id: "ludo", name: "Ludo", page: "ludo.html" }
+    ];
 
-/* ============ SORT / FILTER CONTROLS (main grid) ============ */
-function applyMainGridControls() {
-  const grid = document.getElementById("mainGameGrid");
-  if (!grid) return;
+    /* STREAK ENGINE */
+    function dateStr(offsetDays = 0) {
+      const d = new Date();
+      d.setDate(d.getDate() + offsetDays);
+      return d.toISOString().slice(0, 10);
+    }
 
-  const searchVal = document.getElementById("search").value.toLowerCase();
-  const sortVal = document.getElementById("sortSelect").value;
-  const categoryVal = document.getElementById("categorySelect").value;
-  const playCounts = JSON.parse(localStorage.getItem("riftPlayCounts")) || {};
+    function renderStreakBadge(streak) {
+      const countEl = document.getElementById("streakCount");
+      const circleEl = document.getElementById("streakCircle");
+      if (countEl) countEl.textContent = streak;
+      if (circleEl) circleEl.classList.toggle("streak-hot", streak >= 3);
+    }
 
-  const cards = Array.from(grid.querySelectorAll(".game-card"));
+    function updateStreak() {
+      if (isGuest) return;
+      const today = dateStr(0);
+      const yesterday = dateStr(-1);
+      const lastPlayed = localStorage.getItem("riftLastPlayed");
+      let streak = parseInt(localStorage.getItem("riftStreak")) || 0;
 
-  cards.forEach(card => {
-    const name = card.getAttribute("data-name") || "";
-    const category = card.getAttribute("data-category") || "";
-    const matchesSearch = name.toLowerCase().includes(searchVal);
-    const matchesCategory = categoryVal === "all" || category === categoryVal;
-    card.style.display = (matchesSearch && matchesCategory) ? "" : "none";
-  });
+      if (lastPlayed && lastPlayed !== today && lastPlayed !== yesterday) {
+        streak = 0;
+        localStorage.setItem("riftStreak", "0");
+      }
+      renderStreakBadge(streak);
+    }
 
-  if (sortVal === "az" || sortVal === "za") {
-    cards.sort((a, b) => {
-      const titleA = a.querySelector("h3").textContent.trim().toLowerCase();
-      const titleB = b.querySelector("h3").textContent.trim().toLowerCase();
-      return sortVal === "az" ? titleA.localeCompare(titleB) : titleB.localeCompare(titleA);
+    function recordStreakPlay() {
+      if (isGuest) return;
+      const today = dateStr(0);
+      const yesterday = dateStr(-1);
+      const lastPlayed = localStorage.getItem("riftLastPlayed");
+      let streak = parseInt(localStorage.getItem("riftStreak")) || 0;
+
+      if (lastPlayed === today) {
+        // Logged already
+      } else if (lastPlayed === yesterday) {
+        streak += 1;
+      } else {
+        streak = 1;
+      }
+      localStorage.setItem("riftStreak", String(streak));
+      localStorage.setItem("riftLastPlayed", today);
+      renderStreakBadge(streak);
+    }
+
+    /* VIEWPORT THEME MANAGER */
+    window.toggleTheme = function() {
+      const isLight = document.body.classList.toggle("light-theme");
+      localStorage.setItem("riftTheme", isLight ? "light" : "dark");
+    };
+
+    if (localStorage.getItem("riftTheme") === "light") {
+      document.body.classList.add("light-theme");
+    }
+
+    function setGameOfDay() {
+      const today = new Date();
+      const dayId = today.getFullYear() * 1000 + (today.getMonth() + 1) * 100 + today.getDate();
+      const index = dayId % gamePool.length;
+      currentGameOfDay = gamePool[index];
+      
+      const titleEl = document.getElementById("gotwTitle");
+      if (titleEl) {
+        titleEl.textContent = isGuest ? "🔒 Locked Content" : currentGameOfDay.name;
+      }
+    }
+
+    window.playGameOfDay = function() {
+      if (isGuest) {
+        showGlassModal("Highlight channels and recommended content profiles require an account!", { title: "Account Required", icon: "📅" });
+        return;
+      }
+      window.openGame(currentGameOfDay.page, currentGameOfDay.name);
+    };
+
+    /* AUTHENTICATION ROUTINES */
+    window.logout = function() {
+      isGuest = false;
+      document.getElementById("site").style.display = "none";
+      document.getElementById("loginScreen").style.display = "flex";
+      document.getElementById("email").value = "";
+      document.getElementById("password").value = "";
+      
+      auth.signOut().catch(err => showGlassModal(err.message, { title: "Sign Out Error", icon: "⚠️" }));
+    };
+
+    window.login = function () {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      signInWithEmailAndPassword(auth, email, password)
+        .then(u => loadUser(u.user.email, false))
+        .catch(err => showGlassModal(err.message, { title: "Login Failed", icon: "⚠️" }));
+    };
+
+    window.signup = function () {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      createUserWithEmailAndPassword(auth, email, password)
+        .then(u => loadUser(u.user.email, false))
+        .catch(err => showGlassModal(err.message, { title: "Sign Up Failed", icon: "⚠️" }));
+    };
+
+    window.loginAsGuest = function () {
+      loadUser("Guest Player", true);
+    };
+
+    function loadUser(email, guestModeStatus) {
+      isGuest = guestModeStatus;
+      
+      document.getElementById("loginScreen").style.display = "none";
+      document.getElementById("site").style.display = "block";
+      document.getElementById("username").textContent = email;
+
+      const exclusivesContainer = document.getElementById("exclusivesContainer");
+      const cards = exclusivesContainer.querySelectorAll(".game-card");
+      const gotwBanner = document.getElementById("gotwBanner");
+      const gotwBtn = document.getElementById("gotwBtn");
+
+      setGameOfDay();
+
+      renderSkeletonCards("favoritesGrid", 3);
+      renderSkeletonCards("historyGrid", 3);
+      renderSkeletonCards("mainGameGridSkeleton", 9);
+      
+      const skeletonGrid = document.getElementById("mainGameGridSkeleton");
+      const mainGrid = document.getElementById("mainGameGrid");
+
+      if (skeletonGrid) skeletonGrid.style.display = "flex";
+      if (mainGrid) mainGrid.style.display = "none";
+
+      if (isGuest) {
+        document.getElementById("historySection").style.display = "none"; 
+        document.getElementById("statsBar").style.display = "none";
+        
+        if (gotwBanner) gotwBanner.classList.add("locked-banner");
+        if (gotwBtn) gotwBtn.textContent = "🔒 Locked (Account Required)";
+
+        cards.forEach(card => {
+          card.classList.add("locked-card");
+          const title = card.querySelector(".ex-title");
+          if(title && !title.textContent.includes("🔒")) {
+             title.textContent = "🔒 " + title.textContent;
+          }
+          const exBtn = card.querySelector(".ex-btn");
+          if (exBtn) exBtn.textContent = "Locked";
+        });
+      } else {
+        document.getElementById("historySection").style.display = "block";
+        document.getElementById("statsBar").style.display = "flex";
+        
+        if (gotwBanner) gotwBanner.classList.remove("locked-banner");
+        if (gotwBtn) gotwBtn.textContent = "Play Game of the Day";
+
+        cards.forEach(card => {
+          card.classList.remove("locked-card");
+          const title = card.querySelector(".ex-title");
+          if (title) title.textContent = title.textContent.replace("🔒 ", "");
+          const exBtn = card.querySelector(".ex-btn");
+          if (exBtn) exBtn.textContent = "Play";
+        });
+      }
+
+      setTimeout(() => {
+        try {
+          if (!isGuest) {
+            renderHistory();
+            updateStats();
+            updateStreak();
+          }
+          renderFavorites();
+        } catch (err) {
+          console.error("Rift Hub load error:", err);
+        } finally {
+          if (skeletonGrid) skeletonGrid.style.display = "none";
+          if (mainGrid) mainGrid.style.display = "flex";
+          
+          revealGrid("mainGameGrid");
+          revealGrid("favoritesGrid");
+          revealGrid("historyGrid");
+          applyMainGridControls();
+        }
+      }, 450);
+    }
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) loadUser(user.email, false);
     });
-    cards.forEach(card => grid.appendChild(card));
-  } else if (sortVal === "mostplayed") {
-    cards.sort((a, b) => {
-      const idA = a.getAttribute("data-name");
-      const idB = b.getAttribute("data-name");
-      return (playCounts[idB] || 0) - (playCounts[idA] || 0);
-    });
-    cards.forEach(card => grid.appendChild(card));
-  }
 
-  filterFavoritesGrid(searchVal);
-  fixLayout();
-}
+    /* HISTORY & LAUNCH ENGINE */
+    window.openGame = function (page, name) {
+      if (!isGuest) {
+        let history = JSON.parse(localStorage.getItem("riftHistory")) || [];
+        history = history.filter(g => g.name !== name);
+        history.unshift({ name, page });
+        history = history.slice(0, 3);
+        localStorage.setItem("riftHistory", JSON.stringify(history));
 
-document.getElementById("sortSelect").addEventListener("change", applyMainGridControls);
-document.getElementById("categorySelect").addEventListener("change", applyMainGridControls);
+        let count = parseInt(localStorage.getItem("riftGamesPlayed")) || 0;
+        localStorage.setItem("riftGamesPlayed", count + 1);
 
-document.getElementById("search").addEventListener("input", function () {
-  applyMainGridControls();
-});
+        const poolEntry = gamePool.find(g => g.page === page);
+        if (poolEntry) {
+          const playCounts = JSON.parse(localStorage.getItem("riftPlayCounts")) || {};
+          playCounts[poolEntry.id] = (playCounts[poolEntry.id] || 0) + 1;
+          localStorage.setItem("riftPlayCounts", JSON.stringify(playCounts));
+        }
 
-document.getElementById("exclusiveSearch").addEventListener("input", function () {
-  const val = this.value.toLowerCase();
+        recordStreakPlay();
+      }
+      window.location.href = page;
+    };
 
-  document.querySelectorAll("#exclusivesContainer .game-card").forEach(card => {
-    const name = card.getAttribute("data-exclusive-name");
-    if (!name) return;
-    card.style.display = name.toLowerCase().includes(val) ? "" : "none";
-  });
-});
+    window.openExclusive = function (page, name) {
+      if (isGuest) {
+        showGlassModal("Rift configs are only open to Cloud accounts.", { title: "Premium Exclusive", icon: "🔥" });
+        return;
+      }
+      window.openGame(page, name);
+    };
 
-fixLayout();
-</script>
+    function updateStats() {
+      if (isGuest) return;
+      const count = localStorage.getItem("riftGamesPlayed") || 0;
+      const countEl = document.getElementById("gamesPlayedCount");
+      if (countEl) countEl.textContent = count;
+    }
 
+    /* FAVORITING SYSTEM */
+    window.toggleFavorite = function (id, name, page) {
+      if (isGuest) {
+        showGlassModal("Global cloud saving for favorites requires a profile registration!", { title: "Account Required", icon: "⭐" });
+        return;
+      }
+      let favs = JSON.parse(localStorage.getItem("riftFavs")) || [];
+      const exists = favs.find(f => f.id === id);
+
+      if (exists) {
+        favs = favs.filter(f => f.id !== id);
+      } else {
+        favs.push({ id, name, page });
+      }
+      localStorage.setItem("riftFavs", JSON.stringify(favs));
+      renderFavorites();
+    };
+
+    function renderFavorites() {
+      const grid = document.getElementById("favoritesGrid");
+      const section = document.getElementById("favoritesSection");
+      if (!grid || !section) return;
+      
+      if (isGuest) {
+        grid.innerHTML = `
+          <div class="game-card locked-card" style="width: 100%; max-width: 400px; margin: 0 auto;">
+            <div class="glass-card-inner">
+              <div class="glass-layer"></div>
+              <div class="game-info" style="text-align:center;">
+                <h3>🔒 Favorites Grid Is Locked</h3>
+                <p>Create an account to build your personal dashboard panel.</p>
+              </div>
+            </div>
+          </div>`;
+        section.style.display = "block";
+        return;
+      }
+
+      let favs = JSON.parse(localStorage.getItem("riftFavs")) || [];
+      
+      document.querySelectorAll("#mainGameGrid .game-card").forEach(card => {
+        const button = card.querySelector(".fav-btn");
+        if (!button) return;
+        const clickHandlerString = button.getAttribute("onclick");
+        const targetFav = favs.find(f => clickHandlerString.includes(`'${f.id}'`));
+        
+        if (targetFav) {
+          button.textContent = "★";
+          button.classList.add("is-active");
+        } else {
+          button.textContent = "☆";
+          button.classList.remove("is-active");
+        }
+      });
+
+      if (favs.length === 0) {
+        grid.innerHTML = `<p id="noFavsMsg" style="text-align:center; width: 100%; color: var(--text-muted); padding: 20px;">No favorite games marked yet. Click the star on any game card!</p>`;
+        return;
+      }
+
+      grid.innerHTML = favs.map(g => `
+        <div class="game-card" data-fav-id="${g.id}">
+          <div class="glass-card-inner">
+            <div class="glass-layer"></div>
+            <button class="fav-btn is-active" onclick="window.toggleFavorite('${g.id}','${g.name}','${g.page}')">★</button>
+            <div class="glass-content game-info">
+              <h3>${g.name}</h3>
+              <button onclick="window.openGame('${g.page}','${g.name}')">Play</button>
+            </div>
+          </div>
+        </div>`).join("");
+      
+      const searchEl = document.getElementById("search");
+      if (searchEl) filterFavoritesGrid(searchEl.value.toLowerCase());
+    }
+
+    function renderHistory() {
+      if (isGuest) return;
+      const grid = document.getElementById("historyGrid");
+      if (!grid) return;
+      let history = JSON.parse(localStorage.getItem("riftHistory")) || [];
+
+      if (history.length === 0) {
+        grid.innerHTML = `<p style="text-align:center; width: 100%; color: var(--text-muted); padding: 20px;">No history logged yet.</p>`;
+        return;
+      }
+
+      grid.innerHTML = history.map(g => `
+        <div class="game-card">
+          <div class="glass-card-inner">
+            <div class="glass-layer"></div>
+            <div class="glass-content game-info">
+              <h3>${g.name}</h3>
+              <button onclick="window.openGame('${g.page}','${g.name}')">Play</button>
+            </div>
+          </div>
+        </div>`).join("");
+    }
+
+    function filterFavoritesGrid(queryValue) {
+      const grid = document.getElementById("favoritesGrid");
+      if (!grid || isGuest) return;
+
+      const cards = grid.querySelectorAll(".game-card");
+      let visibleCount = 0;
+
+      const oldSearchMsg = document.getElementById("emptyFavSearchMsg");
+      if (oldSearchMsg) oldSearchMsg.remove();
+      
+      const baseNoFavsMsg = document.getElementById("noFavsMsg");
+      if (baseNoFavsMsg) baseNoFavsMsg.style.display = "block";
+
+      cards.forEach(card => {
+        const favId = card.getAttribute("data-fav-id");
+        if (!favId) return;
+        
+        if (favId.includes(queryValue)) {
+          card.style.display = "";
+          visibleCount++;
+        } else {
+          card.style.display = "none";
+        }
+      });
+
+      if (cards.length > 0 && visibleCount === 0) {
+        if (baseNoFavsMsg) baseNoFavsMsg.style.display = "none";
+        
+        const msg = document.createElement("p");
+        msg.id = "emptyFavSearchMsg";
+        msg.style.cssText = "text-align: center; width: 100%; color: var(--text-muted); padding: 20px;";
+        msg.textContent = "🔍 No matching favorites found.";
+        grid.appendChild(msg);
+      }
+    }
+
+    /* GRID CONTROLS */
+    function applyMainGridControls() {
+      const grid = document.getElementById("mainGameGrid");
+      if (!grid) return;
+
+      const searchVal = document.getElementById("search") ? document.getElementById("search").value.toLowerCase() : "";
+      const sortVal = document.getElementById("sortSelect") ? document.getElementById("sortSelect").value : "az";
+      const categoryVal = document.getElementById("categorySelect") ? document.getElementById("categorySelect").value : "all";
+      const playCounts = JSON.parse(localStorage.getItem("riftPlayCounts")) || {};
+
+      const cards = Array.from(grid.querySelectorAll(".game-card"));
+
+      cards.forEach(card => {
+        const name = card.getAttribute("data-name") || "";
+        const category = card.getAttribute("data-category") || "";
+        const matchesSearch = name.toLowerCase().includes(searchVal);
+        const matchesCategory = categoryVal === "all" || category === categoryVal;
+        card.style.display = (matchesSearch && matchesCategory) ? "" : "none";
+      });
+
+      if (sortVal === "az" || sortVal === "za") {
+        cards.sort((a, b) => {
+          const h3A = a.querySelector("h3");
+          const h3B = b.querySelector("h3");
+          const titleA = h3A ? h3A.textContent.trim().toLowerCase() : "";
+          const titleB = h3B ? h3B.textContent.trim().toLowerCase() : "";
+          return sortVal === "az" ? titleA.localeCompare(titleB) : titleB.localeCompare(titleA);
+        });
+        cards.forEach(card => grid.appendChild(card));
+      } else if (sortVal === "mostplayed") {
+        cards.sort((a, b) => {
+          const idA = a.getAttribute("data-name");
+          const idB = b.getAttribute("data-name");
+          return (playCounts[idB] || 0) - (playCounts[idA] || 0);
+        });
+        cards.forEach(card => grid.appendChild(card));
+      }
+
+      filterFavoritesGrid(searchVal);
+    }
+
+    /* GLOBAL REGISTRATIONS */
+    window.login = login;
+    window.signup = signup;
+    window.loginAsGuest = loginAsGuest;
+    window.openGame = openGame;
+    window.openExclusive = openExclusive;
+    window.logout = logout;
+    window.toggleTheme = toggleTheme;
+    window.playGameOfDay = playGameOfDay;
+    window.toggleFavorite = toggleFavorite;
+
+    document.getElementById("sortSelect").addEventListener("change", applyMainGridControls);
+    document.getElementById("categorySelect").addEventListener("change", applyMainGridControls);
+    document.getElementById("search").addEventListener("input", applyMainGridControls);
+
+    const exclusiveSearchInput = document.getElementById("exclusiveSearch");
+    if (exclusiveSearchInput) {
+      exclusiveSearchInput.addEventListener("input", function () {
+        const val = this.value.toLowerCase();
+        document.querySelectorAll("#exclusivesContainer .game-card").forEach(card => {
+          const name = card.getAttribute("data-exclusive-name");
+          if (!name) return;
+          card.style.display = name.toLowerCase().includes(val) ? "" : "none";
+        });
+      });
+    }
+
+    const passwordInput = document.getElementById("password");
+    if (passwordInput) {
+      passwordInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") window.login();
+      });
+    }
+  </script>
 </body>
 </html>
