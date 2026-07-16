@@ -648,6 +648,7 @@ body.light-theme .controls-bar select {
 }
 
 /* ============ GLASS MODAL (replaces alert()) ============ */
+./* ============ GLASS MODAL (replaces alert()) ============ */
 .glass-modal-overlay {
   position: fixed;
   inset: 0;
@@ -657,17 +658,24 @@ body.light-theme .controls-bar select {
   align-items: center;
   justify-content: center;
   opacity: 0;
+  
+  /* CHANGE THESE LINES */
   pointer-events: none;
-  transition: opacity 0.25s ease;
+  visibility: hidden; /* Keeps it completely hidden from mouse clicks */
+  
+  transition: opacity 0.25s ease, visibility 0.25s ease;
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
 }
 
 .glass-modal-overlay.is-open {
   opacity: 1;
+  
+  /* ADD THIS LINE */
+  visibility: visible; /* Brings it back when active */
+  
   pointer-events: auto;
 }
-
 .glass-modal {
   width: 90%;
   max-width: 380px;
