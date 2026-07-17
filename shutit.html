@@ -1,1 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rift Shut the Box</title>
+<style>
+@import url("https://fonts.googleapis.com/css?family=Lato:400,700");
 
+:root {
+    --p1-color: #4c6fff;
+    --p2-color: #9b5cff;
+    --current-turn-color: #14532d;
+}
+
+body {
+    margin: 0;
+    font-family: 'Lato', Arial, sans-serif;
+    background: var(--current-turn-color);
+    color: white;
+    text-align: center;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: background 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+h1 { 
+    margin: 20px 0 10px 0; 
+    text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+
+/* MENU OVERLAY */
+#menu {
+    position: fixed;
+    inset: 0;
+    background: #0f0f1a;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+}
+.menuBox {
+    background: #141428;
+    padding: 35px;
+    border-radius: 15px;
+    border: 3px solid #4c6fff;
+    box-shadow: 0 0 25px rgba(76,108,255,0.35);
+    text-align: center;
+    width: 100%;
+    max-width: 400px;
+    box-sizing: border-box;
+}
+.menuBox h1 {
+    color: #4c6fff;
+    margin-bottom: 5px;
+}
+.menuBox p.menu-subtitle {
+    color: #a0aec0;
+    margin: 0 0 20px 0;
+    font-size: 15px;
+}
+
+.menu-options {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 10px;
+}
+.mode-option {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    transition: all 0.2s;
+}
+.mode-option:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(76, 108, 255, 0.3);
+}
+.mode-option button {
+    width: 90%;
+    margin: 0 auto 8px auto;
+    display: block;
+}
+.mode-desc {
+    font-size: 13px;
+    color: #a0aec0;
+    margin: 0;
+    line-height: 1.4;
+    padding: 0 10px;
+}
+
+/* BUTTONS */
+button {
+    background: linear-gradient(135deg, #141428, #222244);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    padding: 12px 24px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 16px;
+    transition: 0.2s;
+    margin: 5px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+button:hover:not(:disabled) {
+    transform: scale(1.05);
+    border-color: white;
+}
+button:disabled {
+    background: #2d3748;
+    color: #718096;
+    cursor: not-allowed;
+    border-color: rgba(255,255,255,0.05);
+}
+
+.btn-row {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin: 15px 0;
+}
+
+/* CONTROLS & DASHBOARD */
+.controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 15px;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 550px;
+    margin: 10px auto;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(5px);
+    box-sizing: border-box;
+}
+.player-config {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    height: 45px;
+    padding: 0 5px;
+    box-sizing: border-box;
+    border-radius: 8px;
+    margin-bottom: 4px;
+}
+.player-config.active-turn {
+    background: rgba(255, 255, 255, 0.1);
+}
+.player-name {
+    color: #fff;
+    font-size: 18px;
+    width: 150px;
+    text-align: left;
+    outline: none;
+    cursor: text;
+    border-bottom: 1px dashed rgba(255,255,255,0.4);
+    white-space: nowrap;
+    overflow: hidden;
+}
+input[type="color"] {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    width: 40px;
+    height: 35px;
+}
+.score-box {
+    font-weight: bold;
+    font-size: 18px;
+    color: #ffc;
+    width: 110px;
+    text-align: right;
+}
+
+/* BOX WRAPPER GRID */
+#boxWrapper {
+    background: #3a2212;
+    padding: 18px;
+    border-radius: 16px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.6);
+    width: 100%;
+    max-width: 680px;
+    box-sizing: border-box;
+    margin: 15px auto;
+}
+.felt-board {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* FLAPS / TILES CONTAINER */
+.tiles-container {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    gap: 6px;
+    margin-bottom: 25px;
+    perspective: 400px;
+}
+.tile {
+    flex: 1;
+    height: 85px;
+    background: #e6c280;
+    color: #2d1a04;
+    font-size: 1.4rem;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    cursor: pointer;
+    user-select: none;
+    box-shadow: 0 6px 0 #9c7a3c, 0 8px 10px rgba(0,0,0,0.4);
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transform-origin: top;
+    border: 2px solid transparent;
+}
+
+/* HIGH VISIBILITY LEGAL MOVES STYLE */
+.tile.pickable {
+    border: 3px solid #00f0ff;
+    box-shadow: 0 0 18px rgba(0, 240, 255, 0.85), 0 6px 0 #009cb3;
+    transform: translateY(-3px);
+}
+.tile.selected {
+    background: #ffd700;
+    box-shadow: 0 6px 0 #b89200, 0 8px 10px rgba(255, 215, 0, 0.2);
+    transform: translateY(2px);
+    border: 2px solid #fff;
+}
+
+/* FIXED SHUT TILE CLEAN DESIGN */
+.tile.shut {
+    background: #19110a;
+    color: transparent;
+    box-shadow: inset 0 6px 10px rgba(0,0,0,0.8);
+    transform: rotateX(-90deg);
+    cursor: not-allowed;
+    pointer-events: none;
+    border-color: transparent;
+}
+
+#statusBox {
+    background: rgba(0, 0, 0, 0.7);
+    border: 2px solid rgba(255,255,255,0.2);
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 16px;
+    width: 95%;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    margin-bottom: 15px;
+    box-sizing: border-box;
+    font-weight: bold;
+}
+
+/* DICE MECHANICS */
+.dice-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 5px;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 15px 25px;
+    border-radius: 15px;
+    border: 1px solid rgba(255,255,255,0.15);
+    min-height: 86px;
+    width: 100%;
+    box-sizing: border-box;
+}
+.dice {
+    width: 54px;
+    height: 54px;
+    background: white;
+    border-radius: 10px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    padding: 6px;
+    box-sizing: border-box;
+    box-shadow: 0 5px 12px rgba(0,0,0,0.6), inset 0 -4px 0 #bbb;
+    transition: transform 0.05s linear;
+}
+.dot {
+    background: #111;
+    border-radius: 50%;
+    width: 8px;
+    height: 8px;
+    margin: auto;
+    visibility: hidden;
+}
+
+/* SCOPED DICE FACES */
+.d1 .dot:nth-child(5) { visibility: visible; }
+.d2 .dot:nth-child(1), .d2 .dot:nth-child(9) { visibility: visible; }
+.d3 .dot:nth-child(1), .d3 .dot:nth-child(5), .d3 .dot:nth-child(9) { visibility: visible; }
+.d4 .dot:nth-child(1), .d4 .dot:nth-child(3), .d4 .dot:nth-child(7), .d4 .dot:nth-child(9) { visibility: visible; }
+.d5 .dot:nth-child(1), .d5 .dot:nth-child(3), .d5 .dot:nth-child(5), .d5 .dot:nth-child(7), .d5 .dot:nth-child(9) { visibility: visible; }
+.d6 .dot:nth-child(1), .d6 .dot:nth-child(3), .d6 .dot:nth-child(4), .d6 .dot:nth-child(6), .d6 .dot:nth-child(7), .d6 .dot:nth-child(9) { visibility: visible; }
+
+.action-row {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    margin-top: 15px;
+}
+.action-row button {
+    flex: 1;
+    margin: 0;
+}
+#confirmBtn {
+    background: linear-gradient(135deg, #d97706, #b45309);
+}
+</style>
+</head>
+<body>
+
+<div id="menu">
+  <div class="menuBox" id="menuStep1">
+    <h1>🎲 Rift Shut The Box</h1>
+    <p class="menu-subtitle">Select Game Ruleset Mode</p>
+    
+    <div class="menu-options">
+      <div class="mode-option">
+        <button onclick="selectRuleset('general')">General Mode</button>
+        <p class="mode-desc">Pick either the exact 2 face numbers rolled on the dice OR the single total sum tile.</p>
+      </div>
+      
+      <div class="mode-option">
+        <button onclick="selectRuleset('addition')">Addition Mode</button>
+        <p class="mode-desc">Classic rules. Choose any combination of open tiles that add up perfectly to the dice sum.</p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="menuBox" id="menuStep2" style="display:none;">
+    <h1>👥 Select Players</h1>
+    <p id="selectedModeText" class="menu-subtitle"></p>
+    <button onclick="startGame(1)" style="width:90%;">1 Player (vs AI)</button>
+    <button onclick="startGame(2)" style="width:90%;">2 Player</button>
+    <br><br>
+    <button onclick="showRulesetSelection()" style="font-size:12px; padding:6px 12px;">⬅ Back to Modes</button>
+  </div>
+</div>
+
+<h1>🎲 Rift Shut The Box</h1>
+
+<div class="btn-row">
+  <button onclick="window.location.href='index.html'">🏠 Back</button>
+  <button onclick="initGame()">Reset</button>
+  <button onclick="showMenu()">Menu</button>
+</div>
+
+<div class="controls">
+  <div class="player-config active-turn" id="p1Block">
+    <span class="player-name" contenteditable="true" id="p1Name" oninput="updateDashboard()">Player 1</span>
+    <input type="color" value="#4c6fff" id="p1Colour" />
+    <span class="score-box" id="p1ScoreDisplay">Score: 0</span>
+  </div>
+  <div class="player-config" id="p2Block">
+    <span class="player-name" contenteditable="true" id="p2Name" oninput="updateDashboard()">Player 2</span>
+    <input type="color" value="#9b5cff" id="p2Colour" />
+    <span class="score-box" id="p2ScoreDisplay">Score: 0</span>
+  </div>
+</div>
+
+<div id="boxWrapper">
+    <div class="felt-board">
+        <div class="tiles-container" id="tilesBox"></div>
+
+        <div id="statusBox"><span id="status">Player 1's Turn</span></div>
+
+        <div class="dice-container">
+            <div id="htmlDice1" class="dice d1">
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+            </div>
+            <div id="htmlDice2" class="dice d1">
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+            </div>
+        </div>
+
+        <div class="action-row">
+            <button id="confirmBtn" onclick="submitSelection()" disabled>Confirm Tiles</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let turn = 'P1';
+let playerMode = 2; 
+let rulesetMode = 'addition'; 
+const totalTilesCount = 12; 
+
+let gameOver = false;
+let hasRolled = false;
+let die1Value = 0;
+let die2Value = 0;
+let currentRollTotal = 0;
+let secondDieActive = true;
+
+let p1FinalScore = null;
+let p2FinalScore = null;
+
+let tileStates = Array(totalTilesCount).fill(false);       
+let selectedTiles = Array(totalTilesCount).fill(false);    
+let colours = { P1: "#4c6fff", P2: "#9b5cff" };
+
+function showMenu() {
+    showRulesetSelection();
+    document.getElementById("menu").style.display = "flex";
+}
+
+function showRulesetSelection() {
+    document.getElementById("menuStep1").style.display = "block";
+    document.getElementById("menuStep2").style.display = "none";
+}
+
+function selectRuleset(modeChoice) {
+    rulesetMode = modeChoice;
+    document.getElementById("menuStep1").style.display = "none";
+    document.getElementById("menuStep2").style.display = "block";
+    
+    document.getElementById("selectedModeText").textContent = 
+        modeChoice === 'general' ? "Mode: General (2 Dice Faces OR Total Tile)" : "Mode: Addition (Any combination)";
+}
+
+function startGame(selectedPlayers) {
+    playerMode = selectedPlayers;
+    document.getElementById("menu").style.display = "none";
+    
+    if (playerMode === 1) {
+        document.getElementById('p2Name').textContent = 'Rift AI';
+        document.getElementById('p2Name').contentEditable = 'false';
+    } else {
+        document.getElementById('p2Name').textContent = 'Player 2';
+        document.getElementById('p2Name').contentEditable = 'true';
+    }
+    initGame();
+}
+
+function initGame() {
+    turn = 'P1';
+    gameOver = false;
+    hasRolled = false;
+    die1Value = 0;
+    die2Value = 0;
+    currentRollTotal = 0;
+    secondDieActive = true;
+    p1FinalScore = null;
+    p2FinalScore = null;
+    
+    tileStates = Array(totalTilesCount).fill(false);
+    selectedTiles = Array(totalTilesCount).fill(false);
+
+    setDiceFace('htmlDice1', 1);
+    setDiceFace('htmlDice2', 1);
+    
+    updateThemeColors();
+    buildTilesUI();
+    updateDashboard();
+
+    setTimeout(processDiceRoll, 1000);
+}
+
+function updateThemeColors() {
+    colours.P1 = document.getElementById('p1Colour').value;
+    colours.P2 = document.getElementById('p2Colour').value;
+    
+    document.getElementById('p1Block').style.borderLeft = `4px solid ${colours.P1}`;
+    document.getElementById('p2Block').style.borderLeft = `4px solid ${colours.P2}`;
+    
+    const activeColor = (turn === 'P1') ? colours.P1 : colours.P2;
+    document.body.style.background = activeColor;
+}
+
+function setDiceFace(id, num) {
+    const dice = document.getElementById(id);
+    if(num === '-') {
+        dice.className = "dice";
+        dice.style.opacity = "0.2";
+    } else {
+        dice.className = `dice d${num}`;
+        dice.style.opacity = "1";
+    }
+}
+
+function buildTilesUI() {
+    const tilesBox = document.getElementById('tilesBox');
+    tilesBox.innerHTML = '';
+    
+    let dynamicPickableList = getValidPickableTilesList();
+
+    for (let i = 1; i <= totalTilesCount; i++) {
+        const tile = document.createElement('div');
+        tile.className = 'tile';
+        tile.textContent = i;
+        
+        if (tileStates[i-1]) {
+            tile.className = 'tile shut';
+        } else {
+            if (selectedTiles[i-1]) {
+                tile.className = 'tile selected';
+            } else if (hasRolled && dynamicPickableList.includes(i)) {
+                tile.className = 'tile pickable';
+            }
+        }
+        
+        tile.onclick = () => handleTileClick(i);
+        tilesBox.appendChild(tile);
+    }
+}
+
+// FIXED: Calculates valid moves dynamically based on what has ALREADY been highlighted/selected!
+function getValidPickableTilesList() {
+    if (!hasRolled) return [];
+    
+    let currentlySelectedIndices = [];
+    let currentSelectionSum = 0;
+    for (let i = 0; i < totalTilesCount; i++) {
+        if (selectedTiles[i]) {
+            currentlySelectedIndices.push(i + 1);
+            currentSelectionSum += (i + 1);
+        }
+    }
+    
+    let pickable = [];
+    if (rulesetMode === 'general') {
+        if (currentlySelectedIndices.length === 0) {
+            if (!tileStates[die1Value - 1]) pickable.push(die1Value);
+            if (secondDieActive && !tileStates[die2Value - 1]) pickable.push(die2Value);
+            if (currentRollTotal <= totalTilesCount && !tileStates[currentRollTotal - 1]) {
+                pickable.push(currentRollTotal);
+            }
+        } else if (currentlySelectedIndices.length === 1) {
+            let singleSelected = currentlySelectedIndices[0];
+            if (singleSelected === currentRollTotal) {
+                return []; 
+            }
+            if (secondDieActive) {
+                if (singleSelected === die1Value && !tileStates[die2Value - 1] && !selectedTiles[die2Value - 1]) {
+                    pickable.push(die2Value);
+                }
+                if (singleSelected === die2Value && !tileStates[die1Value - 1] && !selectedTiles[die1Value - 1]) {
+                    pickable.push(die1Value);
+                }
+            }
+        }
+    } else {
+        let openAvailableItems = [];
+        for (let i = 0; i < totalTilesCount; i++) {
+            if (!tileStates[i] && !selectedTiles[i]) {
+                openAvailableItems.push(i + 1);
+            }
+        }
+        
+        let targetRemainingValue = currentRollTotal - currentSelectionSum;
+        if (targetRemainingValue <= 0) return [];
+        
+        let validNextFlicks = new Set();
+        function checkValidCombinations(arr, remainingGoal, path = []) {
+            let currentPathSum = path.reduce((a, b) => a + b, 0);
+            if (currentPathSum === remainingGoal) {
+                path.forEach(val => validNextFlicks.add(val));
+                return;
+            }
+            if (currentPathSum > remainingGoal || arr.length === 0) return;
+            
+            for (let i = 0; i < arr.length; i++) {
+                checkValidCombinations(arr.slice(i + 1), remainingGoal, path.concat([arr[i]]));
+            }
+        }
+        checkValidCombinations(openAvailableItems, targetRemainingValue);
+        pickable = Array.from(validNextFlicks);
+    }
+    return pickable;
+}
+
+function handleTileClick(num) {
+    if (!hasRolled || gameOver || (playerMode === 1 && turn === 'P2')) return;
+    if (tileStates[num-1]) return;
+
+    if (rulesetMode === 'general') {
+        let targets = secondDieActive ? [die1Value, die2Value] : [die1Value];
+        
+        if (num === currentRollTotal) {
+            let wasSelected = selectedTiles[num-1];
+            selectedTiles.fill(false);
+            selectedTiles[num-1] = !wasSelected;
+        } else if (targets.includes(num)) {
+            if (selectedTiles[currentRollTotal-1]) {
+                selectedTiles[currentRollTotal-1] = false;
+            }
+            selectedTiles[num-1] = !selectedTiles[num-1];
+        } else {
+            // Check if it's highlighted as an option before clicking
+            if (!getValidPickableTilesList().includes(num)) return;
+            selectedTiles[num-1] = !selectedTiles[num-1];
+        }
+    } else {
+        if (!selectedTiles[num-1] && !getValidPickableTilesList().includes(num)) {
+            return; 
+        }
+        selectedTiles[num-1] = !selectedTiles[num-1];
+    }
+
+    buildTilesUI();
+    validateMathSelection();
+    updateDashboard();
+}
+
+function processDiceRoll() {
+    if (gameOver) return;
+    hasRolled = true;
+    
+    const d1El = document.getElementById('htmlDice1');
+    const d2El = document.getElementById('htmlDice2');
+    
+    let frames = 0;
+    const maxFrames = 12;
+    
+    const interval = setInterval(() => {
+        frames++;
+        setDiceFace('htmlDice1', Math.floor(Math.random() * 6) + 1);
+        setDiceFace('htmlDice2', Math.floor(Math.random() * 6) + 1);
+        
+        d1El.style.transform = `rotate(${Math.random() * 20 - 10}deg) scale(1.05)`;
+        d2El.style.transform = `rotate(${Math.random() * 20 - 10}deg) scale(1.05)`;
+        
+        if (frames >= maxFrames) {
+            clearInterval(interval);
+            d1El.style.transform = 'none';
+            d2El.style.transform = 'none';
+            
+            let singleDieAllowed = true;
+            for (let i = 6; i < totalTilesCount; i++) {
+                if (!tileStates[i]) {
+                    singleDieAllowed = false;
+                    break;
+                }
+            }
+            
+            die1Value = Math.floor(Math.random() * 6) + 1;
+            die2Value = Math.floor(Math.random() * 6) + 1;
+            
+            setDiceFace('htmlDice1', die1Value);
+            if (singleDieAllowed) {
+                setDiceFace('htmlDice2', '-');
+                secondDieActive = false;
+                currentRollTotal = die1Value;
+            } else {
+                setDiceFace('htmlDice2', die2Value);
+                secondDieActive = true;
+                currentRollTotal = die1Value + die2Value;
+            }
+            
+            selectedTiles.fill(false);
+            buildTilesUI();
+            
+            if (!isAnyMovePossible()) {
+                document.getElementById('status').innerHTML = `No legal options available! Turn Over.`;
+                setTimeout(finalizeTurnChange, 2200);
+            } else {
+                if (playerMode === 1 && turn === 'P2') {
+                    setTimeout(executeAiTurnBrain, 1000);
+                } else {
+                    validateMathSelection();
+                }
+            }
+        }
+    }, 60);
+}
+
+function isAnyMovePossible() {
+    if (rulesetMode === 'general') {
+        if (currentRollTotal <= totalTilesCount && !tileStates[currentRollTotal - 1]) return true;
+        if (secondDieActive) {
+            if (die1Value === die2Value) {
+                return !tileStates[die1Value - 1] && false; 
+            }
+            return !tileStates[die1Value - 1] && !tileStates[die2Value - 1];
+        } else {
+            return !tileStates[die1Value - 1];
+        }
+    } else {
+        let openItems = [];
+        for (let i = 0; i < totalTilesCount; i++) {
+            if (!tileStates[i]) openItems.push(i + 1);
+        }
+        function solve(arr, tgt) {
+            if (tgt === 0) return true;
+            if (tgt < 0 || arr.length === 0) return false;
+            return solve(arr.slice(1), tgt - arr[0]) || solve(arr.slice(1), tgt);
+        }
+        return solve(openItems, currentRollTotal);
+    }
+}
+
+function validateMathSelection() {
+    let currentSum = 0;
+    let selectedIndices = [];
+    
+    for (let i = 0; i < totalTilesCount; i++) {
+        if (selectedTiles[i]) {
+            currentSum += (i + 1);
+            selectedIndices.push(i + 1);
+        }
+    }
+    
+    const statusEl = document.getElementById('status');
+    const confirmBtn = document.getElementById('confirmBtn');
+    
+    if (rulesetMode === 'general') {
+        let isTotalSelected = (selectedIndices.length === 1 && selectedIndices[0] === currentRollTotal);
+        let isFacesSelected = false;
+        if (secondDieActive) {
+            isFacesSelected = (selectedIndices.length === 2 && selectedIndices.includes(die1Value) && selectedIndices.includes(die2Value));
+        } else {
+            isFacesSelected = (selectedIndices.length === 1 && selectedIndices.includes(die1Value));
+        }
+        
+        if (isTotalSelected || isFacesSelected) {
+            statusEl.innerHTML = `Selection validated! Press <span style="color:#23cc71">Confirm Tiles</span>.`;
+            confirmBtn.disabled = false;
+        } else {
+            let targetsText = secondDieActive ? `[${die1Value} & ${die2Value}] OR total [${currentRollTotal}]` : `[${die1Value}]`;
+            statusEl.innerHTML = `Select items matching: ${targetsText}`;
+            confirmBtn.disabled = true;
+        }
+    } else {
+        if (currentSum === currentRollTotal) {
+            statusEl.innerHTML = `Sum matches exact! Press <span style="color:#23cc71">Confirm Tiles</span>.`;
+            confirmBtn.disabled = false;
+        } else {
+            let diff = currentRollTotal - currentSum;
+            statusEl.innerHTML = `Target: <b>${currentRollTotal}</b> | Current: <b>${currentSum}</b> (${diff > 0 ? 'Need ' + diff : 'Over by ' + Math.abs(diff)})`;
+            confirmBtn.disabled = true;
+        }
+    }
+}
+
+function submitSelection() {
+    for (let i = 0; i < totalTilesCount; i++) {
+        if (selectedTiles[i]) {
+            tileStates[i] = true;
+            selectedTiles[i] = false;
+        }
+    }
+    
+    hasRolled = false;
+    document.getElementById('confirmBtn').disabled = true;
+    buildTilesUI();
+    
+    if (tileStates.every(state => state === true)) {
+        document.getElementById('status').innerHTML = `<span style="color:#6bff6b;">Perfect Shut Game Completed!</span>`;
+        setTimeout(() => { finalizeTurnChange(true); }, 1500);
+    } else {
+        updateDashboard();
+        setTimeout(processDiceRoll, 800);
+    }
+}
+
+function calculateCurrentScore() {
+    let score = 0;
+    for (let i = 0; i < totalTilesCount; i++) {
+        if (tileStates[i]) score += (i + 1);
+    }
+    return score;
+}
+
+function finalizeTurnChange(perfectClear = false) {
+    let turnScore = perfectClear ? 78 : calculateCurrentScore();
+    
+    if (turn === 'P1') {
+        p1FinalScore = turnScore;
+        
+        turn = 'P2';
+        hasRolled = false;
+        currentRollTotal = 0;
+        tileStates.fill(false);
+        selectedTiles.fill(false);
+        
+        setDiceFace('htmlDice1', 1);
+        setDiceFace('htmlDice2', 1);
+        
+        updateThemeColors();
+        buildTilesUI();
+        updateDashboard();
+        
+        setTimeout(processDiceRoll, 1200);
+    } else {
+        p2FinalScore = turnScore;
+        handleWinState();
+    }
+}
+
+function handleWinState() {
+    gameOver = true;
+    hasRolled = true;
+    document.getElementById('confirmBtn').disabled = true;
+    
+    let p1Name = document.getElementById('p1Name').textContent.trim();
+    let p2Name = document.getElementById('p2Name').textContent.trim();
+    let message = "";
+    
+    if (p1FinalScore > p2FinalScore) {
+        message = `🏆 ${p1Name} wins with a higher score of ${p1FinalScore}!`;
+    } else if (p2FinalScore > p1FinalScore) {
+        message = `🏆 ${p2Name} wins with a higher score of ${p2FinalScore}!`;
+    } else {
+        message = `🤝 It's a draw at ${p1FinalScore} points each!`;
+    }
+    
+    document.getElementById('status').innerHTML = `<span style="color:#ffd700; font-size:18px;">${message}</span>`;
+    updateDashboard();
+}
+
+function updateDashboard() {
+    let p1Name = document.getElementById('p1Name').textContent.trim();
+    let p2Name = document.getElementById('p2Name').textContent.trim();
+    let activeName = (turn === 'P1') ? p1Name : p2Name;
+    
+    const p1Block = document.getElementById('p1Block');
+    const p2Block = document.getElementById('p2Block');
+    
+    let p1Current = p1FinalScore !== null ? p1FinalScore : (turn === 'P1' ? calculateCurrentScore() : 0);
+    let p2Current = p2FinalScore !== null ? p2FinalScore : (turn === 'P2' ? calculateCurrentScore() : 0);
+    
+    document.getElementById('p1ScoreDisplay').textContent = `Score: ${p1Current}`;
+    document.getElementById('p2ScoreDisplay').textContent = `Score: ${p2Current}`;
+    
+    if (gameOver) return;
+
+    if (turn === 'P1') {
+        p1Block.classList.add('active-turn');
+        p2Block.classList.remove('active-turn');
+    } else {
+        p2Block.classList.add('active-turn');
+        p1Block.classList.remove('active-turn');
+    }
+    
+    if (playerMode === 1 && turn === 'P2') {
+        document.getElementById('status').innerHTML = `🤖 AI Bot is thinking...`;
+    } else {
+        document.getElementById('status').innerHTML = `Turn: <b>${activeName}</b> ${hasRolled ? '| Select tiles below' : '| Auto-rolling...'}`;
+    }
+}
+
+function executeAiTurnBrain() {
+    if (rulesetMode === 'general') {
+        if (currentRollTotal <= totalTilesCount && !tileStates[currentRollTotal - 1]) {
+            selectedTiles[currentRollTotal - 1] = true;
+        } else {
+            selectedTiles[die1Value - 1] = true;
+            if (secondDieActive) selectedTiles[die2Value - 1] = true;
+        }
+        buildTilesUI();
+        setTimeout(submitSelection, 1200);
+    } else {
+        let openItems = [];
+        for (let i = 0; i < totalTilesCount; i++) {
+            if (!tileStates[i]) openItems.push(i + 1);
+        }
+        
+        let masterCombos = [];
+        function gatherAll(arr, tgt, path = []) {
+            let sum = path.reduce((a,b) => a + b, 0);
+            if (sum === tgt) masterCombos.push(path);
+            if (sum >= tgt) return;
+            for (let i = 0; i < arr.length; i++) {
+                gatherAll(arr.slice(i + 1), tgt, path.concat([arr[i]]));
+            }
+        }
+        gatherAll(openItems, currentRollTotal);
+        
+        if (masterCombos.length > 0) {
+            masterCombos.sort((a, b) => Math.min(...a) - Math.min(...b));
+            let bestSelection = masterCombos[0];
+            
+            bestSelection.forEach(num => {
+                selectedTiles[num - 1] = true;
+            });
+            
+            buildTilesUI();
+            setTimeout(submitSelection, 1200);
+        }
+    }
+}
+
+document.getElementById('p1Colour').addEventListener('input', () => updateThemeColors());
+document.getElementById('p2Colour').addEventListener('input', () => updateThemeColors());
+
+showMenu();
+</script>
+</body>
+</html>
