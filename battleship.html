@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rift Sea Battle</title>
+<style>
+@import url("https://fonts.googleapis.com/css?family=Lato:400,700");
+
+:root {
+    --p1-color: #4c6fff;
+    --p2-color: #9b5cff;
+    --current-turn-color: #1a2e40;
+}
+
+body {
+    margin: 0;
+    font-family: 'Lato', Arial, sans-serif;
+    background: var(--current-turn-color);
+    color: white;
+    text-align: center;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: background 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+}
+
+h1 { 
+    margin: 15px 0 5px 0; 
+    font-size: 24px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+
+/* MENU OVERLAY */
+#menu {
+    position: fixed;
+    inset: 0;
+    background: #0b111e;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+}
+.menuBox {
+    background: #111928;
+    padding: 30px;
+    border-radius: 15px;
+    border: 3px solid #4c6fff;
+    box-shadow: 0 0 25px rgba(76,108,255,0.35);
+    text-align: center;
+    width: 100%;
+    max-width: 400px;
+    box-sizing: border-box;
+}
+.menuBox h1 {
+    color: #4c6fff;
+    margin-bottom: 5px;
+}
+.menuBox p.menu-subtitle {
+    color: #a0aec0;
+    margin: 0 0 20px 0;
+    font-size: 14px;
+}
+
+.menu-controls {
+    margin: 20px 0 25px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+.control-row {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+    width: 100%;
+}
+.control-label {
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    text-align: left;
+}
+.slider-container {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 15px;
+}
+.slider-value {
+    color: #ffc;
+    font-size: 18px;
+    font-weight: bold;
+    min-width: 50px;
+    text-align: left;
+}
+.menu-controls input[type="range"] {
+    flex-grow: 1;
+    height: 8px;
+    border-radius: 5px;
+    cursor: pointer;
+    accent-color: #4c6fff;
+}
+
+/* BIG SUNK SHIP BANNER OVERLAY */
+#sunkOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(11, 17, 30, 0.85);
+    backdrop-filter: blur(8px);
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease-out;
+}
+.sunk-card {
+    background: linear-gradient(135deg, #1e1b4b, #31100f);
+    border: 4px solid #ef4444;
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 0 50px rgba(239, 68, 68, 0.6);
+    text-align: center;
+    transform: scale(0.9);
+    animation: popUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+.sunk-card h2 {
+    font-size: 36px;
+    margin: 0 0 10px 0;
+    color: #ef4444;
+    text-shadow: 0 0 15px rgba(239, 68, 68, 0.8);
+    letter-spacing: 2px;
+}
+.sunk-card p {
+    font-size: 18px;
+    margin: 0;
+    color: #f3f4f6;
+    font-weight: bold;
+}
+
+/* BUTTONS */
+button {
+    background: linear-gradient(135deg, #141b2d, #1f2942);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    padding: 10px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 15px;
+    transition: 0.2s;
+    margin: 5px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    width: 90%;
+}
+button:hover:not(:disabled) {
+    transform: scale(1.03);
+    border-color: white;
+}
+button:disabled {
+    background: #2d3748;
+    color: #718096;
+    cursor: not-allowed;
+    border-color: rgba(255,255,255,0.05);
+}
+
+.btn-row {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin: 5px 0;
+    width: auto;
+}
+.btn-row button {
+    width: auto;
+    padding: 8px 16px;
+}
+
+/* CONTROLS & DASHBOARD */
+.controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 10px;
+    border-radius: 12px;
+    width: 95%;
+    max-width: 540px;
+    margin: 5px auto;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(5px);
+    box-sizing: border-box;
+}
+.player-config {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    height: 35px;
+    padding: 0 10px;
+    box-sizing: border-box;
+    border-radius: 8px;
+}
+.player-config.active-turn {
+    background: rgba(255, 255, 255, 0.1);
+}
+.player-name {
+    color: #fff;
+    font-size: 16px;
+    width: 140px;
+    text-align: left;
+    outline: none;
+    cursor: text;
+    border-bottom: 1px dashed rgba(255,255,255,0.4);
+    white-space: nowrap;
+    overflow: hidden;
+}
+input[type="color"] {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    width: 35px;
+    height: 30px;
+}
+.score-box {
+    font-weight: bold;
+    font-size: 16px;
+    color: #ffc;
+    width: 140px;
+    text-align: right;
+}
+
+/* FLEX PLAY CONTAINER LAYOUT */
+#gameContainer {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: center;
+    gap: 15px;
+    margin: 10px auto;
+    width: 95%;
+    max-width: 850px;
+    box-sizing: border-box;
+}
+
+#boxWrapper {
+    background: #111e2e;
+    padding: 12px;
+    border-radius: 16px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.6);
+    flex: 2;
+    max-width: 460px;
+    box-sizing: border-box;
+    border: 2px solid rgba(255,255,255,0.1);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.felt-board {
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+/* SIDE TRACKERS */
+.captured-box {
+    background: #111e2e;
+    border: 2px solid #4c6fff;
+    border-radius: 12px;
+    padding: 10px;
+    flex: 1;
+    min-width: 100px;
+    max-width: 130px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+    box-sizing: border-box;
+}
+.captured-box h3 {
+    font-size: 12px;
+    margin: 0 0 10px 0;
+    color: #ffc;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    width: 100%;
+    padding-bottom: 4px;
+}
+.captured-fleet {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+    align-items: center;
+}
+.lost-ship-token {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid #ef4444;
+    color: #f87171;
+    font-size: 10px;
+    padding: 4px 6px;
+    border-radius: 4px;
+    font-weight: bold;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    box-sizing: border-box;
+}
+
+#statusBox {
+    background: rgba(0, 0, 0, 0.7);
+    border: 2px solid rgba(255,255,255,0.2);
+    padding: 8px 15px;
+    border-radius: 10px;
+    font-size: 14px;
+    width: 100%;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    margin-bottom: 10px;
+    box-sizing: border-box;
+    font-weight: bold;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* COMPACT GRID CONFIGURATION */
+.grid-title {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+    color: #a0aec0;
+    font-weight: bold;
+}
+.battle-grid {
+    display: grid;
+    gap: 4px;
+    width: 100%;
+    max-width: 360px; /* Constrains the grid width so cells don't get too tall */
+    margin: 0 auto 12px auto;
+}
+.cell {
+    aspect-ratio: 1;
+    background: #1e293b;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 4px;
+    cursor: pointer;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+/* CELL STATES & HIGHLIGHTS */
+.cell.targetable {
+    border: 1px solid #00f0ff;
+    box-shadow: inset 0 0 4px rgba(0, 240, 255, 0.2);
+}
+.cell.targetable:hover {
+    background: rgba(0, 240, 255, 0.15);
+    transform: scale(1.03);
+}
+.cell.selected {
+    border: 2px solid #ffd700;
+    background: rgba(255, 215, 0, 0.2);
+}
+.cell.miss {
+    background: #2a3342;
+}
+.cell.miss::after {
+    content: "•";
+    color: #38bdf8;
+    font-size: 22px;
+}
+.cell.hit {
+    background: #ef4444;
+    border-color: #f87171;
+    box-shadow: inset 0 0 10px #7f1d1d, 0 0 8px rgba(239, 68, 68, 0.5);
+}
+.cell.hit::after {
+    content: "💥";
+    font-size: 11px;
+}
+
+.cell.animate-burst {
+    animation: explosionBurst 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) 1;
+}
+.cell.animate-splash {
+    animation: waterSplash 0.5s ease-out 1;
+}
+
+.cell.ship-placed {
+    background: #3b82f6;
+    border: 2px solid #93c5fd;
+    border-radius: 4px;
+}
+.cell.ship-hull-block {
+    background: #475569;
+    border: 2px solid #cbd5e1;
+    border-radius: 4px;
+}
+
+.action-row {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    max-width: 360px;
+}
+.action-row button {
+    flex: 1;
+    margin: 0;
+    padding: 8px 12px;
+    font-size: 14px;
+}
+#confirmBtn {
+    background: linear-gradient(135deg, #d97706, #b45309);
+}
+#undoBtn {
+    background: linear-gradient(135deg, #4b5563, #374151);
+}
+
+@keyframes explosionBurst {
+    0% { transform: scale(0.6); background: #facc15; }
+    50% { transform: scale(1.2); background: #f97316; }
+    100% { transform: scale(1); }
+}
+@keyframes waterSplash {
+    0% { transform: scale(0.8); }
+    50% { background: #0ea5e9; }
+    100% { transform: scale(1); }
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes popUp { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+@media (max-width: 640px) {
+    #gameContainer { flex-direction: column; align-items: center; }
+    .captured-box { min-height: auto; width: 100%; max-width: 460px; flex-direction: row; }
+    .captured-box h3 { width: auto; border-bottom: none; margin-bottom: 0; padding-bottom: 0; margin-right: 12px; }
+    .captured-fleet { flex-direction: row; justify-content: flex-start; flex-wrap: wrap; }
+    .lost-ship-token { width: auto; }
+}
+</style>
+</head>
+<body>
+
+<div id="sunkOverlay">
+    <div class="sunk-card">
+        <h2>💥 VESSEL SUNK!</h2>
+        <p id="sunkOverlayText">A warship has been completely destroyed!</p>
+    </div>
+</div>
+
+<div id="menu">
+  <div class="menuBox">
+    <h1>⚔️ Rift Sea Battle</h1>
+    <p class="menu-subtitle">Single Player Tactical Simulator</p>
+    
+    <div class="menu-controls">
+      <div class="control-row">
+        <div class="control-label">Grid Matrix Dimensions:</div>
+        <div class="slider-container">
+          <div class="slider-value" id="gridVal">7x7</div>
+          <input type="range" min="5" max="10" value="7" id="gridSizeSlider" oninput="syncSliderValues()" />
+        </div>
+      </div>
+      
+      <div class="control-row">
+        <div class="control-label">Total Ships Allocated:</div>
+        <div class="slider-container">
+          <div class="slider-value" id="shipVal">3</div>
+          <input type="range" min="2" max="5" value="3" id="shipCountSlider" oninput="syncSliderValues()" />
+        </div>
+      </div>
+    </div>
+
+    <button onclick="setupPlacementPhase()">Engage Fleet Command</button>
+  </div>
+</div>
+
+<h1>⚔️ Rift Sea Battle</h1>
+
+<div class="btn-row">
+  <button onclick="showMenu()">Menu</button>
+  <button onclick="setupPlacementPhase()">Reset</button>
+</div>
+
+<div class="controls">
+  <div class="player-config active-turn" id="p1Block">
+    <span class="player-name" contenteditable="true" id="p1Name" oninput="updateDashboard()">Fleet Alpha</span>
+    <input type="color" value="#4c6fff" id="p1Colour" />
+    <span class="score-box" id="p1ScoreDisplay">Vessels: 0/0</span>
+  </div>
+  <div class="player-config" id="p2Block">
+    <span class="player-name" id="p2Name">Rift AI</span>
+    <input type="color" value="#9b5cff" id="p2Colour" />
+    <span class="score-box" id="p2ScoreDisplay">Vessels: 0/0</span>
+  </div>
+</div>
+
+<div id="gameContainer">
+    <div class="captured-box">
+        <h3 id="p1LostTitle">Lost Alpha</h3>
+        <div id="p1LostFleet" class="captured-fleet"></div>
+    </div>
+
+    <div id="boxWrapper">
+        <div class="felt-board">
+            <div id="statusBox"><span id="status">Deploying Fleets...</span></div>
+
+            <div class="grid-title" id="gridTitleText">Tactical Arena Matrix</div>
+            <div class="battle-grid" id="boardUI"></div>
+
+            <div class="action-row">
+                <button id="undoBtn" onclick="undoLastPlacement()" style="display:none;">Undo Placement</button>
+                <button id="confirmBtn" onclick="firePayloadStrike()" disabled>Fire Strike</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="captured-box">
+        <h3>Lost AI</h3>
+        <div id="p2LostFleet" class="captured-fleet"></div>
+    </div>
+</div>
+
+<script>
+let turn = 'P1';
+let gamePhase = 'placement';
+let gridSize = 7;
+let maxShipsCount = 3;
+
+let gameOver = false;
+let selectedCoordinate = null;
+let placementHorizontal = true;
+let currentPlacementShipIndex = 0;
+let lastHoveredIndex = null;
+let targetCellToAnimate = null; 
+
+let shipSizes = [];
+let placementHistory = []; 
+
+let shipsData = { P1: [], P2: [] };
+let gridMatrices = { P1: [], P2: [] };
+let colours = { P1: "#4c6fff", P2: "#9b5cff" };
+
+function showMenu() {
+    document.getElementById("menu").style.display = "flex";
+}
+
+function syncSliderValues() {
+    const gSlider = document.getElementById('gridSizeSlider');
+    const sSlider = document.getElementById('shipCountSlider');
+    let gVal = parseInt(gSlider.value);
+    let sVal = parseInt(sSlider.value);
+    document.getElementById('gridVal').textContent = `${gVal}x${gVal}`;
+    document.getElementById('shipVal').textContent = sVal;
+}
+
+function setupPlacementPhase() {
+    document.getElementById("menu").style.display = "none";
+    document.getElementById("sunkOverlay").style.display = "none";
+    
+    gridSize = parseInt(document.getElementById('gridSizeSlider').value);
+    maxShipsCount = parseInt(document.getElementById('shipCountSlider').value);
+    
+    shipSizes = [];
+    for(let i = 0; i < maxShipsCount; i++) {
+        shipSizes.push(Math.max(2, 5 - i));
+    }
+    
+    turn = 'P1';
+    gamePhase = 'placement';
+    gameOver = false;
+    selectedCoordinate = null;
+    currentPlacementShipIndex = 0;
+    placementHorizontal = true;
+    placementHistory = [];
+    targetCellToAnimate = null;
+    
+    shipsData.P1 = shipSizes.map(size => ({ size: size, hits: 0, sunk: false }));
+    shipsData.P2 = shipSizes.map(size => ({ size: size, hits: 0, sunk: false }));
+    
+    gridMatrices.P1 = Array(gridSize * gridSize).fill(0);
+    gridMatrices.P2 = Array(gridSize * gridSize).fill(0);
+    
+    const container = document.getElementById('boardUI');
+    container.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+
+    document.getElementById('confirmBtn').disabled = true;
+    document.getElementById('confirmBtn').style.display = 'none';
+    document.getElementById('undoBtn').style.display = 'inline-block';
+    updateUndoButtonState();
+    
+    updateThemeColors();
+    buildGridUI();
+    updateDashboard();
+}
+
+window.addEventListener('keydown', function(e) {
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Spacebar', ' ', 'Tab'].includes(e.key)) {
+        e.preventDefault();
+    }
+
+    if (gamePhase !== 'placement') return;
+    
+    if (e.key === ' ') {
+        placementHorizontal = !placementHorizontal;
+        if (lastHoveredIndex !== null) {
+            buildGridUI();
+            highlightPlacementVector(lastHoveredIndex, shipSizes[currentPlacementShipIndex], true);
+        } else {
+            buildGridUI();
+        }
+        updateDashboard();
+    }
+}, { passive: false });
+
+function getCenteredPlacementIndices(hoveredIndex, size) {
+    let row = Math.floor(hoveredIndex / gridSize);
+    let col = hoveredIndex % gridSize;
+    let offset = Math.floor(size / 2);
+    
+    let targetIndices = [];
+    let isValid = true;
+    let startRow = row - (placementHorizontal ? 0 : offset);
+    let startCol = col - (placementHorizontal ? offset : 0);
+    
+    for (let i = 0; i < size; i++) {
+        let r = startRow + (placementHorizontal ? 0 : i);
+        let c = startCol + (placementHorizontal ? i : 0);
+        
+        if (r < 0 || r >= gridSize || c < 0 || c >= gridSize) {
+            isValid = false;
+            break;
+        }
+        targetIndices.push(r * gridSize + c);
+    }
+    
+    return { targetIndices, isValid };
+}
+
+function buildGridUI() {
+    const container = document.getElementById('boardUI');
+    container.innerHTML = '';
+    
+    if (gamePhase === 'placement') {
+        let matrix = gridMatrices['P1'];
+        let currentShipSize = shipSizes[currentPlacementShipIndex];
+        
+        for (let i = 0; i < gridSize * gridSize; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            
+            if (matrix[i] > 0) {
+                cell.classList.add('ship-placed');
+            }
+            
+            cell.onmouseenter = () => {
+                lastHoveredIndex = i;
+                highlightPlacementVector(i, currentShipSize, true);
+            };
+            cell.onmouseleave = () => {
+                lastHoveredIndex = null;
+                highlightPlacementVector(i, currentShipSize, false);
+            };
+            cell.onclick = () => handleVesselDeployment(i, currentShipSize);
+            
+            container.appendChild(cell);
+        }
+    } else {
+        let targetMatrix = gridMatrices['P2'];
+        let ownMatrix = gridMatrices['P1'];
+        
+        for (let i = 0; i < gridSize * gridSize; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            
+            let state = (turn === 'P1') ? targetMatrix[i] : ownMatrix[i];
+            
+            if (state === 'miss') {
+                cell.classList.add('miss');
+                if (targetCellToAnimate === i) cell.classList.add('animate-splash');
+            } else if (state === 'hit') {
+                cell.classList.add('hit');
+                if (targetCellToAnimate === i) cell.classList.add('animate-burst');
+            } else {
+                if (turn === 'P2') {
+                    if (state > 0) {
+                        cell.classList.add('ship-hull-block');
+                    }
+                    if (selectedCoordinate === i) {
+                        cell.classList.add('selected');
+                    }
+                } else {
+                    if (!gameOver) {
+                        if (selectedCoordinate === i) cell.classList.add('selected');
+                        else cell.classList.add('targetable');
+                    }
+                }
+            }
+            
+            cell.onclick = () => handleCombatSelection(i);
+            container.appendChild(cell);
+        }
+    }
+}
+
+function highlightPlacementVector(originIndex, size, isEntering) {
+    const cells = document.getElementById('boardUI').children;
+    let { targetIndices, isValid } = getCenteredPlacementIndices(originIndex, size);
+    
+    targetIndices.forEach(idx => {
+        if (idx >= 0 && idx < cells.length) {
+            if (isEntering) {
+                let isOccupied = gridMatrices['P1'][idx] !== 0;
+                cells[idx].style.background = (isValid && !isOccupied) ? 'rgba(34, 197, 94, 0.4)' : 'rgba(239, 68, 68, 0.4)';
+            } else {
+                cells[idx].style.background = '';
+            }
+        }
+    });
+}
+
+function handleVesselDeployment(originIndex, size) {
+    let matrix = gridMatrices['P1'];
+    let { targetIndices, isValid } = getCenteredPlacementIndices(originIndex, size);
+    
+    if (!isValid) return;
+    
+    for (let idx of targetIndices) {
+        if (matrix[idx] !== 0) return;
+    }
+    
+    targetIndices.forEach(idx => {
+        matrix[idx] = currentPlacementShipIndex + 1;
+    });
+    
+    placementHistory.push(targetIndices);
+    currentPlacementShipIndex++;
+    updateUndoButtonState();
+    
+    if (currentPlacementShipIndex >= shipSizes.length) {
+        turn = 'P2';
+        currentPlacementShipIndex = 0;
+        autoPlaceVesselsAI();
+        initiateBattlePhase();
+    } else {
+        buildGridUI();
+        updateDashboard();
+    }
+}
+
+function undoLastPlacement() {
+    if (placementHistory.length === 0 || gamePhase !== 'placement') return;
+    
+    let matrix = gridMatrices['P1'];
+    let lastPlacedIndices = placementHistory.pop();
+    
+    lastPlacedIndices.forEach(idx => {
+        matrix[idx] = 0;
+    });
+    
+    currentPlacementShipIndex--;
+    updateUndoButtonState();
+    buildGridUI();
+    updateDashboard();
+}
+
+function updateUndoButtonState() {
+    document.getElementById('undoBtn').disabled = (placementHistory.length === 0);
+}
+
+function autoPlaceVesselsAI() {
+    let matrix = gridMatrices['P2'];
+    shipSizes.forEach((size, index) => {
+        let placed = false;
+        while (!placed) {
+            let isHorizontal = Math.random() < 0.5;
+            let row = Math.floor(Math.random() * gridSize);
+            let col = Math.floor(Math.random() * (gridSize - (isHorizontal ? size : 0)));
+            if (!isHorizontal) row = Math.floor(Math.random() * (gridSize - size));
+            
+            let targetCells = [];
+            let clear = true;
+            
+            for(let i=0; i<size; i++) {
+                let r = row + (isHorizontal ? 0 : i);
+                let c = col + (isHorizontal ? i : 0);
+                let cellIndex = r * gridSize + c;
+                if(matrix[cellIndex] !== 0) { clear = false; break; }
+                targetCells.push(cellIndex);
+            }
+            
+            if(clear) {
+                targetCells.forEach(cellIdx => { matrix[cellIdx] = index + 1; });
+                placed = true;
+            }
+        }
+    });
+}
+
+function initiateBattlePhase() {
+    gamePhase = 'battle';
+    turn = 'P1';
+    selectedCoordinate = null;
+    
+    document.getElementById('undoBtn').style.display = 'none';
+    document.getElementById('confirmBtn').style.display = 'inline-block';
+    
+    updateThemeColors();
+    buildGridUI();
+    updateDashboard();
+}
+
+function handleCombatSelection(index) {
+    if (gameOver || gamePhase !== 'battle' || turn === 'P2') return;
+    
+    let state = gridMatrices['P2'][index];
+    if (state === 'miss' || state === 'hit') return;
+
+    selectedCoordinate = (selectedCoordinate === index) ? null : index;
+    
+    buildGridUI();
+    validateFiringState();
+}
+
+function validateFiringState() {
+    const btn = document.getElementById('confirmBtn');
+    if (selectedCoordinate !== null) {
+        btn.disabled = false;
+        document.getElementById('status').innerHTML = `Target Locked! Ready to <span style="color:#23cc71">Fire Strike</span>.`;
+    } else {
+        btn.disabled = true;
+        document.getElementById('status').innerHTML = `Select an open target cell location box inside the enemy matrix map area.`;
+    }
+}
+
+function firePayloadStrike() {
+    document.getElementById('confirmBtn').disabled = true;
+    let currentAttacker = turn;
+    let opponent = (turn === 'P1') ? 'P2' : 'P1';
+    let opponentMatrix = gridMatrices[opponent];
+    let opponentShips = shipsData[opponent];
+    
+    targetCellToAnimate = selectedCoordinate; 
+    let targetVal = opponentMatrix[selectedCoordinate];
+    let isAHit = false;
+    let newlySunkShipSize = null;
+
+    if (targetVal > 0) {
+        opponentMatrix[selectedCoordinate] = 'hit';
+        let shipIndex = targetVal - 1;
+        opponentShips[shipIndex].hits++;
+        isAHit = true;
+        
+        if (opponentShips[shipIndex].hits === opponentShips[shipIndex].size && !opponentShips[shipIndex].sunk) {
+            opponentShips[shipIndex].sunk = true;
+            newlySunkShipSize = opponentShips[shipIndex].size;
+        }
+    } else {
+        opponentMatrix[selectedCoordinate] = 'miss';
+    }
+    
+    selectedCoordinate = null;
+    buildGridUI();
+    
+    let totalStructuralIntegrity = opponentShips.reduce((acc, s) => acc + (s.size - s.hits), 0);
+    if (totalStructuralIntegrity === 0) {
+        handleWinState();
+        return;
+    }
+    
+    if (isAHit) {
+        let attackerName = (currentAttacker === 'P1') ? document.getElementById('p1Name').textContent.trim() : 'Rift AI';
+        
+        if (newlySunkShipSize !== null) {
+            let victimName = (currentAttacker === 'P1') ? 'Rift AI' : document.getElementById('p1Name').textContent.trim();
+            document.getElementById('sunkOverlayText').innerHTML = `<b>${attackerName}</b> completely <b>SUNK</b> ${victimName}'s size ${newlySunkShipSize} vessel!`;
+            document.getElementById('sunkOverlay').style.display = 'flex';
+            
+            setTimeout(() => {
+                document.getElementById('sunkOverlay').style.display = 'none';
+                targetCellToAnimate = null; 
+                if (turn === 'P2' && !gameOver) {
+                    executeAiTurnBrain();
+                } else {
+                    buildGridUI();
+                    updateDashboard();
+                }
+            }, 2200);
+        } else {
+            document.getElementById('status').innerHTML = `💥 <span style="color:#23cc71">DIRECT HIT!</span> ${attackerName} earns a bonus strike!`;
+            setTimeout(() => {
+                targetCellToAnimate = null; 
+                if (turn === 'P2' && !gameOver) {
+                    executeAiTurnBrain();
+                } else {
+                    buildGridUI();
+                    updateDashboard();
+                }
+            }, 2200);
+        }
+    } else {
+        document.getElementById('status').textContent = "Impact missed! Changing active command turns...";
+        setTimeout(() => {
+            targetCellToAnimate = null;
+            switchTurnSequence();
+        }, 2000);
+    }
+}
+
+function switchTurnSequence() {
+    turn = (turn === 'P1') ? 'P2' : 'P1';
+    selectedCoordinate = null;
+    
+    updateThemeColors();
+    buildGridUI();
+    updateDashboard();
+    
+    if (turn === 'P2' && !gameOver) {
+        setTimeout(executeAiTurnBrain, 1500);
+    }
+}
+
+function executeAiTurnBrain() {
+    if(gameOver) return;
+    
+    let targetMatrix = gridMatrices['P1'];
+    let validIndices = [];
+    
+    for (let i = 0; i < targetMatrix.length; i++) {
+        if (targetMatrix[i] !== 'miss' && targetMatrix[i] !== 'hit') {
+            validIndices.push(i);
+        }
+    }
+    
+    if (validIndices.length > 0) {
+        let randIdx = Math.floor(Math.random() * validIndices.length);
+        selectedCoordinate = validIndices[randIdx];
+    }
+    
+    document.getElementById('status').innerHTML = `🤖 AI Bot locking target coordinates...`;
+    buildGridUI();
+    
+    setTimeout(() => {
+        if(!gameOver) {
+            firePayloadStrike();
+        }
+    }, 1800);
+}
+
+function handleWinState() {
+    gameOver = true;
+    let p1Name = document.getElementById('p1Name').textContent.trim();
+    let victor = (turn === 'P1') ? p1Name : 'Rift AI';
+    
+    document.getElementById('status').innerHTML = `<span style="color:#ffd700; font-size:16px;">🏆 Total Victory! ${victor} decimated the enemy fleet!</span>`;
+    updateDashboard();
+}
+
+function updateThemeColors() {
+    colours.P1 = document.getElementById('p1Colour').value;
+    colours.P2 = document.getElementById('p2Colour').value;
+    
+    document.getElementById('p1Block').style.borderLeft = `4px solid ${colours.P1}`;
+    document.getElementById('p2Block').style.borderLeft = `4px solid ${colours.P2}`;
+    
+    document.body.style.background = (turn === 'P1') ? colours.P1 : colours.P2;
+}
+
+function updateDashboard() {
+    let p1Name = document.getElementById('p1Name').textContent.trim();
+    document.getElementById('p1LostTitle').textContent = `Lost ${p1Name.split(' ')[0]}`;
+    
+    let p1ActiveShips = shipsData.P1.filter(s => s.hits < s.size).length;
+    let p2ActiveShips = shipsData.P2.filter(s => s.hits < s.size).length;
+    
+    document.getElementById('p1ScoreDisplay').textContent = `Vessels: ${p1ActiveShips}/${maxShipsCount}`;
+    document.getElementById('p2ScoreDisplay').textContent = `Vessels: ${p2ActiveShips}/${maxShipsCount}`;
+    
+    const p1FleetBox = document.getElementById('p1LostFleet');
+    const p2FleetBox = document.getElementById('p2LostFleet');
+    p1FleetBox.innerHTML = '';
+    p2FleetBox.innerHTML = '';
+
+    shipsData.P1.forEach(ship => {
+        if (ship.sunk) {
+            let div = document.createElement('div');
+            div.className = 'lost-ship-token';
+            div.textContent = `Vessel (Size ${ship.size})`;
+            p1FleetBox.appendChild(div);
+        }
+    });
+
+    shipsData.P2.forEach(ship => {
+        if (ship.sunk) {
+            let div = document.createElement('div');
+            div.className = 'lost-ship-token';
+            div.textContent = `Vessel (Size ${ship.size})`;
+            p2FleetBox.appendChild(div);
+        }
+    });
+
+    const p1Block = document.getElementById('p1Block');
+    const p2Block = document.getElementById('p2Block');
+    
+    if (turn === 'P1') {
+        p1Block.classList.add('active-turn');
+        p2Block.classList.remove('active-turn');
+    } else {
+        p2Block.classList.add('active-turn');
+        p1Block.classList.remove('active-turn');
+    }
+    
+    if (gamePhase === 'placement') {
+        let currentSize = shipSizes[currentPlacementShipIndex];
+        document.getElementById('gridTitleText').textContent = `${p1Name} Deployment Map`;
+        document.getElementById('status').innerHTML = `🔧 <b>${p1Name}</b>: Deploy your size <b>${currentSize}</b> ship. <br><small style="color: #a0aec0;">Press [SPACEBAR] to rotate</small>`;
+    } else {
+        if (turn === 'P1') {
+            document.getElementById('gridTitleText').textContent = `${p1Name} Target Coordinates`;
+        } else {
+            document.getElementById('gridTitleText').textContent = `${p1Name} Defensive Layout`;
+        }
+        
+        if (gameOver) return;
+        
+        if (turn === 'P2') {
+            document.getElementById('status').innerHTML = `🤖 AI Bot calculating targeting algorithms...`;
+        } else {
+            validateFiringState();
+        }
+    }
+}
+
+document.getElementById('p1Colour').addEventListener('input', () => updateThemeColors());
+document.getElementById('p2Colour').addEventListener('input', () => updateThemeColors());
+
+syncSliderValues();
+showMenu();
+</script>
+</body>
+</html>
