@@ -1351,6 +1351,16 @@
             </div>
           </div>
         </div>
+         <div class="game-card" data-name="shutit">
+          <div class="glass-card-inner">
+            <div class="glass-layer"></div>
+            <button class="fav-btn" onclick="window.toggleFavorite('shutit', 'Shut The Box', 'shutit.html')">☆</button>
+            <div class="glass-content game-info">
+              <h3>Shut The Box</h3>
+              <button onclick="window.openGame('shutit.html','Shut The Box')">Play</button>
+            </div>
+          </div>
+        </div>
 
       </div>
     </section>
@@ -1468,7 +1478,7 @@
       snakesandladders: "board", nonogram: "puzzle", hangman: "word",
       simonsays: "arcade", checkers: "strategy", Utictactoe: "strategy",
       hexes: "strategy", sudoku: "puzzle", stack: "arcade", cookieclicker: "arcade",
-      crossyroad: "arcade", holdit: "arcade", ludo: "board", subway: "arcade"
+      crossyroad: "arcade", holdit: "arcade", ludo: "board", subway: "arcade", shutit: "board"
     };
 
     const controlsMap = {
@@ -1479,7 +1489,7 @@
       snakesandladders: "click", nonogram: "click", hangman: "keyboard",
       simonsays: "click", checkers: "click", Utictactoe: "click",
       hexes: "click", sudoku: "keyboard", stack: "space", cookieclicker: "click",
-      crossyroad: "arrows", holdit: "space", ludo: "click", subway: "arrows"
+      crossyroad: "arrows", holdit: "space", ludo: "click", subway: "arrows", shutit: "click"
     };
 
     const controlIconInfo = {
@@ -1584,7 +1594,7 @@
       { id: "holdit", name: "Hold It!", page: "holdit.html" },
       { id: "ludo", name: "Ludo", page: "ludo.html" },
       { id: "subway", name: "Subway Surfers", page: "subway.html" },
-      
+      { id: "shutit", name: "Shut The Box", page: "shutit.html" },
       
     ];
 
