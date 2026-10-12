@@ -5,978 +5,276 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rift Hub</title>
   <style>
-    /* THEME VARIABLES - DARK MODE (DEFAULT) */
-    :root {
-      --bg-main: #06070d;
-      --bg-card: rgba(255, 255, 255, 0.06);
-      --bg-solid: #0d0e15;
-      --text-main: #ffffff;
-      --text-muted: #94a3b8;
-      --accent: #3b82f6;
-      --accent-glow: rgba(59, 130, 246, 0.25);
-      --border-locked: rgba(239, 68, 68, 0.4);
-      --bg-locked: rgba(20, 20, 35, 0.45);
-      --banner-bg: rgba(30, 30, 55, 0.4);
-      --star-active: #ffb800;
-      --star-inactive: #64748b;
-      --input-bg: rgba(255, 255, 255, 0.05);
-      --input-text: #ffffff;
-      --glass-blur: blur(25px) saturate(210%);
-      --card-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
-      --glass-highlight: inset 0 1px 1px 0 rgba(255, 255, 255, 0.15);
-      --card-border: rgba(255, 255, 255, 0.08);
-    }
+/* THEME VARIABLES - DARK MODE (DEFAULT) */
+:root {
+  --bg-main: #06070d; --bg-card: rgba(255,255,255,0.06); --bg-solid: #0d0e15; --text-main: #ffffff; --text-muted: #94a3b8;
+  --accent: #3b82f6; --accent-glow: rgba(59,130,246,0.25); --border-locked: rgba(239,68,68,0.4); --bg-locked: rgba(20,20,35,0.45);
+  --banner-bg: rgba(30,30,55,0.4); --star-active: #ffb800; --star-inactive: #64748b; --input-bg: rgba(255,255,255,0.05); --input-text: #ffffff;
+  --glass-blur: blur(25px) saturate(210%); --card-shadow: 0 12px 40px rgba(0,0,0,0.6); --glass-highlight: inset 0 1px 1px 0 rgba(255,255,255,0.15);
+  --card-border: rgba(255,255,255,0.08);
+}
+/* PREMIUM SILVER & BLUE LIGHT MODE */
+body.light-theme {
+  --bg-main: #eef1f7; --bg-card: rgba(219,234,254,0.45); --bg-solid: rgba(255,255,255,0.8); --text-main: #0f172a; --text-muted: #475569;
+  --accent: #0066ff; --accent-glow: rgba(0,102,255,0.15); --border-locked: rgba(220,38,38,0.35); --bg-locked: rgba(241,245,249,0.5);
+  --banner-bg: rgba(255,255,255,0.6); --star-active: #f59e0b; --star-inactive: #94a3b8; --input-bg: rgba(0,0,0,0.05); --input-text: #0f172a;
+  --glass-blur: blur(25px) saturate(190%); --card-shadow: 0 16px 40px rgba(30,58,110,0.16), 0 3px 10px rgba(30,58,110,0.12);
+  --glass-highlight: inset 0 1px 1px 0 rgba(255,255,255,0.7); --card-border: rgba(0,0,0,0.08);
+}
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg-main); color: var(--text-main); transition: background 0.3s ease, color 0.3s ease; min-height: 100vh;
+  display: flex; flex-direction: column; justify-content: space-between; }
+body.light-theme { background: linear-gradient(160deg, #fbfcfe 0%, #eef1f8 45%, #dfe6f2 100%); background-attachment: fixed; }
+/* ANIMATED BACKGROUND */
+#bgCanvas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none;
+  -webkit-mask-image: linear-gradient(to right, #000 0%, rgba(0,0,0,0.55) 22%, rgba(0,0,0,0.55) 78%, #000 100%);
+  mask-image: linear-gradient(to right, #000 0%, rgba(0,0,0,0.55) 22%, rgba(0,0,0,0.55) 78%, #000 100%); }
+.glass-card-inner { background: rgba(8,10,20,0.55); }
+body.light-theme .glass-card-inner { background: rgba(255,255,255,0.45); }
+#loginScreen, #site, footer { position: relative; z-index: 1; }
+/* INNER CONTAINMENT MASK */
+.glass-card-inner { position: relative; width: 100%; height: 100%; border-radius: 24px; overflow: hidden; clip-path: inset(0 round 24px);
+  transform: translateZ(0); -webkit-transform: translateZ(0); isolation: isolate; }
+/* LIQUID GLASS LAYER */
+.glass-layer { position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1; background: var(--bg-card);
+  backdrop-filter: blur(30px) saturate(220%); -webkit-backdrop-filter: blur(30px) saturate(220%); pointer-events: none; }
+.glass-content { position: relative; z-index: 2; pointer-events: auto; }
+/* GLASS RIM */
+.glass-card-inner::before { content: ""; position: absolute; inset: 0; z-index: 1; border-radius: 24px; padding: 1.5px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.22) 45%, rgba(255,255,255,0.1) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; }
+body.light-theme .glass-card-inner::before { background: linear-gradient(180deg, rgba(59,130,246,0.6) 0%, rgba(59,130,246,0.25) 45%, rgba(59,130,246,0.12) 100%); }
+/* GLOSS EFFECT */
+.glass-card-inner::after { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(160deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0) 40%), radial-gradient(90% 70% at 100% 100%, rgba(120,170,255,0.1) 0%, rgba(120,170,255,0) 60%);
+  mix-blend-mode: overlay; }
+body.light-theme .glass-card-inner::after {
+  background: linear-gradient(160deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 45%), radial-gradient(90% 70% at 100% 100%, rgba(59,130,246,0.14) 0%, rgba(59,130,246,0) 60%);
+  mix-blend-mode: soft-light; }
+/* LOGIN SCREEN */
+#loginScreen { display: flex; flex-direction: column; justify-content: center; align-items: center; flex-grow: 1; padding: 40px 20px; }
+.login-container { background: var(--bg-solid); box-shadow: 0 20px 40px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); border-radius: 24px;
+  padding: 40px 30px; width: 100%; max-width: 380px; box-sizing: border-box; text-align: center; }
+body.light-theme .login-container { box-shadow: 0 20px 40px rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.06); background: rgba(255,255,255,0.85); backdrop-filter: blur(20px); }
+.login-container h2 { font-size: 28px; font-weight: 700; margin: 0 0 24px 0; letter-spacing: -0.02em; }
+.input-group { margin-bottom: 12px; text-align: left; }
+.input-group input { padding: 12px 16px; width: 100%; box-sizing: border-box; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);
+  background: var(--input-bg); color: var(--input-text); font-family: inherit; font-size: 15px; transition: all 0.2s ease; outline: none; }
+body.light-theme .input-group input { border: 1px solid #cbd5e1; }
+.input-group input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+.button-row { display: flex; gap: 12px; margin-bottom: 12px; }
+button { padding: 12px 28px; border: none; background: var(--accent); color: white; border-radius: 12px; cursor: pointer; font-weight: 600;
+  font-family: inherit; font-size: 14px; transition: all 0.2s ease; display: inline-block; }
+button:hover { transform: translateY(-1px); opacity: 0.95; }
+.btn-login, .btn-signup { flex: 1; }
+.btn-signup { background: transparent; border: 1px solid var(--accent); color: var(--text-main); }
+.guest-btn { background: rgba(255,255,255,0.08); color: var(--text-main); width: 100%; border: 1px solid rgba(255,255,255,0.05); }
+body.light-theme .guest-btn { background: rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.02); }
+/* PORTAL VIEW */
+#site { display: none; max-width: 1200px; margin: 0 auto; width: 100%; padding: 20px; box-sizing: border-box; }
+header { padding: 30px 20px; display: flex; justify-content: space-between; align-items: center; background: var(--bg-solid); border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.05); margin-bottom: 30px; }
+body.light-theme header { border: 1px solid rgba(0,0,0,0.05); background: rgba(255,255,255,0.5); backdrop-filter: blur(10px); }
+header h1 { font-weight: 700; font-size: 34px; margin: 0; letter-spacing: -0.03em; }
+.user-profile { display: flex; align-items: center; gap: 16px; }
+.logout-btn { background: none; border: none; color: #ef4444; cursor: pointer; font-weight: 600; padding: 0; }
+.logout-btn:hover { text-decoration: underline; }
+/* THEME PILL */
+.theme-toggle-btn { position: fixed; top: 25px; right: 25px; z-index: 100; padding: 8px 14px; font-size: 13px; background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.15); color: var(--text-main); border-radius: 20px; cursor: pointer; font-weight: 500; transition: background 0.2s, border-color 0.2s; }
+body.light-theme .theme-toggle-btn { background: rgba(255,255,255,0.6); border: 1px solid rgba(0,0,0,0.15); }
+.theme-toggle-btn:hover { background: rgba(255,255,255,0.12); }
+body.light-theme .theme-toggle-btn:hover { background: rgba(0,0,0,0.04); }
+.search-input { margin-top: 15px; padding: 12px 20px; width: 100%; max-width: 500px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.1);
+  background: var(--input-bg); color: var(--input-text); font-family: inherit; font-size: 15px; transition: all 0.2s ease; }
+body.light-theme .search-input { border: 1px solid #cbd5e1; }
+.search-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+/* GAME OF THE DAY BANNER */
+.gotw-banner { position: relative; margin: 30px 0; border-radius: 24px; box-shadow: var(--card-shadow); }
+.gotw-banner .glass-content { padding: 40px 35px; text-align: center; }
+.gotw-banner h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 2px; color: var(--accent); margin: 0 0 16px 0; }
+.gotw-banner h3 { font-size: 28px; font-weight: 700; margin: 0 0 24px 0; letter-spacing: -0.02em; }
+.gotw-banner.locked-banner .glass-layer { background: rgba(239,68,68,0.06); }
+.gotw-banner.locked-banner .glass-card-inner::before { background: linear-gradient(180deg, rgba(239,68,68,0.55) 0%, rgba(239,68,68,0.2) 45%, rgba(239,68,68,0.12) 100%); }
+.gotw-banner.locked-banner .glass-card-inner::after { background: linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 40%); mix-blend-mode: overlay; }
+body.light-theme .gotw-banner.locked-banner .glass-layer { background: rgba(220,38,38,0.05); }
+body.light-theme .gotw-banner.locked-banner .glass-card-inner::before { background: linear-gradient(180deg, rgba(220,38,38,0.55) 0%, rgba(220,38,38,0.22) 45%, rgba(220,38,38,0.14) 100%); }
+body.light-theme .gotw-banner.locked-banner .glass-card-inner::after { background: linear-gradient(160deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 40%); mix-blend-mode: soft-light; }
+/* STATS BAR */
+.stats-bar { background: var(--bg-solid); margin: 20px 0; padding: 16px; border-radius: 16px; display: flex; justify-content: center; gap: 44px; align-items: center; border: 1px solid rgba(255,255,255,0.05); }
+body.light-theme .stats-bar { border: 1px solid rgba(0,0,0,0.05); }
+.stat-item { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.stat-label { font-size: 12.5px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.01em; }
+.stat-value { color: var(--accent); font-size: 15px; }
+/* STREAK CIRCLE */
+.streak-circle { position: relative; width: 62px; height: 62px; border-radius: 50%; padding: 3px;
+  background: conic-gradient(from 200deg, rgba(255,184,0,0.95) 0deg, rgba(255,122,0,0.85) 90deg, rgba(239,68,68,0.8) 180deg, rgba(255,122,0,0.85) 270deg, rgba(255,184,0,0.95) 360deg);
+  box-shadow: 0 6px 18px rgba(255,140,0,0.18), 0 0 0 1px rgba(255,255,255,0.06); transition: box-shadow 0.4s ease, transform 0.3s ease; }
+.streak-circle-inner { position: relative; width: 100%; height: 100%; border-radius: 50%; background: var(--bg-solid);
+  backdrop-filter: blur(20px) saturate(200%); -webkit-backdrop-filter: blur(20px) saturate(200%); display: flex; flex-direction: column;
+  align-items: center; justify-content: center; overflow: hidden; box-shadow: inset 0 1px 1px rgba(255,255,255,0.18), inset 0 -3px 8px rgba(0,0,0,0.3); }
+.streak-circle-inner::before { content: ""; position: absolute; top: 0; left: 10%; right: 10%; height: 45%; border-radius: 50% 50% 60% 60% / 100% 100% 30% 30%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0) 100%); pointer-events: none; }
+.streak-flame { font-size: 15px; line-height: 1; filter: grayscale(0.85) opacity(0.55); transition: filter 0.4s ease; margin-bottom: 1px; }
+.streak-number { font-size: 17px; font-weight: 800; line-height: 1; letter-spacing: -0.02em; color: var(--text-main); }
+.streak-circle.streak-hot { box-shadow: 0 8px 26px rgba(255,94,0,0.4), 0 0 22px rgba(255,140,0,0.3), 0 0 0 1px rgba(255,255,255,0.1); animation: streakBreathe 2.4s ease-in-out infinite; }
+.streak-circle.streak-hot .streak-flame { filter: none; }
+@keyframes streakBreathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.055); } }
+body.light-theme .streak-circle { box-shadow: 0 6px 16px rgba(255,140,0,0.14), 0 0 0 1px rgba(0,0,0,0.04); }
+body.light-theme .streak-circle.streak-hot { box-shadow: 0 8px 22px rgba(255,94,0,0.28), 0 0 18px rgba(255,140,0,0.2), 0 0 0 1px rgba(0,0,0,0.05); }
+/* SORT BAR */
+.controls-bar { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 14px; margin-bottom: 30px; }
+.controls-bar select { padding: 10px 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: var(--input-bg); color: var(--input-text);
+  font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; -webkit-appearance: none; appearance: none; }
+body.light-theme .controls-bar select { border: 1px solid #cbd5e1; }
+.controls-bar select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+/* GRID AND CARDS */
+.game-grid { display: flex; flex-wrap: wrap; gap: 20px; padding: 20px 0; justify-content: flex-start; }
+.game-card { position: relative; border-radius: 24px; text-align: center; width: calc(33.333% - 14px); box-sizing: border-box; border: 1px solid transparent;
+  transition: transform 0.4s cubic-bezier(0.16,1,0.3,1), box-shadow 0.4s ease, border-color 0.4s ease; box-shadow: var(--card-shadow); background: transparent; }
+.game-card:hover:not(.locked-card) { transform: translateY(-6px); border-color: var(--accent); box-shadow: 0 15px 30px var(--accent-glow); }
+.fav-btn { position: absolute; top: 16px; right: 16px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: var(--star-inactive);
+  border-radius: 50%; width: 36px; height: 36px; cursor: pointer; font-size: 20px; line-height: 34px; padding: 0; z-index: 10; transition: all 0.2s ease; }
+body.light-theme .fav-btn { background: rgba(255,255,255,0.65); border: 1px solid rgba(0,0,0,0.15); color: #475569; box-shadow: 0 2px 6px rgba(30,58,110,0.12); }
+body.light-theme .fav-btn.is-active { background: rgba(255,255,255,0.85) !important; border-color: var(--star-active); }
+.fav-btn.is-active { color: var(--star-active) !important; background: rgba(0,0,0,0.5) !important; border-color: var(--star-active); }
+/* EXCLUSIVES LIST VIEW */
+.exclusives-list { display: flex; flex-direction: column; gap: 16px; padding: 20px 0; }
+.exclusives-list .game-card { width: 100%; }
+/* LOCKED CARD */
+.game-card.locked-card { background: var(--bg-locked) !important; border: 1px solid var(--border-locked) !important; }
+.game-card.locked-card .glass-layer { background: rgba(239,68,68,0.06); }
+.game-card.locked-card .glass-card-inner::before { background: linear-gradient(180deg, rgba(239,68,68,0.55) 0%, rgba(239,68,68,0.2) 45%, rgba(239,68,68,0.12) 100%); }
+.game-card.locked-card .glass-card-inner::after { background: linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 40%); mix-blend-mode: overlay; }
+body.light-theme .game-card.locked-card .glass-layer { background: rgba(220,38,38,0.05); }
+body.light-theme .game-card.locked-card .glass-card-inner::before { background: linear-gradient(180deg, rgba(220,38,38,0.55) 0%, rgba(220,38,38,0.22) 45%, rgba(220,38,38,0.14) 100%); }
+body.light-theme .game-card.locked-card .glass-card-inner::after { background: linear-gradient(160deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 40%); mix-blend-mode: soft-light; }
+.game-card.locked-card button:not(.fav-btn) { background: rgba(100,116,139,0.2); color: var(--text-muted); border: 1px solid rgba(255,255,255,0.05); cursor: not-allowed; }
+body.light-theme .game-card.locked-card button:not(.fav-btn) { background: rgba(0,0,0,0.05); }
+.game-info { padding: 30px 25px; }
+.game-info h3 { margin: 0 0 16px 0; font-size: 21px; font-weight: 600; letter-spacing: -0.01em; }
+.game-info button { width: auto; min-width: 120px; }
+section h2 { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; margin-top: 40px; }
+.section-title-container { display: flex; justify-content: space-between; align-items: center; margin-top: 40px; margin-bottom: 20px; }
+.section-title-container h2 { margin: 0; }
+/* CONTROL HINT CHIPS */
+.control-hints { display: flex; justify-content: center; margin: -6px 0 18px 0; }
+.control-hint-circle { position: relative; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.055); border: 1px solid rgba(255,255,255,0.14); backdrop-filter: blur(14px) saturate(180%); -webkit-backdrop-filter: blur(14px) saturate(180%);
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.16), 0 3px 8px rgba(0,0,0,0.25); cursor: default;
+  transition: transform 0.3s cubic-bezier(0.16,1,0.3,1), box-shadow 0.3s ease, border-color 0.3s ease; }
+.control-hint-icon { font-size: 13px; line-height: 1; color: var(--text-muted); transform: translateY(-0.5px); transition: color 0.3s ease; }
+.game-card:hover:not(.locked-card) .control-hint-circle { transform: translateY(-3px); border-color: var(--accent); box-shadow: inset 0 1px 1px rgba(255,255,255,0.16), 0 6px 16px var(--accent-glow); }
+.game-card:hover:not(.locked-card) .control-hint-icon { color: var(--accent); }
+body.light-theme .control-hint-circle { background: rgba(255,255,255,0.6); border: 1px solid rgba(0,0,0,0.08); box-shadow: inset 0 1px 1px rgba(255,255,255,0.7), 0 3px 8px rgba(30,58,110,0.12); }
+body.light-theme .control-hint-icon { color: #475569; }
+/* SKELETON LOADERS */
+@keyframes skeleton-shimmer { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
+.skeleton-card { position: relative; border-radius: 24px; width: calc(33.333% - 14px); box-sizing: border-box; box-shadow: var(--card-shadow); overflow: hidden; background: var(--bg-card); }
+.exclusives-list .skeleton-card { width: 100%; }
+.skeleton-shimmer-inner { padding: 30px 25px; height: 118px; box-sizing: border-box; }
+.skeleton-line { height: 21px; width: 55%; border-radius: 8px; margin: 0 auto 20px auto;
+  background: linear-gradient(90deg, rgba(148,163,184,0.12) 0%, rgba(148,163,184,0.28) 50%, rgba(148,163,184,0.12) 100%); background-size: 800px 100%; animation: skeleton-shimmer 1.4s ease-in-out infinite; }
+.skeleton-line.skeleton-btn { height: 40px; width: 40%; border-radius: 12px; margin-bottom: 0; }
+body.light-theme .skeleton-line { background: linear-gradient(90deg, rgba(100,116,139,0.08) 0%, rgba(100,116,139,0.2) 50%, rgba(100,116,139,0.08) 100%); background-size: 800px 100%; }
+.grid-fade-in { animation: gridFadeIn 0.35s ease both; }
+@keyframes gridFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+/* MODALS */
+.glass-modal-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; opacity: 0;
+  pointer-events: none; visibility: hidden; transition: opacity 0.25s ease, visibility 0.25s ease; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+.glass-modal-overlay.is-open { opacity: 1; visibility: visible; pointer-events: auto; }
+.glass-modal { width: 90%; max-width: 380px; border-radius: 24px; box-shadow: 0 25px 60px rgba(0,0,0,0.5); transform: translateY(16px) scale(0.97); transition: transform 0.25s cubic-bezier(0.16,1,0.3,1); }
+.glass-modal-overlay.is-open .glass-modal { transform: translateY(0) scale(1); }
+.glass-modal .glass-content { padding: 32px 28px 28px 28px; text-align: center; }
+.glass-modal-icon { font-size: 30px; margin-bottom: 12px; display: block; }
+.glass-modal h3 { margin: 0 0 10px 0; font-size: 19px; font-weight: 700; letter-spacing: -0.01em; }
+.glass-modal p { margin: 0 0 24px 0; color: var(--text-muted); font-size: 14.5px; line-height: 1.5; }
+.glass-modal button { min-width: 120px; }
+.glass-modal.modal-locked .glass-card-inner::before { background: linear-gradient(180deg, rgba(239,68,68,0.55) 0%, rgba(239,68,68,0.2) 45%, rgba(239,68,68,0.12) 100%); }
+body.light-theme .glass-modal.modal-locked .glass-card-inner::before { background: linear-gradient(180deg, rgba(220,38,38,0.55) 0%, rgba(220,38,38,0.22) 45%, rgba(220,38,38,0.14) 100%); }
+footer { margin-top: 80px; padding: 40px 20px; background: var(--bg-solid); text-align: center; border-top: 1px solid rgba(255,255,255,0.05); }
+footer h3 { margin: 0 0 8px 0; font-size: 1.25rem; }
+footer p { color: var(--text-muted); margin: 0 0 16px 0; font-size: 0.9rem; }
+a { color: var(--text-muted); margin: 0 12px; cursor: pointer; text-decoration: none; font-size: 14px; }
+a:hover { color: var(--accent); }
+@media (max-width: 900px) { .game-card { width: calc(50% - 10px); } }
+@media (max-width: 600px) { .game-card { width: 100%; } }
 
-    /* PREMIUM SILVER & BLUE LIGHT MODE */
-    body.light-theme {
-      --bg-main: #eef1f7;
-      --bg-card: rgba(219, 234, 254, 0.45);
-      --bg-solid: rgba(255, 255, 255, 0.8);
-      --text-main: #0f172a;
-      --text-muted: #475569;
-      --accent: #0066ff;
-      --accent-glow: rgba(0, 102, 255, 0.15);
-      --border-locked: rgba(220, 38, 38, 0.35);
-      --bg-locked: rgba(241, 245, 249, 0.5);
-      --banner-bg: rgba(255, 255, 255, 0.6);
-      --star-active: #f59e0b;
-      --star-inactive: #94a3b8;
-      --input-bg: rgba(0, 0, 0, 0.05);
-      --input-text: #0f172a;
-      --glass-blur: blur(25px) saturate(190%);
-      --card-shadow: 0 16px 40px rgba(30, 58, 110, 0.16), 0 3px 10px rgba(30, 58, 110, 0.12);
-      --glass-highlight: inset 0 1px 1px 0 rgba(255, 255, 255, 0.7);
-      --card-border: rgba(0, 0, 0, 0.08);
-    }
-
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: var(--bg-main);
-      color: var(--text-main);
-      transition: background 0.3s ease, color 0.3s ease;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-
-    body.light-theme {
-      background: linear-gradient(160deg, #fbfcfe 0%, #eef1f8 45%, #dfe6f2 100%);
-      background-attachment: fixed;
-    }
-
-    /* ANIMATED BACKGROUND */
-    #bgCanvas {
-      position: fixed;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 0;
-      pointer-events: none;
-      /* calm the middle where the cards sit, keep the edges lively */
-      -webkit-mask-image: linear-gradient(to right, #000 0%, rgba(0,0,0,0.55) 22%, rgba(0,0,0,0.55) 78%, #000 100%);
-      mask-image: linear-gradient(to right, #000 0%, rgba(0,0,0,0.55) 22%, rgba(0,0,0,0.55) 78%, #000 100%);
-    }
-
-    /* darker base under the glass so the particles don't show through the cards */
-    .glass-card-inner { background: rgba(8, 10, 20, 0.55); }
-    body.light-theme .glass-card-inner { background: rgba(255, 255, 255, 0.45); }
-
-    #loginScreen, #site, footer {
-      position: relative;
-      z-index: 1;
-    }
-
-    /* INNER CONTAINMENT MASK FOR CORRECT CORNER RENDER */
-    .glass-card-inner {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      border-radius: 24px;
-      overflow: hidden;
-      clip-path: inset(0 round 24px);
-      transform: translateZ(0);
-      -webkit-transform: translateZ(0);
-      isolation: isolate;
-    }
-
-    /* LIQUID GLASS LAYER */
-    .glass-layer {
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      z-index: 1;
-      background: var(--bg-card);
-      backdrop-filter: blur(30px) saturate(220%);
-      -webkit-backdrop-filter: blur(30px) saturate(220%);
-      pointer-events: none;
-    }
-
-    .glass-content {
-      position: relative;
-      z-index: 2;
-      pointer-events: auto;
-    }
-
-    /* GLASS RIM */
-    .glass-card-inner::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      z-index: 1;
-      border-radius: 24px;
-      padding: 1.5px;
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.22) 45%, rgba(255, 255, 255, 0.1) 100%);
-      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-      -webkit-mask-composite: xor;
-      mask-composite: exclude;
-      pointer-events: none;
-    }
-
-    body.light-theme .glass-card-inner::before {
-      background: linear-gradient(180deg, rgba(59, 130, 246, 0.6) 0%, rgba(59, 130, 246, 0.25) 45%, rgba(59, 130, 246, 0.12) 100%);
-    }
-
-    /* GLOSS EFFECT */
-    .glass-card-inner::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      z-index: 1;
-      pointer-events: none;
-      background:
-        linear-gradient(160deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0) 40%),
-        radial-gradient(90% 70% at 100% 100%, rgba(120, 170, 255, 0.1) 0%, rgba(120, 170, 255, 0) 60%);
-      mix-blend-mode: overlay;
-    }
-
-    body.light-theme .glass-card-inner::after {
-      background:
-        linear-gradient(160deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 45%),
-        radial-gradient(90% 70% at 100% 100%, rgba(59, 130, 246, 0.14) 0%, rgba(59, 130, 246, 0) 60%);
-      mix-blend-mode: soft-light;
-    }
-
-    /* LOGIN SCREEN GLASS CONTAINER */
-    #loginScreen {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      flex-grow: 1;
-      padding: 40px 20px;
-    }
-
-    .login-container {
-      background: var(--bg-solid);
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      border-radius: 24px;
-      padding: 40px 30px;
-      width: 100%;
-      max-width: 380px;
-      box-sizing: border-box;
-      text-align: center;
-    }
-
-    body.light-theme .login-container {
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
-      border: 1px solid rgba(0, 0, 0, 0.06);
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(20px);
-    }
-
-    .login-container h2 {
-      font-size: 28px;
-      font-weight: 700;
-      margin: 0 0 24px 0;
-      letter-spacing: -0.02em;
-    }
-
-    .input-group {
-      margin-bottom: 12px;
-      text-align: left;
-    }
-
-    .input-group input {
-      padding: 12px 16px;
-      width: 100%;
-      box-sizing: border-box;
-      border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      background: var(--input-bg);
-      color: var(--input-text);
-      font-family: inherit;
-      font-size: 15px;
-      transition: all 0.2s ease;
-      outline: none;
-    }
-
-    body.light-theme .input-group input {
-      border: 1px solid #cbd5e1;
-    }
-
-    .input-group input:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-glow);
-    }
-
-    .button-row {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-
-    button {
-      padding: 12px 28px;
-      border: none;
-      background: var(--accent);
-      color: white;
-      border-radius: 12px;
-      cursor: pointer;
-      font-weight: 600;
-      font-family: inherit;
-      font-size: 14px;
-      transition: all 0.2s ease;
-      display: inline-block;
-    }
-
-    button:hover {
-      transform: translateY(-1px);
-      opacity: 0.95;
-    }
-
-    .btn-login, .btn-signup {
-      flex: 1;
-    }
-
-    .btn-signup {
-      background: transparent;
-      border: 1px solid var(--accent);
-      color: var(--text-main);
-    }
-
-    .guest-btn {
-      background: rgba(255, 255, 255, 0.08);
-      color: var(--text-main);
-      width: 100%;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    body.light-theme .guest-btn {
-      background: rgba(0, 0, 0, 0.05);
-      border: 1px solid rgba(0, 0, 0, 0.02);
-    }
-
-    /* PORTAL VIEW */
-    #site {
-      display: none;
-      max-width: 1200px;
-      margin: 0 auto;
-      width: 100%;
-      padding: 20px;
-      box-sizing: border-box;
-    }
-
-    header {
-      padding: 30px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: var(--bg-solid);
-      border-radius: 20px;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      margin-bottom: 30px;
-    }
-
-    body.light-theme header {
-      border: 1px solid rgba(0, 0, 0, 0.05);
-      background: rgba(255, 255, 255, 0.5);
-      backdrop-filter: blur(10px);
-    }
-
-    header h1 {
-      font-weight: 700;
-      font-size: 34px;
-      margin: 0;
-      letter-spacing: -0.03em;
-    }
-
-    .user-profile {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-
-    .logout-btn {
-      background: none;
-      border: none;
-      color: #ef4444;
-      cursor: pointer;
-      font-weight: 600;
-      padding: 0;
-    }
-
-    .logout-btn:hover {
-      text-decoration: underline;
-    }
-
-    /* THEME PILL */
-    .theme-toggle-btn {
-      position: fixed;
-      top: 25px;
-      right: 25px;
-      z-index: 100;
-      padding: 8px 14px;
-      font-size: 13px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      color: var(--text-main);
-      border-radius: 20px;
-      cursor: pointer;
-      font-weight: 500;
-      transition: background 0.2s, border-color 0.2s;
-    }
-
-    body.light-theme .theme-toggle-btn {
-      background: rgba(255, 255, 255, 0.6);
-      border: 1px solid rgba(0, 0, 0, 0.15);
-    }
-
-    .theme-toggle-btn:hover {
-      background: rgba(255, 255, 255, 0.12);
-    }
-
-    body.light-theme .theme-toggle-btn:hover {
-      background: rgba(0, 0, 0, 0.04);
-    }
-
-    .search-input {
-      margin-top: 15px;
-      padding: 12px 20px;
-      width: 100%;
-      max-width: 500px;
-      border-radius: 14px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      background: var(--input-bg);
-      color: var(--input-text);
-      font-family: inherit;
-      font-size: 15px;
-      transition: all 0.2s ease;
-    }
-
-    body.light-theme .search-input {
-      border: 1px solid #cbd5e1;
-    }
-
-    .search-input:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-glow);
-    }
-
-    /* GAME OF THE DAY BANNER */
-    .gotw-banner {
-      position: relative;
-      margin: 30px 0;
-      border-radius: 24px;
-      box-shadow: var(--card-shadow);
-    }
-
-    .gotw-banner .glass-content {
-      padding: 40px 35px;
-      text-align: center;
-    }
-
-    .gotw-banner h2 {
-      font-size: 13px;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      color: var(--accent);
-      margin: 0 0 16px 0;
-    }
-
-    .gotw-banner h3 {
-      font-size: 28px;
-      font-weight: 700;
-      margin: 0 0 24px 0;
-      letter-spacing: -0.02em;
-    }
-
-    .gotw-banner.locked-banner .glass-layer {
-      background: rgba(239, 68, 68, 0.06);
-    }
-
-    .gotw-banner.locked-banner .glass-card-inner::before {
-      background: linear-gradient(180deg, rgba(239, 68, 68, 0.55) 0%, rgba(239, 68, 68, 0.2) 45%, rgba(239, 68, 68, 0.12) 100%);
-    }
-
-    .gotw-banner.locked-banner .glass-card-inner::after {
-      background: linear-gradient(160deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0) 40%);
-      mix-blend-mode: overlay;
-    }
-
-    body.light-theme .gotw-banner.locked-banner .glass-layer {
-      background: rgba(220, 38, 38, 0.05);
-    }
-
-    body.light-theme .gotw-banner.locked-banner .glass-card-inner::before {
-      background: linear-gradient(180deg, rgba(220, 38, 38, 0.55) 0%, rgba(220, 38, 38, 0.22) 45%, rgba(220, 38, 38, 0.14) 100%);
-    }
-
-    body.light-theme .gotw-banner.locked-banner .glass-card-inner::after {
-      background: linear-gradient(160deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 40%);
-      mix-blend-mode: soft-light;
-    }
-
-    /* STATS BAR LAYOUT */
-    .stats-bar {
-      background: var(--bg-solid);
-      margin: 20px 0;
-      padding: 16px;
-      border-radius: 16px;
-      display: flex;
-      justify-content: center;
-      gap: 44px;
-      align-items: center;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    body.light-theme .stats-bar {
-      border: 1px solid rgba(0, 0, 0, 0.05);
-    }
-
-    .stat-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .stat-label {
-      font-size: 12.5px;
-      font-weight: 600;
-      color: var(--text-muted);
-      letter-spacing: 0.01em;
-    }
-
-    .stat-value {
-      color: var(--accent);
-      font-size: 15px;
-    }
-
-    /* STREAK CIRCLE */
-    .streak-circle {
-      position: relative;
-      width: 62px;
-      height: 62px;
-      border-radius: 50%;
-      padding: 3px;
-      background: conic-gradient(from 200deg,
-        rgba(255, 184, 0, 0.95) 0deg,
-        rgba(255, 122, 0, 0.85) 90deg,
-        rgba(239, 68, 68, 0.8) 180deg,
-        rgba(255, 122, 0, 0.85) 270deg,
-        rgba(255, 184, 0, 0.95) 360deg);
-      box-shadow:
-        0 6px 18px rgba(255, 140, 0, 0.18),
-        0 0 0 1px rgba(255, 255, 255, 0.06);
-      transition: box-shadow 0.4s ease, transform 0.3s ease;
-    }
-
-    .streak-circle-inner {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      background: var(--bg-solid);
-      backdrop-filter: blur(20px) saturate(200%);
-      -webkit-backdrop-filter: blur(20px) saturate(200%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      box-shadow:
-        inset 0 1px 1px rgba(255, 255, 255, 0.18),
-        inset 0 -3px 8px rgba(0, 0, 0, 0.3);
-    }
-
-    .streak-circle-inner::before {
-      content: "";
-      position: absolute;
-      top: 0; left: 10%; right: 10%;
-      height: 45%;
-      border-radius: 50% 50% 60% 60% / 100% 100% 30% 30%;
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 100%);
-      pointer-events: none;
-    }
-
-    .streak-flame {
-      font-size: 15px;
-      line-height: 1;
-      filter: grayscale(0.85) opacity(0.55);
-      transition: filter 0.4s ease;
-      margin-bottom: 1px;
-    }
-
-    .streak-number {
-      font-size: 17px;
-      font-weight: 800;
-      line-height: 1;
-      letter-spacing: -0.02em;
-      color: var(--text-main);
-    }
-
-    .streak-circle.streak-hot {
-      box-shadow:
-        0 8px 26px rgba(255, 94, 0, 0.4),
-        0 0 22px rgba(255, 140, 0, 0.3),
-        0 0 0 1px rgba(255, 255, 255, 0.1);
-      animation: streakBreathe 2.4s ease-in-out infinite;
-    }
-
-    .streak-circle.streak-hot .streak-flame {
-      filter: none;
-    }
-
-    @keyframes streakBreathe {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.055); }
-    }
-
-    body.light-theme .streak-circle {
-      box-shadow: 0 6px 16px rgba(255, 140, 0, 0.14), 0 0 0 1px rgba(0, 0, 0, 0.04);
-    }
-
-    body.light-theme .streak-circle.streak-hot {
-      box-shadow:
-        0 8px 22px rgba(255, 94, 0, 0.28),
-        0 0 18px rgba(255, 140, 0, 0.2),
-        0 0 0 1px rgba(0, 0, 0, 0.05);
-    }
-
-    /* SORT BAR CONTROLS */
-    .controls-bar {
-      display: flex;
-      gap: 12px;
-      justify-content: center;
-      flex-wrap: wrap;
-      margin-top: 14px;
-      margin-bottom: 30px;
-    }
-
-    .controls-bar select {
-      padding: 10px 16px;
-      border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      background: var(--input-bg);
-      color: var(--input-text);
-      font-family: inherit;
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      -webkit-appearance: none;
-      appearance: none;
-    }
-
-    body.light-theme .controls-bar select {
-      border: 1px solid #cbd5e1;
-    }
-
-    .controls-bar select:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-glow);
-    }
-
-    /* GRID AND CARDS */
-    .game-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      padding: 20px 0;
-      justify-content: flex-start;
-    }
-
-    .game-card {
-      position: relative;
-      border-radius: 24px;
-      text-align: center;
-      width: calc(33.333% - 14px);
-      box-sizing: border-box;
-      border: 1px solid transparent;
-      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease, border-color 0.4s ease;
-      box-shadow: var(--card-shadow);
-      background: transparent;
-    }
-
-    .game-card:hover:not(.locked-card) {
-      transform: translateY(-6px);
-      border-color: var(--accent);
-      box-shadow: 0 15px 30px var(--accent-glow);
-    }
-
-    .fav-btn {
-      position: absolute;
-      top: 16px;
-      right: 16px;
-      background: rgba(0, 0, 0, 0.3);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: var(--star-inactive);
-      border-radius: 50%;
-      width: 36px;
-      height: 36px;
-      cursor: pointer;
-      font-size: 20px;
-      line-height: 34px;
-      padding: 0;
-      z-index: 10;
-      transition: all 0.2s ease;
-    }
-
-    body.light-theme .fav-btn {
-      background: rgba(255, 255, 255, 0.65);
-      border: 1px solid rgba(0, 0, 0, 0.15);
-      color: #475569;
-      box-shadow: 0 2px 6px rgba(30, 58, 110, 0.12);
-    }
-
-    body.light-theme .fav-btn.is-active {
-      background: rgba(255, 255, 255, 0.85) !important;
-      border-color: var(--star-active);
-    }
-
-    .fav-btn.is-active {
-      color: var(--star-active) !important;
-      background: rgba(0, 0, 0, 0.5) !important;
-      border-color: var(--star-active);
-    }
-
-    /* EXCLUSIVES LIST VIEW */
-    .exclusives-list {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      padding: 20px 0;
-    }
-
-    .exclusives-list .game-card {
-      width: 100%;
-    }
-
-    /* LOCKED CARD STYLINGS */
-    .game-card.locked-card {
-      background: var(--bg-locked) !important;
-      border: 1px solid var(--border-locked) !important;
-    }
-
-    .game-card.locked-card .glass-layer {
-      background: rgba(239, 68, 68, 0.06);
-    }
-
-    .game-card.locked-card .glass-card-inner::before {
-      background: linear-gradient(180deg, rgba(239, 68, 68, 0.55) 0%, rgba(239, 68, 68, 0.2) 45%, rgba(239, 68, 68, 0.12) 100%);
-    }
-
-    .game-card.locked-card .glass-card-inner::after {
-      background: linear-gradient(160deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0) 40%);
-      mix-blend-mode: overlay;
-    }
-
-    body.light-theme .game-card.locked-card .glass-layer {
-      background: rgba(220, 38, 38, 0.05);
-    }
-
-    body.light-theme .game-card.locked-card .glass-card-inner::before {
-      background: linear-gradient(180deg, rgba(220, 38, 38, 0.55) 0%, rgba(220, 38, 38, 0.22) 45%, rgba(220, 38, 38, 0.14) 100%);
-    }
-
-    body.light-theme .game-card.locked-card .glass-card-inner::after {
-      background: linear-gradient(160deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 40%);
-      mix-blend-mode: soft-light;
-    }
-
-    .game-card.locked-card button:not(.fav-btn) {
-      background: rgba(100, 116, 139, 0.2);
-      color: var(--text-muted);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      cursor: not-allowed;
-    }
-
-    body.light-theme .game-card.locked-card button:not(.fav-btn) {
-      background: rgba(0, 0, 0, 0.05);
-    }
-
-    .game-info {
-      padding: 30px 25px;
-    }
-
-    .game-info h3 {
-      margin: 0 0 16px 0;
-      font-size: 21px;
-      font-weight: 600;
-      letter-spacing: -0.01em;
-    }
-
-    .game-info button {
-      width: auto;
-      min-width: 120px;
-    }
-
-    section h2 {
-      font-size: 24px;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      margin-top: 40px;
-    }
-
-    .section-title-container {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 40px;
-      margin-bottom: 20px;
-    }
-
-    .section-title-container h2 {
-      margin: 0;
-    }
-
-    /* CONTROL SCHEME HINT CHIPS */
-    .control-hints {
-      display: flex;
-      justify-content: center;
-      margin: -6px 0 18px 0;
-    }
-
-    .control-hint-circle {
-      position: relative;
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(255, 255, 255, 0.055);
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      backdrop-filter: blur(14px) saturate(180%);
-      -webkit-backdrop-filter: blur(14px) saturate(180%);
-      box-shadow:
-        inset 0 1px 1px rgba(255, 255, 255, 0.16),
-        0 3px 8px rgba(0, 0, 0, 0.25);
-      cursor: default;
-      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease;
-    }
-
-    .control-hint-icon {
-      font-size: 13px;
-      line-height: 1;
-      color: var(--text-muted);
-      transform: translateY(-0.5px);
-      transition: color 0.3s ease;
-    }
-
-    .game-card:hover:not(.locked-card) .control-hint-circle {
-      transform: translateY(-3px);
-      border-color: var(--accent);
-      box-shadow:
-        inset 0 1px 1px rgba(255, 255, 255, 0.16),
-        0 6px 16px var(--accent-glow);
-    }
-
-    .game-card:hover:not(.locked-card) .control-hint-icon {
-      color: var(--accent);
-    }
-
-    body.light-theme .control-hint-circle {
-      background: rgba(255, 255, 255, 0.6);
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      box-shadow:
-        inset 0 1px 1px rgba(255, 255, 255, 0.7),
-        0 3px 8px rgba(30, 58, 110, 0.12);
-    }
-
-    body.light-theme .control-hint-icon {
-      color: #475569;
-    }
-
-    /* SKELETON LOADERS */
-    @keyframes skeleton-shimmer {
-      0% { background-position: -400px 0; }
-      100% { background-position: 400px 0; }
-    }
-
-    .skeleton-card {
-      position: relative;
-      border-radius: 24px;
-      width: calc(33.333% - 14px);
-      box-sizing: border-box;
-      box-shadow: var(--card-shadow);
-      overflow: hidden;
-      background: var(--bg-card);
-    }
-
-    .exclusives-list .skeleton-card { width: 100%; }
-
-    .skeleton-shimmer-inner {
-      padding: 30px 25px;
-      height: 118px;
-      box-sizing: border-box;
-    }
-
-    .skeleton-line {
-      height: 21px;
-      width: 55%;
-      border-radius: 8px;
-      margin: 0 auto 20px auto;
-      background: linear-gradient(90deg,
-        rgba(148, 163, 184, 0.12) 0%,
-        rgba(148, 163, 184, 0.28) 50%,
-        rgba(148, 163, 184, 0.12) 100%);
-      background-size: 800px 100%;
-      animation: skeleton-shimmer 1.4s ease-in-out infinite;
-    }
-
-    .skeleton-line.skeleton-btn {
-      height: 40px;
-      width: 40%;
-      border-radius: 12px;
-      margin-bottom: 0;
-    }
-
-    body.light-theme .skeleton-line {
-      background: linear-gradient(90deg,
-        rgba(100, 116, 139, 0.08) 0%,
-        rgba(100, 116, 139, 0.2) 50%,
-        rgba(100, 116, 139, 0.08) 100%);
-      background-size: 800px 100%;
-    }
-
-    .grid-fade-in {
-      animation: gridFadeIn 0.35s ease both;
-    }
-
-    @keyframes gridFadeIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* MODALS */
-    .glass-modal-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 1000;
-      background: rgba(0, 0, 0, 0.45);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0;
-      pointer-events: none;
-      visibility: hidden;
-      transition: opacity 0.25s ease, visibility 0.25s ease;
-      backdrop-filter: blur(4px);
-      -webkit-backdrop-filter: blur(4px);
-    }
-
-    .glass-modal-overlay.is-open {
-      opacity: 1;
-      visibility: visible;
-      pointer-events: auto;
-    }
-
-    .glass-modal {
-      width: 90%;
-      max-width: 380px;
-      border-radius: 24px;
-      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
-      transform: translateY(16px) scale(0.97);
-      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    .glass-modal-overlay.is-open .glass-modal {
-      transform: translateY(0) scale(1);
-    }
-
-    .glass-modal .glass-content {
-      padding: 32px 28px 28px 28px;
-      text-align: center;
-    }
-
-    .glass-modal-icon {
-      font-size: 30px;
-      margin-bottom: 12px;
-      display: block;
-    }
-
-    .glass-modal h3 {
-      margin: 0 0 10px 0;
-      font-size: 19px;
-      font-weight: 700;
-      letter-spacing: -0.01em;
-    }
-
-    .glass-modal p {
-      margin: 0 0 24px 0;
-      color: var(--text-muted);
-      font-size: 14.5px;
-      line-height: 1.5;
-    }
-
-    .glass-modal button {
-      min-width: 120px;
-    }
-
-    .glass-modal.modal-locked .glass-card-inner::before {
-      background: linear-gradient(180deg, rgba(239, 68, 68, 0.55) 0%, rgba(239, 68, 68, 0.2) 45%, rgba(239, 68, 68, 0.12) 100%);
-    }
-
-    body.light-theme .glass-modal.modal-locked .glass-card-inner::before {
-      background: linear-gradient(180deg, rgba(220, 38, 38, 0.55) 0%, rgba(220, 38, 38, 0.22) 45%, rgba(220, 38, 38, 0.14) 100%);
-    }
-
-    footer {
-      margin-top: 80px;
-      padding: 40px 20px;
-      background: var(--bg-solid);
-      text-align: center;
-      border-top: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    footer h3 {
-      margin: 0 0 8px 0;
-      font-size: 1.25rem;
-    }
-
-    footer p {
-      color: var(--text-muted);
-      margin: 0 0 16px 0;
-      font-size: 0.9rem;
-    }
-
-    a {
-      color: var(--text-muted);
-      margin: 0 12px;
-      cursor: pointer;
-      text-decoration: none;
-      font-size: 14px;
-    }
-
-    a:hover { color: var(--accent); }
-
-    /* LAYOUT HELPER FOR BALANCING GRID SIZES */
-    @media (max-width: 900px) {
-      .game-card {
-        width: calc(50% - 10px);
-      }
-    }
-    @media (max-width: 600px) {
-      .game-card {
-        width: 100%;
-      }
-    }
   </style>
+  <style> block right before </head>
+===================================================================== -->
+<style>
+  /* seasonal tag */
+  #seasonTag { position: fixed; left: 16px; bottom: 14px; z-index: 5; font-size: 12px; font-weight: 600;
+    color: var(--text-muted); opacity: .75; pointer-events: none; letter-spacing: .02em; }
+
+  /* achievements button sits under the Theme pill; hidden until you earn one */
+  .ach-toggle-btn { top: 66px; display: none; }
+
+  /* panel */
+  .ach-panel { width: 92%; max-width: 880px; border-radius: 24px; box-shadow: 0 25px 60px rgba(0,0,0,.5);
+    transform: translateY(16px) scale(.97); transition: transform .25s cubic-bezier(.16,1,.3,1); }
+  .glass-modal-overlay.is-open .ach-panel { transform: none; }
+  .ach-panel .glass-card-inner { max-height: 88vh; }
+  .ach-content { max-height: 88vh; overflow-y: auto; padding: 28px 26px 30px; }
+  .ach-title { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -.02em; text-align: center; }
+  .ach-sub { margin: 6px 0 0; text-align: center; color: var(--text-muted); font-size: 13.5px; }
+  .ach-close { position: absolute; top: 16px; right: 16px; padding: 0; width: 34px; height: 34px; border-radius: 50%;
+    background: rgba(255,255,255,.08); color: var(--text-main); border: 1px solid rgba(255,255,255,.12); font-size: 14px; z-index: 5; }
+  body.light-theme .ach-close { background: rgba(0,0,0,.05); border-color: rgba(0,0,0,.12); }
+  .ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 14px; margin-top: 22px; }
+
+  /* cards: chunky colored tiles with a 3D bottom edge */
+  .ach-card { --tc: #64748b; --c1: #6366f1; --c2: #4338ca; position: relative; text-align: center; padding: 26px 8px 12px; border-radius: 16px; cursor: pointer;
+    background: linear-gradient(180deg, var(--c1), var(--c2)); border: 3px solid rgba(0,0,0,.38); border-bottom-width: 8px; overflow: hidden;
+    box-shadow: 0 6px 14px rgba(0,0,0,.25); transition: filter 2.6s ease, transform .15s ease, border-bottom-width .15s ease; }
+  .ach-card::before { content: ""; position: absolute; left: -20%; right: -20%; top: -30%; height: 70%; background: rgba(255,255,255,.16); transform: rotate(-8deg); pointer-events: none; }
+  .ach-card:hover { transform: translateY(-3px); }
+  .ach-card:active { transform: translateY(4px); border-bottom-width: 4px; }
+  .ach-card.locked { filter: grayscale(1) brightness(.78); }
+  body.light-theme .ach-card.locked { filter: grayscale(1) brightness(1.08) contrast(.85); }
+  .ach-chip { position: absolute; top: 7px; left: 7px; z-index: 2; font-size: 10px; font-weight: 900; letter-spacing: .04em; padding: 2px 8px; border-radius: 99px;
+    background: var(--tc); color: #111; border: 2px solid rgba(0,0,0,.35); transition: background 1s ease; }
+  .ach-icon { position: relative; z-index: 1; display: block; font-size: 44px; line-height: 1; margin: 2px 0 10px; filter: drop-shadow(0 4px 0 rgba(0,0,0,.28)); }
+  .ach-name { position: relative; z-index: 1; font-family: ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", "Nunito", system-ui, sans-serif;
+    font-size: 14px; font-weight: 900; color: #fff; text-shadow: 0 2px 0 rgba(0,0,0,.35); margin-bottom: 9px; line-height: 1.1; }
+  .ach-pips { position: relative; z-index: 1; display: flex; justify-content: center; gap: 4px; }
+  .ach-pips i { width: 15px; height: 7px; border-radius: 3px; background: rgba(0,0,0,.3); transition: background .9s ease; }
+  .ach-pips i.on { background: #fff; box-shadow: 0 1px 0 rgba(0,0,0,.3); }
+  .ach-card.just { animation: achPulse 1.9s ease-out; }
+  @keyframes achPulse { 0% { box-shadow: 0 0 0 0 var(--tc); } 100% { box-shadow: 0 0 34px 16px transparent; } }
+
+  /* sparkle burst */
+  .ach-sparkle { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+  .ach-sparkle i { position: absolute; left: 50%; top: 50%; width: 10px; height: 10px; opacity: 0; background: #fde68a;
+    clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+    animation: achSpark 1.4s ease-out forwards; }
+  @keyframes achSpark {
+    0%   { opacity: 0; transform: translate(-50%,-50%) rotate(var(--a)) translateX(0) scale(.3); }
+    20%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%,-50%) rotate(var(--a)) translateX(var(--d)) scale(1.1); }
+  }
+
+  /* detail sheet */
+  .ach-detail { max-width: 400px; }
+  .ach-big { display: flex; align-items: center; justify-content: center; width: 84px; height: 84px; margin: 0 auto 12px; border-radius: 20px; font-size: 44px;
+    background: linear-gradient(180deg, var(--c1), var(--c2)); border: 3px solid rgba(0,0,0,.38); border-bottom-width: 7px; }
+  .ach-big.bw { filter: grayscale(1) brightness(.8); }
+  .ach-desc { margin: 0 0 16px !important; }
+  .ach-prog { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; font-size: 12.5px; font-weight: 700; color: var(--text-muted); }
+  .ach-bar { flex: 1; height: 8px; border-radius: 99px; background: rgba(148,163,184,.25); overflow: hidden; }
+  .ach-bar i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--accent), #a78bfa); }
+  .ach-tiers { list-style: none; margin: 0 0 14px; padding: 0; text-align: left; }
+  .ach-tiers li { display: flex; align-items: center; gap: 10px; padding: 8px 4px; font-size: 13.5px; opacity: .55; }
+  .ach-tiers li.done { opacity: 1; }
+  .ach-tiers b { --tc: #64748b; flex: none; width: 24px; height: 24px; border-radius: 7px; transform: rotate(45deg) scale(.82);
+    background: var(--tc); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; }
+  .ach-tiers b::after { content: attr(data-n); transform: rotate(-45deg); }
+  .ach-tiers span { flex: 1; }
+  .ach-tiers em { display: block; font-style: normal; font-size: 11px; color: var(--text-muted); letter-spacing: .08em; text-transform: uppercase; }
+  .ach-tiers .ck { flex: none; flex-grow: 0; color: #22c55e; font-weight: 800; }
+  .ach-tip { margin: 0 0 16px !important; font-size: 13px !important; }
+</style>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7292845069394911"
      crossorigin="anonymous"></script>
 </head>
@@ -985,16 +283,13 @@
   <canvas id="bgCanvas"></canvas>
 
   <button onclick="window.toggleTheme()" class="theme-toggle-btn">🌓 Theme</button>
+  <button id="achBtn" class="theme-toggle-btn ach-toggle-btn">🏆 Achievements</button>
 
   <div id="loginScreen">
     <div class="login-container">
       <h2>Rift Hub</h2>
-      <div class="input-group">
-        <input type="email" id="email" placeholder="Email Address">
-      </div>
-      <div class="input-group">
-        <input type="password" id="password" placeholder="Password">
-      </div>
+      <div class="input-group"><input type="email" id="email" placeholder="Email Address"></div>
+      <div class="input-group"><input type="password" id="password" placeholder="Password"></div>
       <div class="button-row">
         <button class="btn-login" onclick="window.login()">Login</button>
         <button class="btn-signup" onclick="window.signup()">Sign Up</button>
@@ -1365,6 +660,7 @@
             </div>
           </div>
         </div>
+
         <div class="game-card" data-name="subway">
           <div class="glass-card-inner">
             <div class="glass-layer"></div>
@@ -1375,7 +671,8 @@
             </div>
           </div>
         </div>
-         <div class="game-card" data-name="shutit">
+
+        <div class="game-card" data-name="shutit">
           <div class="glass-card-inner">
             <div class="glass-layer"></div>
             <button class="fav-btn" onclick="window.toggleFavorite('shutit', 'Shut The Box', 'shutit.html')">☆</button>
@@ -1385,6 +682,7 @@
             </div>
           </div>
         </div>
+
         <div class="game-card" data-name="battleship">
           <div class="glass-card-inner">
             <div class="glass-layer"></div>
@@ -1395,6 +693,7 @@
             </div>
           </div>
         </div>
+
         <div class="game-card" data-name="reaction">
           <div class="glass-card-inner">
             <div class="glass-layer"></div>
@@ -1405,7 +704,8 @@
             </div>
           </div>
         </div>
-        <div class="game-card" data-name="reaction">
+
+        <div class="game-card" data-name="lights">
           <div class="glass-card-inner">
             <div class="glass-layer"></div>
             <button class="fav-btn" onclick="window.toggleFavorite('lights', 'Lights Out', 'lights.html')">☆</button>
@@ -1415,7 +715,8 @@
             </div>
           </div>
         </div>
-        <div class="game-card" data-name="reaction">
+
+        <div class="game-card" data-name="21">
           <div class="glass-card-inner">
             <div class="glass-layer"></div>
             <button class="fav-btn" onclick="window.toggleFavorite('21', '21', '21.html')">☆</button>
@@ -1425,6 +726,7 @@
             </div>
           </div>
         </div>
+
         <div class="game-card" data-name="monopoly">
           <div class="glass-card-inner">
             <div class="glass-layer"></div>
@@ -1435,6 +737,7 @@
             </div>
           </div>
         </div>
+
         <div class="game-card" data-name="uno">
           <div class="glass-card-inner">
             <div class="glass-layer"></div>
@@ -1445,6 +748,7 @@
             </div>
           </div>
         </div>
+
         <div class="game-card" data-name="monopolydeal">
           <div class="glass-card-inner">
             <div class="glass-layer"></div>
@@ -1455,6 +759,7 @@
             </div>
           </div>
         </div>
+
       </div>
     </section>
 
@@ -1464,7 +769,7 @@
         <input type="text" id="exclusiveSearch" class="search-input" style="max-width: 250px; margin-top: 0;" placeholder="Filter exclusives...">
       </div>
       <div class="exclusives-list" id="exclusivesContainer">
-        
+
         <div class="game-card" data-exclusive-name="rift runner">
           <div class="glass-card-inner">
             <div class="glass-layer"></div>
@@ -1504,6 +809,7 @@
             </div>
           </div>
         </div>
+
         <div class="game-card" data-exclusive-name="rift match">
           <div class="glass-card-inner">
             <div class="glass-layer"></div>
@@ -1513,6 +819,7 @@
             </div>
           </div>
         </div>
+
         <div class="game-card" data-exclusive-name="rift socket">
           <div class="glass-card-inner">
             <div class="glass-layer"></div>
@@ -1525,32 +832,33 @@
 
       </div>
     </section>
+
     <section>
-  <div class="section-title-container">
-    <h2>🌐 External Games 🌐</h2>
-    <input type="text" id="externalSearch" class="search-input" style="max-width: 250px; margin-top: 0;" placeholder="Filter external...">
-  </div>
-  <div class="exclusives-list" id="externalContainer">
-    
-    <div class="game-card" data-external-name="papa louie games">
-      <div class="glass-card-inner">
-        <div class="glass-layer"></div>
-        <div class="glass-content game-info">
-          <h3 class="ex-title">Papa Louie Games</h3>
-          <button class="ex-btn" onclick="window.location.href='papalouie.html'">Explore</button>
-        </div>
+      <div class="section-title-container">
+        <h2>🌐 External Games 🌐</h2>
+        <input type="text" id="externalSearch" class="search-input" style="max-width: 250px; margin-top: 0;" placeholder="Filter external...">
       </div>
-    </div>
-    <!--<div class="game-card" data-external-name="neal.fun games">
-      <div class="glass-card-inner">
-        <div class="glass-layer"></div>
-        <div class="glass-content game-info">
-          <h3 class="ex-title">Neal.Fun Games</h3>
-          <button class="ex-btn" onclick="window.location.href='neal_fun.html'">Explore</button>
+      <div class="exclusives-list" id="externalContainer">
+        <div class="game-card" data-external-name="papa louie games">
+          <div class="glass-card-inner">
+            <div class="glass-layer"></div>
+            <div class="glass-content game-info">
+              <h3 class="ex-title">Papa Louie Games</h3>
+              <button class="ex-btn" onclick="window.location.href='papalouie.html'">Explore</button>
+            </div>
+          </div>
         </div>
+        <!--<div class="game-card" data-external-name="neal.fun games">
+          <div class="glass-card-inner">
+            <div class="glass-layer"></div>
+            <div class="glass-content game-info">
+              <h3 class="ex-title">Neal.Fun Games</h3>
+              <button class="ex-btn" onclick="window.location.href='neal_fun.html'">Explore</button>
+            </div>
+          </div>
+        </div>-->
       </div>
-  </div>-->
-</section>
+    </section>
 
     <section id="historySection">
       <h2 style="text-align: center; margin-top:60px;">🕘 Recently Played</h2>
@@ -1584,152 +892,375 @@
   </footer>
 
   <!-- ANIMATED BACKGROUND SCRIPT -->
-  <script>
-  (() => {
-    const canvas = document.getElementById("bgCanvas");
-    const ctx = canvas.getContext("2d");
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+<script>
+(() => {
+  const canvas = document.getElementById("bgCanvas");
+  const ctx = canvas.getContext("2d");
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const emit = (n, v) => { try { window.riftEvent && window.riftEvent(n, v); } catch (e) {} };
 
-    let w, h, dpr, particles = [], stars = [], flares = [], nextStar = 90;
-    const mouse = { x: -9999, y: -9999, down: false, downAt: 0 };
-    let t = 0;
+  let w, h, dpr, particles = [], stars = [], flares = [], sparks = [], gold = null;
+  let nextStar = 90, nextGold = 900;
+  const mouse = { x: -9999, y: -9999, down: false, downAt: 0 };
+  let t = 0, ra = 0, flash = 0;
 
-    const LINK_DIST = 130;     // dot-to-dot line distance
-    const CURSOR_LINK = 170;   // cursor-to-dot line distance
-    const HOLD_RADIUS = 360;   // how far the rift reaches while holding
-    const MAX_CHARGE = 1100;   // ms to reach a full charge
+  const LINK_DIST = 130;     // dot-to-dot line distance
+  const CURSOR_LINK = 170;   // cursor-to-dot line distance
+  const HOLD_RADIUS = 360;   // how far the rift reaches while holding
+  const MAX_CHARGE = 1100;   // ms to reach a full charge
 
-    function resize() {
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
-      w = window.innerWidth;
-      h = window.innerHeight;
-      canvas.width = w * dpr;
-      canvas.height = h * dpr;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  /* ---------- SEASONS & HOLIDAYS ----------
+     Preview any look with ?bg=winter | spring | summer | autumn | newyear | valentine |
+     stpatrick | earth | july4 | halloween | thanksgiving | christmas | dawn | day | dusk | night */
+  const base = { name: "Night", icon: "🌙", hue: 205, range: 70, fx: "dots", fall: 0, sway: 0, links: 1, acc: [59, 130, 246] };
+  const P = {
+    night: { ...base, a: [59, 130, 246], b: [139, 92, 246] },
+    dawn:  { ...base, name: "Dawn", icon: "🌅", hue: 330, a: [251, 146, 60], b: [236, 72, 153], acc: [234, 88, 12] },
+    day:   { ...base, name: "Day", icon: "☀️", hue: 195, range: 60, a: [59, 130, 246], b: [99, 102, 241] },
+    dusk:  { ...base, name: "Dusk", icon: "🌇", hue: 310, range: 75, a: [168, 85, 247], b: [251, 113, 133], acc: [147, 51, 234] },
 
-      const count = Math.min(230, Math.floor((w * h) / 7500));
-      particles = Array.from({ length: count }, () => {
-        const z = 0.2 + Math.random() * 0.8;      // depth: 0.2 far -> 1 near
-        return {
-          x: Math.random() * w,
-          y: Math.random() * h,
-          vx: 0,
-          vy: 0,
-          z,
-          r: 0.5 + z * 1.7,
-          hue: 205 + Math.random() * 75,           // blue -> violet
-          phase: Math.random() * Math.PI * 2
-        };
-      });
+    // the four seasons (gently tinted by the time of day)
+    winter: { name: "Winter", icon: "❄️", hue: 200, range: 30, a: [125, 211, 252], b: [199, 210, 254], acc: [37, 99, 235], fx: "snow", fall: 0.006, sway: 0.004, links: 0.6, seasonal: true },
+    spring: { name: "Spring", icon: "🌸", hue: 335, range: 25, a: [244, 114, 182], b: [134, 239, 172], acc: [219, 39, 119], fx: "petals", fall: 0.02, sway: 0.006, links: 0.12, seasonal: true },
+    summer: { name: "Summer", icon: "☀️", hue: 52, range: 28, a: [250, 204, 21], b: [251, 146, 60], acc: [217, 119, 6], fx: "fireflies", fall: 0, sway: 0, links: 0.45, seasonal: true },
+    autumn: { name: "Autumn", icon: "🍂", hue: 18, range: 38, a: [234, 88, 12], b: [180, 83, 9], acc: [194, 65, 12], fx: "leaves", fall: 0.028, sway: 0.007, links: 0.08, seasonal: true },
+
+    // holidays
+    newyear:     { name: "New Year", icon: "🎆", hues: [45, 50, 200, 330, 280], range: 0, hue: 45, a: [251, 191, 36], b: [236, 72, 153], acc: [217, 119, 6], fx: "confetti", fall: 0.03, sway: 0.005, links: 0.1 },
+    valentine:   { name: "Valentine's", icon: "💖", hue: 335, range: 25, a: [244, 63, 94], b: [236, 72, 153], acc: [225, 29, 72], fx: "hearts", fall: -0.02, sway: 0.006, links: 0.1 },
+    stpatrick:   { name: "St. Patrick's", icon: "🍀", hues: [120, 140, 95, 48], range: 0, hue: 120, a: [34, 197, 94], b: [250, 204, 21], acc: [22, 163, 74], fx: "confetti", fall: 0.025, sway: 0.005, links: 0.15 },
+    earth:       { name: "Earth Day", icon: "🌍", hues: [120, 150, 200, 95], range: 0, hue: 130, a: [34, 197, 94], b: [56, 189, 248], acc: [5, 150, 105], fx: "leaves", fall: 0.022, sway: 0.006, links: 0.1 },
+    july4:       { name: "Fireworks", icon: "🎇", hues: [0, 220, 0, 220, 45], range: 0, hue: 0, a: [239, 68, 68], b: [59, 130, 246], acc: [37, 99, 235], fx: "confetti", fall: 0.025, sway: 0.004, links: 0.1 },
+    halloween:   { name: "Halloween", icon: "🎃", hue: 18, range: 35, a: [249, 115, 22], b: [147, 51, 234], acc: [234, 88, 12], fx: "embers", fx2: "bats", fx2p: 0.1, fall: -0.012, sway: 0.004, links: 0.25 },
+    thanksgiving:{ name: "Thanksgiving", icon: "🦃", hue: 28, range: 30, a: [217, 119, 6], b: [153, 27, 27], acc: [180, 83, 9], fx: "leaves", fall: 0.03, sway: 0.007, links: 0.06 },
+    christmas:   { name: "Holidays", icon: "🎄", hues: [0, 130, 0, 130, 45], range: 0, hue: 0, a: [239, 68, 68], b: [34, 197, 94], acc: [220, 38, 38], fx: "snow", fx2: "dots", fx2p: 0.35, fall: 0.008, sway: 0.004, links: 0.35 }
+  };
+
+  const mix = (x, y, k) => x.map((v, i) => v + (y[i] - v) * k);
+  function tod() {
+    const hr = new Date().getHours();
+    return hr >= 5 && hr < 8 ? P.dawn : hr >= 8 && hr < 17 ? P.day : hr >= 17 && hr < 21 ? P.dusk : P.night;
+  }
+  function pickPalette() {
+    const q = new URLSearchParams(location.search).get("bg");
+    let id;
+    if (q && P[q]) id = q;
+    else {
+      const d = new Date(), m = d.getMonth(), day = d.getDate();
+      const th = 1 + ((4 - new Date(d.getFullYear(), 10, 1).getDay() + 7) % 7) + 21;   // 4th Thursday of Nov
+      if ((m === 11 && day === 31) || (m === 0 && day <= 2)) id = "newyear";
+      else if (m === 1 && day >= 10 && day <= 14) id = "valentine";
+      else if (m === 2 && day >= 15 && day <= 17) id = "stpatrick";
+      else if (m === 3 && day >= 20 && day <= 22) id = "earth";
+      else if (m === 6 && day <= 4) id = "july4";
+      else if (m === 9 && day >= 25) id = "halloween";
+      else if (m === 10 && day >= th - 4 && day <= th + 1) id = "thanksgiving";
+      else if (m === 11 && day >= 18 && day <= 26) id = "christmas";
+      else id = (m === 11 || m <= 1) ? "winter" : m <= 4 ? "spring" : m <= 7 ? "summer" : "autumn";
+    }
+    const p = P[id];
+    const out = { ...p, id };
+    if (p.seasonal) { const tp = tod(); out.a = mix(p.a, tp.a, 0.3); out.b = mix(p.b, tp.b, 0.3); }
+    return out;
+  }
+
+  let target = pickPalette();
+  const cur = { hue: target.hue, range: target.range, a: target.a.slice(), b: target.b.slice(), fall: target.fall, sway: target.sway, links: target.links };
+  const FX = { fx: "dots", fx2: null, fx2p: 0, hues: null };
+
+  const tag = document.createElement("div");
+  tag.id = "seasonTag";
+  document.body.appendChild(tag);
+
+  function applyTarget() {
+    FX.fx = target.fx; FX.fx2 = target.fx2 || null; FX.fx2p = target.fx2p || 0; FX.hues = target.hues || null;
+    particles.forEach(p => { p.alt = FX.fx2 ? Math.random() < FX.fx2p : false; });
+    tag.textContent = `${target.icon} ${target.name}`;
+    const [r, g, b] = target.acc;
+    document.body.style.setProperty("--accent", `rgb(${r},${g},${b})`);
+    document.body.style.setProperty("--accent-glow", `rgba(${r},${g},${b},0.25)`);
+    setTimeout(() => emit("season", target.id), 900);
+  }
+  setInterval(() => {
+    const n = pickPalette(), changed = n.id !== target.id;
+    target = n;
+    if (changed) applyTarget();
+  }, 60000);
+
+  const lerp = (a, b, k) => a + (b - a) * k;
+  function easeTheme() {
+    for (const k of ["hue", "range", "fall", "sway", "links"]) cur[k] = lerp(cur[k], target[k], 0.02);
+    for (let i = 0; i < 3; i++) {
+      cur.a[i] = lerp(cur.a[i], target.a[i], 0.02);
+      cur.b[i] = lerp(cur.b[i], target.b[i], 0.02);
+    }
+  }
+  const rgb = arr => `${Math.round(arr[0])},${Math.round(arr[1])},${Math.round(arr[2])}`;
+
+  /* ---------- PARTICLES ---------- */
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    w = window.innerWidth;
+    h = window.innerHeight;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const count = Math.min(230, Math.floor((w * h) / 7500));
+    particles = Array.from({ length: count }, (_, i) => {
+      const z = 0.2 + Math.random() * 0.8;       // depth: 0.2 far -> 1 near
+      return {
+        x: Math.random() * w, y: Math.random() * h, vx: 0, vy: 0, z,
+        r: 0.5 + z * 1.7, hf: Math.random(), phase: Math.random() * Math.PI * 2, i,
+        rot: Math.random() * 6.283, spin: (Math.random() - 0.5) * 0.08, flip: Math.random() * 6.283,
+        alt: FX.fx2 ? Math.random() < FX.fx2p : false
+      };
+    });
+  }
+
+  /* ---------- SHOOTING STARS (click them!) ---------- */
+  function spawnStar(x, y, ang, sp, max, nc) {
+    stars.push({ x, y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, life: 0, max, nc });
+  }
+  function randomStar() {
+    const ang = Math.PI * (0.12 + Math.random() * 0.16);
+    const fromLeft = Math.random() < 0.7;
+    spawnStar(
+      fromLeft ? Math.random() * w * 0.7 : w * (0.5 + Math.random() * 0.5),
+      Math.random() * h * 0.5,
+      fromLeft ? ang : Math.PI - ang,
+      5 + Math.random() * 3, 100 + Math.random() * 40, false
+    );
+  }
+
+  /* ---------- RARE GOLDEN DOT ---------- */
+  function spawnGold() {
+    if (gold) return;
+    const fromLeft = Math.random() < 0.5;
+    gold = {
+      x: fromLeft ? -20 : w + 20, y: h * (0.15 + Math.random() * 0.6),
+      vx: (fromLeft ? 1 : -1) * (1.2 + Math.random() * 0.8),
+      life: 0, max: 1100, ph: Math.random() * 6.283, trail: []
+    };
+  }
+
+  function pop(x, y, col, n) {
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * 6.283, s = 1 + Math.random() * 5;
+      sparks.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 0, max: 30 + Math.random() * 30, col, r: 1 + Math.random() * 2 });
+    }
+  }
+
+  const distSeg = (px, py, x1, y1, x2, y2) => {
+    const dx = x2 - x1, dy = y2 - y1, l = dx * dx + dy * dy || 1;
+    const u = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / l));
+    return Math.hypot(x1 + u * dx - px, y1 + u * dy - py);
+  };
+  function hitStar(px, py) {
+    for (let i = stars.length - 1; i >= 0; i--) {
+      const s = stars[i];
+      if (s.nc) continue;
+      if (distSeg(px, py, s.x, s.y, s.x - s.vx * 14, s.y - s.vy * 14) < 26) return i;
+    }
+    return -1;
+  }
+  const hitGold = (px, py) => gold && Math.hypot(gold.x - px, gold.y - py) < 34;
+
+  function charge() {
+    return mouse.down ? Math.min((performance.now() - mouse.downAt) / MAX_CHARGE, 1) : 0;
+  }
+
+  /* ---------- BLACK HOLE: hold to open a rift, release to collapse it ---------- */
+  function collapse(power) {
+    flares.push({ x: mouse.x, y: mouse.y, life: 0, max: 30 + power * 22, power });
+    const R = 260 + power * 340;
+    for (const p of particles) {
+      const dx = p.x - mouse.x, dy = p.y - mouse.y;
+      const d = Math.sqrt(dx * dx + dy * dy) || 1;
+      if (d < R) {
+        const k = Math.pow(1 - d / R, 0.7);
+        const f = k * (9 + power * 18) * (0.4 + p.z * 0.6);
+        p.vx += (dx / d) * f + (-dy / d) * f * 0.25;
+        p.vy += (dy / d) * f + (dx / d) * f * 0.25;
+      }
+    }
+    const n = 4 + Math.round(power * 6), off = Math.random() * Math.PI;
+    for (let i = 0; i < n; i++) spawnStar(mouse.x, mouse.y, off + (i / n) * 6.283, 9 + Math.random() * 6, 24 + Math.random() * 18, true);
+  }
+
+  /* ---------- STORM EASTER EGG: click the logo 5 times ---------- */
+  const rain = { until: 0 };
+  function storm() {
+    if (reduceMotion) return;
+    rain.until = performance.now() + 4500;
+    for (const p of particles) p.vy += 1.5 + Math.random() * 2;
+    emit("storm");
+  }
+
+  /* ---------- DRAWING ---------- */
+  function drawParticle(p, fx, hue, light, al, boost) {
+    const r = p.r;
+    const hs = (s, l, a) => `hsla(${hue},${s}%,${l}%,${Math.max(0, Math.min(1, a))})`;
+
+    if (fx === "snow") {
+      const c = light ? "205,85%,58%" : "205,70%,96%";
+      ctx.fillStyle = `hsla(${c},${0.12 * al})`;
+      ctx.beginPath(); ctx.arc(p.x, p.y, r * 4, 0, 6.283); ctx.fill();
+      ctx.fillStyle = `hsla(${c},${Math.min(1, 0.9 * al)})`;
+      ctx.beginPath(); ctx.arc(p.x, p.y, r * 1.1, 0, 6.283); ctx.fill();
+      return;
+    }
+    if (fx === "fireflies") {
+      const pu = Math.pow(0.5 + 0.5 * Math.sin(t * 5 + p.phase), 3);
+      ctx.fillStyle = hs(95, light ? 45 : 65, (0.05 + 0.3 * pu) * al);
+      ctx.beginPath(); ctx.arc(p.x, p.y, r * (5 + 4 * pu), 0, 6.283); ctx.fill();
+      ctx.fillStyle = hs(100, light ? 50 : 75, (0.35 + 0.65 * pu) * al);
+      ctx.beginPath(); ctx.arc(p.x, p.y, r * 1.2, 0, 6.283); ctx.fill();
+      return;
+    }
+    if (fx === "embers") {
+      const fl = 0.5 + 0.5 * Math.sin(t * 25 + p.phase);
+      ctx.fillStyle = hs(100, light ? 50 : 62, (0.06 + 0.12 * fl) * al);
+      ctx.beginPath(); ctx.arc(p.x, p.y, r * 3.5, 0, 6.283); ctx.fill();
+      ctx.fillStyle = hs(100, light ? 45 : 70, (0.5 + 0.5 * fl) * al);
+      ctx.beginPath(); ctx.arc(p.x, p.y, r * 0.9, 0, 6.283); ctx.fill();
+      return;
+    }
+    if (fx === "petals" || fx === "leaves" || fx === "confetti" || fx === "hearts" || fx === "bats") {
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      if (fx === "petals" || fx === "leaves" || fx === "confetti") {
+        ctx.rotate(p.rot);
+        ctx.scale(1, 0.3 + 0.7 * Math.abs(Math.cos(p.flip)));
+      }
+      if (fx === "petals") {
+        ctx.fillStyle = hs(85, light ? 62 : 82, 0.85 * al);
+        ctx.beginPath(); ctx.ellipse(0, 0, r * 2.4, r * 1.3, 0, 0, 6.283); ctx.fill();
+        ctx.fillStyle = hs(90, light ? 50 : 92, 0.5 * al);
+        ctx.beginPath(); ctx.ellipse(r * 0.8, 0, r, r * 0.6, 0, 0, 6.283); ctx.fill();
+      } else if (fx === "leaves") {
+        ctx.fillStyle = hs(85, light ? 42 : 56, 0.9 * al);
+        ctx.beginPath();
+        ctx.moveTo(-r * 2.6, 0); ctx.quadraticCurveTo(0, -r * 2.2, r * 2.6, 0); ctx.quadraticCurveTo(0, r * 2.2, -r * 2.6, 0);
+        ctx.fill();
+        ctx.strokeStyle = hs(70, light ? 26 : 34, 0.7 * al); ctx.lineWidth = 0.8;
+        ctx.beginPath(); ctx.moveTo(-r * 2.6, 0); ctx.lineTo(r * 2.6, 0); ctx.stroke();
+      } else if (fx === "confetti") {
+        ctx.fillStyle = hs(90, light ? 50 : 62, 0.9 * al);
+        ctx.fillRect(-r * 1.6, -r * 0.7, r * 3.2, r * 1.4);
+      } else if (fx === "hearts") {
+        ctx.rotate(Math.sin(t * 3 + p.phase) * 0.3);
+        ctx.scale(r * 0.9, r * 0.9);
+        ctx.fillStyle = hs(90, light ? 55 : 68, 0.85 * al);
+        ctx.beginPath(); ctx.moveTo(0, 2); ctx.bezierCurveTo(-4, -1, -2.5, -4, 0, -2); ctx.bezierCurveTo(2.5, -4, 4, -1, 0, 2); ctx.fill();
+      } else {
+        const f = Math.sin(t * 60 + p.phase);
+        ctx.scale(r * 0.9, r * 0.9);
+        ctx.fillStyle = `hsla(275,55%,${light ? 28 : 58}%,${0.9 * al})`;
+        ctx.beginPath();
+        ctx.moveTo(0, -1);
+        ctx.quadraticCurveTo(-5, -5 * f - 1, -9, -1 + f * 2); ctx.quadraticCurveTo(-5, 1, -3, 3);
+        ctx.lineTo(0, 1.5); ctx.lineTo(3, 3);
+        ctx.quadraticCurveTo(5, 1, 9, -1 + f * 2); ctx.quadraticCurveTo(5, -5 * f - 1, 0, -1);
+        ctx.fill();
+      }
+      ctx.restore();
+      return;
+    }
+    // default glowing dot
+    const tw = 0.6 + 0.4 * Math.sin(t * 6 + p.phase), l = light ? 48 : 70;
+    ctx.fillStyle = hs(90, l, 0.1 * tw * al);
+    ctx.beginPath(); ctx.arc(p.x, p.y, r * 4, 0, 6.283); ctx.fill();
+    ctx.fillStyle = hs(95, l, (light ? 0.85 : 0.9) * tw * al);
+    ctx.beginPath(); ctx.arc(p.x, p.y, r * (0.9 + boost * 0.1), 0, 6.283); ctx.fill();
+  }
+
+  function drawStar4(x, y, rad, rot, col) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.fillStyle = col;
+    ctx.beginPath();
+    for (let i = 0; i < 8; i++) { const rr = i % 2 ? rad * 0.28 : rad, a = i * Math.PI / 4; ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); }
+    ctx.closePath(); ctx.fill(); ctx.restore();
+  }
+
+  /* ---------- FRAME ---------- */
+  function frame() {
+    const light = document.body.classList.contains("light-theme");
+    const now = performance.now();
+    ctx.clearRect(0, 0, w, h);
+    t += 0.004;
+
+    easeTheme();
+    ra += ((now < rain.until ? 1 : 0) - ra) * 0.06;
+
+    // soft ambient glows tinted by the season
+    [
+      { x: w * (0.25 + 0.1 * Math.sin(t * 1.3)), y: h * (0.3 + 0.1 * Math.cos(t)), c: rgb(cur.a) },
+      { x: w * (0.75 + 0.1 * Math.cos(t * 1.1)), y: h * (0.7 + 0.1 * Math.sin(t * 0.9)), c: rgb(cur.b) }
+    ].forEach(g => {
+      const rad = Math.max(w, h) * 0.45;
+      const grad = ctx.createRadialGradient(g.x, g.y, 0, g.x, g.y, rad);
+      grad.addColorStop(0, `rgba(${g.c},${light ? 0.12 : 0.16})`);
+      grad.addColorStop(1, `rgba(${g.c},0)`);
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, w, h);
+    });
+
+    if (ra > 0.5 && Math.random() < 0.004) flash = 1;
+    if (flash > 0.02) {
+      ctx.fillStyle = light ? `rgba(0,102,255,${0.07 * flash})` : `rgba(200,215,255,${0.1 * flash})`;
+      ctx.fillRect(0, 0, w, h);
+      flash *= 0.9;
     }
 
-    function spawnStar(x, y, ang, sp, max) {
-      stars.push({ x, y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, life: 0, max });
-    }
+    const hasMouse = mouse.x > -9000;
+    const c = charge();
 
-    function randomStar() {
-      const ang = Math.PI * (0.12 + Math.random() * 0.16);
-      const fromLeft = Math.random() < 0.7;
-      spawnStar(
-        fromLeft ? Math.random() * w * 0.7 : w * (0.5 + Math.random() * 0.5),
-        Math.random() * h * 0.5,
-        fromLeft ? ang : Math.PI - ang,
-        9 + Math.random() * 5,
-        55 + Math.random() * 30
-      );
-    }
+    // update particles
+    for (const p of particles) {
+      let damp = 0.96;
+      const a = (Math.sin(p.x * 0.0028 + t * 2) + Math.cos(p.y * 0.0032 - t * 1.6)) * Math.PI;
+      const s = 0.5 + p.z * 0.8;
+      p.vx += Math.cos(a) * 0.012 * s;
+      p.vy += Math.sin(a) * 0.012 * s;
+      p.vy += cur.fall * (0.4 + p.z);
+      p.vx += Math.sin(t * 3 + p.phase) * cur.sway;
 
-    function charge() {
-      return mouse.down ? Math.min((performance.now() - mouse.downAt) / MAX_CHARGE, 1) : 0;
-    }
-
-    // release: the rift collapses -> light bloom, dots spiral outward, a few light cracks shoot out
-    function collapse(power) {
-      flares.push({ x: mouse.x, y: mouse.y, life: 0, max: 30 + power * 22, power });
-
-      const R = 260 + power * 340;
-      for (const p of particles) {
-        const dx = p.x - mouse.x, dy = p.y - mouse.y;
-        const d = Math.sqrt(dx * dx + dy * dy) || 1;
-        if (d < R) {
-          const k = Math.pow(1 - d / R, 0.7);
-          const f = k * (9 + power * 18) * (0.4 + p.z * 0.6);
-          p.vx += (dx / d) * f + (-dy / d) * f * 0.25;   // outward + a little spin
-          p.vy += (dy / d) * f + (dx / d) * f * 0.25;
-        }
+      if (ra > 0.02) {                       // storm: dots fall as rain
+        p.vy += 0.12 * ra * (0.4 + p.z * 0.8);
+        p.vx += 0.01 * ra;
+        damp = 0.97;
       }
 
-      const n = 4 + Math.round(power * 6);
-      const off = Math.random() * Math.PI;
-      for (let i = 0; i < n; i++) {
-        spawnStar(mouse.x, mouse.y, off + (i / n) * Math.PI * 2, 9 + Math.random() * 6, 24 + Math.random() * 18);
-      }
-    }
-
-    function frame() {
-      const light = document.body.classList.contains("light-theme");
-      ctx.clearRect(0, 0, w, h);
-      t += 0.004;
-
-      // soft ambient glows that slowly drift
-      const glows = [
-        { x: w * (0.25 + 0.1 * Math.sin(t * 1.3)), y: h * (0.3 + 0.1 * Math.cos(t)), c: "59,130,246" },
-        { x: w * (0.75 + 0.1 * Math.cos(t * 1.1)), y: h * (0.7 + 0.1 * Math.sin(t * 0.9)), c: "139,92,246" }
-      ];
-      glows.forEach(g => {
-        const rad = Math.max(w, h) * 0.45;
-        const grad = ctx.createRadialGradient(g.x, g.y, 0, g.x, g.y, rad);
-        grad.addColorStop(0, `rgba(${g.c},${light ? 0.12 : 0.16})`);
-        grad.addColorStop(1, `rgba(${g.c},0)`);
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, w, h);
-      });
-
-      const hasMouse = mouse.x > -9000;
-      const c = charge();
-
-      // update particles
-      for (const p of particles) {
-        const a = (Math.sin(p.x * 0.0028 + t * 2) + Math.cos(p.y * 0.0032 - t * 1.6)) * Math.PI;
-        const s = 0.5 + p.z * 0.8;
-        p.vx += Math.cos(a) * 0.012 * s;
-        p.vy += Math.sin(a) * 0.012 * s;
-
-        if (hasMouse) {
-          const dx = p.x - mouse.x;
-          const dy = p.y - mouse.y;
-          const d2 = dx * dx + dy * dy;
-          if (mouse.down) {
-            // rift: dots fall inward while orbiting, faster as it charges
-            if (d2 < HOLD_RADIUS * HOLD_RADIUS) {
-              const d = Math.sqrt(d2) || 1;
-              const k = 1 - d / HOLD_RADIUS;
-              const inward = k * (0.35 + c * 0.9);
-              const spin = k * (0.55 + c * 0.9);
-              p.vx += (-dx / d) * inward + (-dy / d) * spin;
-              p.vy += (-dy / d) * inward + (dx / d) * spin;
-              if (d < 26) { p.vx += (dx / d) * 0.6; p.vy += (dy / d) * 0.6; }  // keep an orbit around the core
-            }
-          } else if (d2 < 8100) {
-            const d = Math.sqrt(d2) || 1;
-            const f = (90 - d) / 90;
-            p.vx += (dx / d) * f * 0.3 * p.z;
-            p.vy += (dy / d) * f * 0.3 * p.z;
+      if (hasMouse) {
+        const dx = p.x - mouse.x, dy = p.y - mouse.y, d2 = dx * dx + dy * dy;
+        if (mouse.down) {
+          if (d2 < HOLD_RADIUS * HOLD_RADIUS) {          // the rift: fall inward while orbiting
+            const d = Math.sqrt(d2) || 1, k = 1 - d / HOLD_RADIUS;
+            const inward = k * (0.35 + c * 0.9), spin = k * (0.55 + c * 0.9);
+            p.vx += (-dx / d) * inward + (-dy / d) * spin;
+            p.vy += (-dy / d) * inward + (dx / d) * spin;
+            if (d < 26) { p.vx += (dx / d) * 0.6; p.vy += (dy / d) * 0.6; }
           }
+        } else if (ra < 0.3 && d2 < 8100) {
+          const d = Math.sqrt(d2) || 1, f = (90 - d) / 90;
+          p.vx += (dx / d) * f * 0.3 * p.z;
+          p.vy += (dy / d) * f * 0.3 * p.z;
         }
-
-        p.vx *= 0.96;
-        p.vy *= 0.96;
-        p.x += p.vx;
-        p.y += p.vy;
-
-        if (p.x < -20) p.x = w + 20;
-        if (p.x > w + 20) p.x = -20;
-        if (p.y < -20) p.y = h + 20;
-        if (p.y > h + 20) p.y = -20;
       }
 
-      // dot-to-dot lines
+      p.vx *= damp; p.vy *= damp;
+      p.x += p.vx; p.y += p.vy;
+      p.rot += p.spin; p.flip += Math.abs(p.spin) * 0.7 + 0.01;
+
+      if (p.x < -20) p.x = w + 20;
+      if (p.x > w + 20) p.x = -20;
+      if (p.y < -20) p.y = h + 20;
+      if (p.y > h + 20) p.y = -20;
+    }
+
+    // dot-to-dot lines (season decides how many)
+    const lineBase = (light ? 0.2 : 0.17) * cur.links * (1 - 0.7 * ra);
+    if (lineBase > 0.004) {
       ctx.lineWidth = 1;
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
@@ -1737,778 +1268,788 @@
         for (let j = i + 1; j < particles.length; j++) {
           const q = particles[j];
           if (q.z < 0.5) continue;
-          const dx = p.x - q.x, dy = p.y - q.y;
-          const d2 = dx * dx + dy * dy;
+          const dx = p.x - q.x, dy = p.y - q.y, d2 = dx * dx + dy * dy;
           if (d2 < LINK_DIST * LINK_DIST) {
-            const alpha = (1 - Math.sqrt(d2) / LINK_DIST) * (light ? 0.2 : 0.17);
-            ctx.strokeStyle = light ? `rgba(0,102,255,${alpha})` : `rgba(140,170,255,${alpha})`;
-            ctx.beginPath();
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(q.x, q.y);
-            ctx.stroke();
+            const alpha = (1 - Math.sqrt(d2) / LINK_DIST) * lineBase;
+            ctx.strokeStyle = light ? `rgba(0,102,255,${alpha})` : `rgba(150,180,255,${alpha})`;
+            ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke();
           }
         }
       }
+    }
 
-      // cursor constellation (hidden while the rift is open)
-      if (hasMouse && !mouse.down) {
-        for (const p of particles) {
-          const dx = p.x - mouse.x, dy = p.y - mouse.y;
-          const d = Math.sqrt(dx * dx + dy * dy);
-          if (d < CURSOR_LINK) {
-            const alpha = (1 - d / CURSOR_LINK) * 0.35;
-            ctx.strokeStyle = light ? `rgba(0,102,255,${alpha})` : `rgba(170,195,255,${alpha})`;
-            ctx.beginPath();
-            ctx.moveTo(mouse.x, mouse.y);
-            ctx.lineTo(p.x, p.y);
-            ctx.stroke();
-          }
-        }
-      }
-
-      // dots: glow, twinkle, depth, and motion streaks when moving fast
+    // cursor constellation (hidden while the rift is open)
+    if (hasMouse && !mouse.down && ra < 0.3) {
       for (const p of particles) {
-        const twinkle = 0.6 + 0.4 * Math.sin(t * 6 + p.phase);
-        const l = light ? 48 : 70;
-        const depthA = 0.3 + p.z * 0.7;
-        let boost = 1;
-        if (hasMouse && !mouse.down) {
-          const dx = p.x - mouse.x, dy = p.y - mouse.y;
-          const d = Math.sqrt(dx * dx + dy * dy);
-          if (d < CURSOR_LINK) boost = 1 + (1 - d / CURSOR_LINK) * 0.8;
+        const dx = p.x - mouse.x, dy = p.y - mouse.y, d = Math.sqrt(dx * dx + dy * dy);
+        if (d < CURSOR_LINK) {
+          ctx.strokeStyle = light ? `rgba(0,102,255,${(1 - d / CURSOR_LINK) * 0.3})` : `rgba(175,200,255,${(1 - d / CURSOR_LINK) * 0.3})`;
+          ctx.beginPath(); ctx.moveTo(mouse.x, mouse.y); ctx.lineTo(p.x, p.y); ctx.stroke();
         }
-
-        const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
-        if (speed > 1.5) {
-          const a = Math.min(0.7, (speed - 1.5) * 0.12) * depthA;
-          ctx.strokeStyle = `hsla(${p.hue},95%,${light ? 45 : 78}%,${a})`;
-          ctx.lineWidth = p.r * 0.9 + 0.4;
-          ctx.lineCap = "round";
-          ctx.beginPath();
-          ctx.moveTo(p.x, p.y);
-          ctx.lineTo(p.x - p.vx * 4, p.y - p.vy * 4);
-          ctx.stroke();
-          ctx.lineCap = "butt";
-        }
-
-        ctx.fillStyle = `hsla(${p.hue},90%,${l}%,${Math.min(1, 0.1 * twinkle * depthA * boost)})`;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r * 4 * boost, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = `hsla(${p.hue},95%,${l}%,${Math.min(1, (light ? 0.85 : 0.9) * twinkle * depthA * boost)})`;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r * (0.9 + boost * 0.1), 0, Math.PI * 2);
-        ctx.fill();
       }
+    }
 
-      // the rift: dark core, glowing rim, spinning tilted discs
-      if (mouse.down && hasMouse) {
-        const pulse = 1 + (c >= 1 ? 0.07 * Math.sin(performance.now() / 55) : 0);
-        const cr = (6 + c * 16) * pulse;
-        const R = cr * 4.5;
-
-        const g = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, R);
-        const core = light ? "15,23,42" : "4,5,12";
-        g.addColorStop(0, `rgba(${core},0.95)`);
-        g.addColorStop(0.3, `rgba(${core},0.95)`);
-        g.addColorStop(0.36, `rgba(${light ? "0,102,255" : "170,195,255"},${0.55 + c * 0.35})`);
-        g.addColorStop(0.55, `rgba(139,92,246,${0.2 + c * 0.2})`);
-        g.addColorStop(1, "rgba(59,130,246,0)");
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.arc(mouse.x, mouse.y, R, 0, Math.PI * 2);
-        ctx.fill();
-
-        const spin = performance.now() / 600;
-        const discCol = light ? "0,102,255" : "175,200,255";
-        for (let n = 0; n < 2; n++) {
-          ctx.save();
-          ctx.translate(mouse.x, mouse.y);
-          ctx.rotate((n ? -0.5 : 0.35) + (n ? -spin : spin) * 0.35);
-          ctx.setLineDash(n ? [18, 26, 6, 26] : [46, 22, 10, 22]);
-          ctx.lineDashOffset = -spin * 60 * (n ? -1 : 1);
-          ctx.strokeStyle = `rgba(${discCol},${(0.25 + c * 0.45) * (n ? 0.7 : 1)})`;
-          ctx.lineWidth = n ? 1 : 1.6;
-          ctx.beginPath();
-          ctx.ellipse(0, 0, cr * (n ? 4.4 : 3.4), cr * (n ? 1.5 : 1.15), 0, 0, Math.PI * 2);
-          ctx.stroke();
-          ctx.restore();
-        }
-        ctx.setLineDash([]);
+    // particles
+    for (const p of particles) {
+      const depthA = 0.3 + p.z * 0.7;
+      const hue = FX.hues ? FX.hues[p.i % FX.hues.length] : cur.hue + p.hf * cur.range;
+      let boost = 1;
+      if (hasMouse && !mouse.down) {
+        const dx = p.x - mouse.x, dy = p.y - mouse.y, d = Math.sqrt(dx * dx + dy * dy);
+        if (d < CURSOR_LINK) boost += (1 - d / CURSOR_LINK) * 0.8;
       }
-
-      // collapse bloom: a soft burst of light, no outline
-      for (let i = flares.length - 1; i >= 0; i--) {
-        const f = flares[i];
-        f.life++;
-        const k = f.life / f.max;
-        if (k >= 1) { flares.splice(i, 1); continue; }
-        const r = (90 + f.power * 190) * (0.25 + 0.75 * Math.sqrt(k));
-        const a = (1 - k) * (0.45 + f.power * 0.3);
-        const g = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, r);
-        g.addColorStop(0, `rgba(${light ? "255,255,255" : "230,238,255"},${Math.min(1, a * 1.6)})`);
-        g.addColorStop(0.25, `rgba(${light ? "0,102,255" : "120,160,255"},${a})`);
-        g.addColorStop(0.6, `rgba(139,92,246,${a * 0.45})`);
-        g.addColorStop(1, "rgba(139,92,246,0)");
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.arc(f.x, f.y, r, 0, Math.PI * 2);
-        ctx.fill();
+      const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+      if (ra > 0.05) {                                       // rain streaks
+        ctx.strokeStyle = `hsla(${hue},95%,${light ? 45 : 78}%,${0.45 * ra * depthA})`;
+        ctx.lineWidth = p.r * 0.6 + 0.3;
+        ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.vx * 3, p.y - p.vy * 3); ctx.stroke();
+      } else if (speed > 1.8) {                              // motion streaks (rift / collapse)
+        ctx.strokeStyle = `hsla(${hue},95%,${light ? 45 : 78}%,${Math.min(0.7, (speed - 1.8) * 0.12) * depthA})`;
+        ctx.lineWidth = p.r * 0.9 + 0.4; ctx.lineCap = "round";
+        ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.vx * 4, p.y - p.vy * 4); ctx.stroke();
+        ctx.lineCap = "butt";
       }
+      drawParticle(p, p.alt ? FX.fx2 : FX.fx, hue, light, Math.min(1, depthA * boost), boost);
+    }
 
+    // the rift: dark core, glowing rim, spinning tilted discs
+    if (mouse.down && hasMouse) {
+      const pulse = 1 + (c >= 1 ? 0.07 * Math.sin(now / 55) : 0);
+      const cr = (6 + c * 16) * pulse, R = cr * 4.5;
+      const g = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, R);
+      const core = light ? "15,23,42" : "4,5,12";
+      g.addColorStop(0, `rgba(${core},0.95)`);
+      g.addColorStop(0.3, `rgba(${core},0.95)`);
+      g.addColorStop(0.36, `rgba(${light ? "0,102,255" : "170,195,255"},${0.55 + c * 0.35})`);
+      g.addColorStop(0.55, `rgba(${rgb(cur.b)},${0.2 + c * 0.2})`);
+      g.addColorStop(1, `rgba(${rgb(cur.a)},0)`);
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(mouse.x, mouse.y, R, 0, 6.283); ctx.fill();
+
+      const spin = now / 600, discCol = light ? "0,102,255" : "175,200,255";
+      for (let n = 0; n < 2; n++) {
+        ctx.save();
+        ctx.translate(mouse.x, mouse.y);
+        ctx.rotate((n ? -0.5 : 0.35) + (n ? -spin : spin) * 0.35);
+        ctx.setLineDash(n ? [18, 26, 6, 26] : [46, 22, 10, 22]);
+        ctx.lineDashOffset = -spin * 60 * (n ? -1 : 1);
+        ctx.strokeStyle = `rgba(${discCol},${(0.25 + c * 0.45) * (n ? 0.7 : 1)})`;
+        ctx.lineWidth = n ? 1 : 1.6;
+        ctx.beginPath(); ctx.ellipse(0, 0, cr * (n ? 4.4 : 3.4), cr * (n ? 1.5 : 1.15), 0, 0, 6.283); ctx.stroke();
+        ctx.restore();
+      }
+      ctx.setLineDash([]);
+    }
+
+    // collapse bloom
+    for (let i = flares.length - 1; i >= 0; i--) {
+      const f = flares[i];
+      f.life++;
+      const k = f.life / f.max;
+      if (k >= 1) { flares.splice(i, 1); continue; }
+      const r = (90 + f.power * 190) * (0.25 + 0.75 * Math.sqrt(k)), a = (1 - k) * (0.45 + f.power * 0.3);
+      const g = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, r);
+      g.addColorStop(0, `rgba(${light ? "255,255,255" : "230,238,255"},${Math.min(1, a * 1.6)})`);
+      g.addColorStop(0.25, `rgba(${light ? "0,102,255" : "120,160,255"},${a})`);
+      g.addColorStop(0.6, `rgba(${rgb(cur.b)},${a * 0.45})`);
+      g.addColorStop(1, `rgba(${rgb(cur.b)},0)`);
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(f.x, f.y, r, 0, 6.283); ctx.fill();
+    }
+
+    if (!reduceMotion) {
       // shooting stars
-      if (!reduceMotion) {
-        if (--nextStar <= 0) {
-          randomStar();
-          if (Math.random() < 0.35) randomStar();
-          nextStar = 110 + Math.random() * 210;
-        }
-        for (let i = stars.length - 1; i >= 0; i--) {
-          const s = stars[i];
-          s.x += s.vx; s.y += s.vy; s.life++;
-          const k = s.life / s.max;
-          if (k >= 1) { stars.splice(i, 1); continue; }
-          const fade = Math.sin(k * Math.PI);
-          const tx = s.x - s.vx * 12, ty = s.y - s.vy * 12;
-          const sg = ctx.createLinearGradient(s.x, s.y, tx, ty);
-          const col = light ? "0,102,255" : "190,210,255";
-          sg.addColorStop(0, `rgba(${col},${0.9 * fade})`);
-          sg.addColorStop(1, `rgba(${col},0)`);
-          ctx.strokeStyle = sg;
-          ctx.lineWidth = 1.6;
-          ctx.beginPath();
-          ctx.moveTo(s.x, s.y);
-          ctx.lineTo(tx, ty);
-          ctx.stroke();
-        }
+      if (--nextStar <= 0) {
+        randomStar();
+        if (Math.random() < 0.35) randomStar();
+        nextStar = 110 + Math.random() * 210;
+      }
+      for (let i = stars.length - 1; i >= 0; i--) {
+        const s = stars[i];
+        s.x += s.vx; s.y += s.vy; s.life++;
+        const k = s.life / s.max;
+        if (k >= 1) { stars.splice(i, 1); continue; }
+        const fade = Math.sin(k * Math.PI), tx = s.x - s.vx * 14, ty = s.y - s.vy * 14;
+        const sg = ctx.createLinearGradient(s.x, s.y, tx, ty);
+        const col = light ? "0,102,255" : "190,210,255";
+        sg.addColorStop(0, `rgba(${col},${0.9 * fade})`);
+        sg.addColorStop(1, `rgba(${col},0)`);
+        ctx.strokeStyle = sg; ctx.lineWidth = s.nc ? 1.6 : 2.2;
+        ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(tx, ty); ctx.stroke();
       }
 
-      if (!reduceMotion) requestAnimationFrame(frame);
+      // the rare golden dot
+      if (!gold && --nextGold <= 0) {
+        if (Math.random() < 0.3) spawnGold();
+        nextGold = 1200 + Math.random() * 1200;
+      }
+      if (gold) {
+        gold.life++;
+        gold.x += gold.vx;
+        gold.y += Math.sin(gold.life * 0.03 + gold.ph) * 1.1;
+        if (gold.life % 2 === 0) gold.trail.push({ x: gold.x, y: gold.y, a: 1 });
+        const k = gold.life / gold.max, fade = Math.min(1, gold.life / 40, (1 - k) * 8);
+        if (k >= 1 || gold.x < -60 || gold.x > w + 60) gold = null;
+        else {
+          for (let i = gold.trail.length - 1; i >= 0; i--) {
+            const tr = gold.trail[i];
+            tr.a -= 0.025;
+            if (tr.a <= 0) { gold.trail.splice(i, 1); continue; }
+            ctx.fillStyle = `rgba(255,205,60,${tr.a * 0.5 * fade})`;
+            ctx.beginPath(); ctx.arc(tr.x, tr.y, 1.5 + tr.a * 2, 0, 6.283); ctx.fill();
+          }
+          const pu = 1 + 0.18 * Math.sin(gold.life * 0.2);
+          const g = ctx.createRadialGradient(gold.x, gold.y, 0, gold.x, gold.y, 30 * pu);
+          g.addColorStop(0, `rgba(255,225,110,${0.85 * fade})`);
+          g.addColorStop(0.35, `rgba(255,180,30,${0.35 * fade})`);
+          g.addColorStop(1, "rgba(255,160,0,0)");
+          ctx.fillStyle = g;
+          ctx.beginPath(); ctx.arc(gold.x, gold.y, 30 * pu, 0, 6.283); ctx.fill();
+          drawStar4(gold.x, gold.y, 11 * pu, gold.life * 0.04, `rgba(255,244,190,${fade})`);
+          ctx.fillStyle = `rgba(255,200,40,${fade})`;
+          ctx.beginPath(); ctx.arc(gold.x, gold.y, 4.2, 0, 6.283); ctx.fill();
+        }
+      }
     }
 
-    const isUI = el => el && el.closest && el.closest("button, input, select, a, textarea");
+    // click pops
+    for (let i = sparks.length - 1; i >= 0; i--) {
+      const s = sparks[i];
+      s.life++; s.x += s.vx; s.y += s.vy; s.vx *= 0.95; s.vy *= 0.95; s.vy += 0.04;
+      const k = s.life / s.max;
+      if (k >= 1) { sparks.splice(i, 1); continue; }
+      ctx.fillStyle = `rgba(${s.col},${1 - k})`;
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r * (1 - k * 0.5), 0, 6.283); ctx.fill();
+    }
 
-    window.addEventListener("resize", resize);
-    window.addEventListener("pointermove", e => { mouse.x = e.clientX; mouse.y = e.clientY; });
-    window.addEventListener("pointerdown", e => {
-      if (isUI(e.target)) return;
-      mouse.x = e.clientX; mouse.y = e.clientY;
-      mouse.down = true;
-      mouse.downAt = performance.now();
-    });
-    window.addEventListener("pointerup", () => {
-      if (!mouse.down) return;
-      const power = Math.max(charge(), 0.2);
-      mouse.down = false;
-      collapse(power);
-    });
-    window.addEventListener("pointercancel", () => { mouse.down = false; });
-    document.addEventListener("pointerleave", () => { mouse.x = mouse.y = -9999; mouse.down = false; });
-    document.addEventListener("visibilitychange", () => {
-      if (!document.hidden && !reduceMotion) requestAnimationFrame(frame);
-    });
+    if (!reduceMotion) requestAnimationFrame(frame);
+  }
 
-    resize();
-    frame();
-  })();
-  </script>
+  /* ---------- INPUT ---------- */
+  const isUI = el => el && el.closest && el.closest("button, input, select, a, textarea, .glass-modal-overlay");
 
-  
+  window.addEventListener("resize", resize);
+  window.addEventListener("pointermove", e => {
+    mouse.x = e.clientX; mouse.y = e.clientY;
+    const over = !isUI(e.target) && (hitStar(e.clientX, e.clientY) >= 0 || hitGold(e.clientX, e.clientY));
+    document.documentElement.style.cursor = over ? "pointer" : "";
+  });
+  window.addEventListener("pointerdown", e => {
+    if (isUI(e.target)) return;
+    const si = hitStar(e.clientX, e.clientY);
+    if (si >= 0) {                                   // caught a shooting star
+      pop(stars[si].x, stars[si].y, "255,235,170", 18);
+      stars.splice(si, 1);
+      emit("star");
+      return;
+    }
+    if (hitGold(e.clientX, e.clientY)) {             // caught the golden dot
+      pop(gold.x, gold.y, "255,200,40", 50);
+      gold = null;
+      emit("gold");
+      return;
+    }
+    mouse.x = e.clientX; mouse.y = e.clientY;
+    mouse.down = true;
+    mouse.downAt = performance.now();
+  });
+  window.addEventListener("pointerup", () => {
+    if (!mouse.down) return;
+    const full = charge() >= 1, power = Math.max(charge(), 0.2);
+    mouse.down = false;
+    collapse(power);
+    emit("rift", full ? 1 : 0);
+  });
+  window.addEventListener("pointercancel", () => { mouse.down = false; });
+  document.addEventListener("pointerleave", () => { mouse.x = mouse.y = -9999; mouse.down = false; });
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && !reduceMotion) requestAnimationFrame(frame);
+  });
+
+  // click the Rift Hub logo 5 times quickly for a storm
+  let logoClicks = 0, lastLogoClick = 0;
+  document.querySelectorAll("header h1, .login-container h2, footer h3").forEach(el => {
+    el.style.userSelect = "none";
+    el.style.webkitUserSelect = "none";
+    el.addEventListener("click", () => {
+      const n = performance.now();
+      logoClicks = (n - lastLogoClick < 1200) ? logoClicks + 1 : 1;
+      lastLogoClick = n;
+      if (logoClicks >= 5) { logoClicks = 0; storm(); }
+    });
+  });
+
+  window.riftBg = { storm, gold: spawnGold, star: randomStar };   // handy for testing in the console
+
+  applyTarget();
+  resize();
+  frame();
+})();
+</script>
+
+
+
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-    import {
-      getAuth,
-      signInWithEmailAndPassword,
-      createUserWithEmailAndPassword,
-      onAuthStateChanged
-    } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyD2XQWUKM4SQO8azXkm2XwG_e9ZQWpYJi0",
-      authDomain: "rifthub-4275a.firebaseapp.com",
-      projectId: "rifthub-4275a",
-      storageBucket: "rifthub-4275a.firebasestorage.app",
-      messagingSenderId: "56609352786",
-      appId: "1:56609352786:web:55dc5d3b32412bf1e3838b"
-    };
+const firebaseConfig = {
+  apiKey: "AIzaSyD2XQWUKM4SQO8azXkm2XwG_e9ZQWpYJi0",
+  authDomain: "rifthub-4275a.firebaseapp.com",
+  projectId: "rifthub-4275a",
+  storageBucket: "rifthub-4275a.firebasestorage.app",
+  messagingSenderId: "56609352786",
+  appId: "1:56609352786:web:55dc5d3b32412bf1e3838b"
+};
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    let isGuest = false;
-    let currentGameOfDay = {};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+let isGuest = false;
+let currentGameOfDay = {};
 
-    /* CATEGORY & HARDWARE SCHEME ASSIGNMENT MATRIX */
-    const categoryMap = {
-      snake: "arcade", tetris: "puzzle", pong: "arcade", flappyblock: "arcade",
-      "2048": "puzzle", memorymatch: "puzzle", "pac-man": "arcade", wordle: "word",
-      connectfour: "strategy", tictactoe: "strategy", rockpaperscissors: "arcade",
-      "dots&boxes": "strategy", flowfree: "puzzle", chess: "strategy",
-      snakesandladders: "board", nonogram: "puzzle", hangman: "word",
-      simonsays: "arcade", checkers: "strategy", Utictactoe: "strategy",
-      hexes: "strategy", sudoku: "puzzle", stack: "arcade", cookieclicker: "arcade",
-      crossyroad: "arcade", holdit: "arcade", ludo: "board", subway: "arcade", shutit: "board", battleship: "board", reaction: "arcade", lights: "puzzle", 21: "strategy",
-      monopoly: "board", uno: "strategy", monopolydeal: "strategy"
-    };
+/* CATEGORY & HARDWARE SCHEME ASSIGNMENT MATRIX */
+const categoryMap = {
+  snake: "arcade", tetris: "puzzle", pong: "arcade", flappyblock: "arcade",
+  "2048": "puzzle", memorymatch: "puzzle", "pac-man": "arcade", wordle: "word",
+  connectfour: "strategy", tictactoe: "strategy", rockpaperscissors: "arcade",
+  "dots&boxes": "strategy", flowfree: "puzzle", chess: "strategy",
+  snakesandladders: "board", nonogram: "puzzle", hangman: "word",
+  simonsays: "arcade", checkers: "strategy", Utictactoe: "strategy",
+  hexes: "strategy", sudoku: "puzzle", stack: "arcade", cookieclicker: "arcade",
+  crossyroad: "arcade", holdit: "arcade", ludo: "board", subway: "arcade", shutit: "board", battleship: "board", reaction: "arcade", lights: "puzzle", 21: "strategy",
+  monopoly: "board", uno: "strategy", monopolydeal: "strategy"
+};
 
-    const controlsMap = {
-      snake: "arrows", tetris: "arrows", pong: "arrows", flappyblock: "space",
-      "2048": "arrows", memorymatch: "click", "pac-man": "arrows", wordle: "keyboard",
-      connectfour: "click", tictactoe: "click", rockpaperscissors: "click",
-      "dots&boxes": "click", flowfree: "click", chess: "click",
-      snakesandladders: "click", nonogram: "click", hangman: "keyboard",
-      simonsays: "click", checkers: "click", Utictactoe: "click",
-      hexes: "click", sudoku: "keyboard", stack: "space", cookieclicker: "click",
-      crossyroad: "arrows", holdit: "space", ludo: "click", subway: "arrows", shutit: "click", battleship: "click", reaction: "click", lights: "click", 21: "click",
-      monopoly: "click", uno: "click", monopolydeal: "click"
-    };
+const controlsMap = {
+  snake: "arrows", tetris: "arrows", pong: "arrows", flappyblock: "space",
+  "2048": "arrows", memorymatch: "click", "pac-man": "arrows", wordle: "keyboard",
+  connectfour: "click", tictactoe: "click", rockpaperscissors: "click",
+  "dots&boxes": "click", flowfree: "click", chess: "click",
+  snakesandladders: "click", nonogram: "click", hangman: "keyboard",
+  simonsays: "click", checkers: "click", Utictactoe: "click",
+  hexes: "click", sudoku: "keyboard", stack: "space", cookieclicker: "click",
+  crossyroad: "arrows", holdit: "space", ludo: "click", subway: "arrows", shutit: "click", battleship: "click", reaction: "click", lights: "click", 21: "click",
+  monopoly: "click", uno: "click", monopolydeal: "click"
+};
 
-    const controlIconInfo = {
-      arrows: { icon: "⬆", label: "Arrow Keys" },
-      click: { icon: "🖱", label: "Mouse Click" },
-      keyboard: { icon: "⌨", label: "Keyboard" },
-      space: { icon: "␣", label: "Spacebar" }
-    };
+const controlIconInfo = {
+  arrows: { icon: "⬆", label: "Arrow Keys" },
+  click: { icon: "🖱", label: "Mouse Click" },
+  keyboard: { icon: "⌨", label: "Keyboard" },
+  space: { icon: "␣", label: "Spacebar" }
+};
 
-    // Inject categories and controller hint pills
-    document.querySelectorAll("#mainGameGrid .game-card").forEach(card => {
-      const name = card.getAttribute("data-name");
-      if (!name) return;
+// Inject categories and controller hint pills
+document.querySelectorAll("#mainGameGrid .game-card").forEach(card => {
+  const name = card.getAttribute("data-name");
+  if (!name) return;
+  if (categoryMap[name]) card.setAttribute("data-category", categoryMap[name]);
+  const controlKey = controlsMap[name];
+  if (controlKey) {
+    const info = controlIconInfo[controlKey];
+    const h3 = card.querySelector(".game-info h3");
+    if (h3) {
+      const hintRow = document.createElement("div");
+      hintRow.className = "control-hints";
+      hintRow.innerHTML = `<span class="control-hint-circle" title="${info.label}"><span class="control-hint-icon">${info.icon}</span></span>`;
+      h3.insertAdjacentElement("afterend", hintRow);
+    }
+  }
+});
 
-      if (categoryMap[name]) {
-        card.setAttribute("data-category", categoryMap[name]);
-      }
+/* DIALOG MODAL HANDLERS */
+window.showGlassModal = function (message, opts = {}) {
+  const { title = "Notice", icon = "🔒" } = opts;
+  const titleEl = document.getElementById("glassModalTitle");
+  const msgEl = document.getElementById("glassModalMessage");
+  const iconEl = document.getElementById("glassModalIcon");
+  const overlay = document.getElementById("glassModalOverlay");
+  if (titleEl) titleEl.textContent = title;
+  if (msgEl) msgEl.textContent = message;
+  if (iconEl) iconEl.textContent = icon;
+  if (overlay) overlay.classList.add("is-open");
+};
 
-      const controlKey = controlsMap[name];
-      if (controlKey) {
-        const info = controlIconInfo[controlKey];
-        const h3 = card.querySelector(".game-info h3");
-        if (h3) {
-          const hintRow = document.createElement("div");
-          hintRow.className = "control-hints";
-          hintRow.innerHTML = `<span class="control-hint-circle" title="${info.label}"><span class="control-hint-icon">${info.icon}</span></span>`;
-          h3.insertAdjacentElement("afterend", hintRow);
-        }
-      }
+window.closeGlassModal = function () {
+  const overlay = document.getElementById("glassModalOverlay");
+  if (overlay) overlay.classList.remove("is-open");
+};
+
+document.getElementById("glassModalOverlay").addEventListener("click", (e) => {
+  if (e.target.id === "glassModalOverlay") window.closeGlassModal();
+});
+
+/* SKELETON PLACEHOLDER RENDERING */
+function renderSkeletonCards(gridId, count) {
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  const isExclusiveList = grid.classList.contains("exclusives-list");
+  grid.innerHTML = Array.from({ length: count }).map(() => `
+    <div class="skeleton-card">
+      <div class="skeleton-shimmer-inner" style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:${isExclusiveList ? "90px" : "118px"};">
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line skeleton-btn"></div>
+      </div>
+    </div>`).join("");
+}
+
+function revealGrid(gridId) {
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  grid.classList.add("grid-fade-in");
+  setTimeout(() => grid.classList.remove("grid-fade-in"), 400);
+}
+
+const gamePool = [
+  { id: "snake", name: "Snake", page: "snake.html" },
+  { id: "tetris", name: "Tetris", page: "tetris.html" },
+  { id: "pong", name: "Pong", page: "pong.html" },
+  { id: "flappyblock", name: "Flappy Block", page: "flappyblock.html" },
+  { id: "2048", name: "2048", page: "2048.html" },
+  { id: "memorymatch", name: "Memory Match", page: "memorymatch.html" },
+  { id: "pac-man", name: "Pac-Man", page: "pacman.html" },
+  { id: "wordle", name: "Wordle", page: "wordle.html" },
+  { id: "connectfour", name: "Connect Four", page: "connectfour.html" },
+  { id: "tictactoe", name: "Tic-Tac-Toe", page: "tictactoe.html" },
+  { id: "rockpaperscissors", name: "Rock, Paper, Scissors", page: "rockpaperscissors.html" },
+  { id: "dots&boxes", name: "Dots & Boxes", page: "dotsandboxes.html" },
+  { id: "chess", name: "Chess", page: "chess.html" },
+  { id: "snakesandladders", name: "Portals and Rift Holes", page: "snakesandladders.html" },
+  { id: "flowfree", name: "Flow Free", page: "flowfree.html" },
+  { id: "nonogram", name: "Nonogram", page: "nonogram.html" },
+  { id: "hangman", name: "Hangman", page: "hangman.html" },
+  { id: "simonsays", name: "Simon Says", page: "simonsays.html" },
+  { id: "checkers", name: "Checkers", page: "checkers.html" },
+  { id: "Utictactoe", name: "Ultimate Tic-Tac-Toe", page: "Utictactoe.html" },
+  { id: "hexes", name: "Hexes", page: "hexes.html" },
+  { id: "sudoku", name: "Sudoku", page: "sudoku.html" },
+  { id: "stack", name: "Super Stack", page: "stack.html" },
+  { id: "cookieclicker", name: "Cookie Clicker", page: "cookieclicker.html" },
+  { id: "crossyroad", name: "Crossy Road", page: "crossyroad.html" },
+  { id: "holdit", name: "Hold It!", page: "holdit.html" },
+  { id: "ludo", name: "Ludo", page: "ludo.html" },
+  { id: "subway", name: "Subway Surfers", page: "subway.html" },
+  { id: "shutit", name: "Shut The Box", page: "shutit.html" },
+  { id: "battleship", name: "Battleship", page: "battleship.html" },
+  { id: "reaction", name: "Reaction Test", page: "reaction.html" },
+  { id: "lights", name: "Lights Out", page: "lights.html" },
+  { id: "21", name: "21", page: "21.html" },
+  { id: "monopoly", name: "Monopoly", page: "monopoly.html" },
+  { id: "uno", name: "Uno", page: "uno.html" },
+  { id: "monopolydeal", name: "Monopoly Deal", page: "monopolydeal.html" },
+];
+
+/* STREAK ENGINE */
+function dateStr(offsetDays = 0) {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  return d.toISOString().slice(0, 10);
+}
+
+function renderStreakBadge(streak) {
+  const countEl = document.getElementById("streakCount");
+  const circleEl = document.getElementById("streakCircle");
+  if (countEl) countEl.textContent = streak;
+  if (circleEl) circleEl.classList.toggle("streak-hot", streak >= 3);
+}
+
+function updateStreak() {
+  if (isGuest) return;
+  const today = dateStr(0);
+  const yesterday = dateStr(-1);
+  const lastPlayed = localStorage.getItem("riftLastPlayed");
+  let streak = parseInt(localStorage.getItem("riftStreak")) || 0;
+  if (lastPlayed && lastPlayed !== today && lastPlayed !== yesterday) {
+    streak = 0;
+    localStorage.setItem("riftStreak", "0");
+  }
+  renderStreakBadge(streak);
+}
+
+function recordStreakPlay() {
+  if (isGuest) return;
+  const today = dateStr(0);
+  const yesterday = dateStr(-1);
+  const lastPlayed = localStorage.getItem("riftLastPlayed");
+  let streak = parseInt(localStorage.getItem("riftStreak")) || 0;
+  if (lastPlayed === today) {
+    // Logged already
+  } else if (lastPlayed === yesterday) {
+    streak += 1;
+  } else {
+    streak = 1;
+  }
+  localStorage.setItem("riftStreak", String(streak));
+  localStorage.setItem("riftLastPlayed", today);
+  renderStreakBadge(streak);
+}
+
+/* VIEWPORT THEME MANAGER */
+window.toggleTheme = function () {
+  const isLight = document.body.classList.toggle("light-theme");
+  localStorage.setItem("riftTheme", isLight ? "light" : "dark");
+};
+
+if (localStorage.getItem("riftTheme") === "light") {
+  document.body.classList.add("light-theme");
+}
+
+function setGameOfDay() {
+  const today = new Date();
+  const dayId = today.getFullYear() * 1000 + (today.getMonth() + 1) * 100 + today.getDate();
+  const index = dayId % gamePool.length;
+  currentGameOfDay = gamePool[index];
+  const titleEl = document.getElementById("gotwTitle");
+  if (titleEl) titleEl.textContent = isGuest ? "🔒 Locked Content" : currentGameOfDay.name;
+}
+
+window.playGameOfDay = function () {
+  if (isGuest) {
+    showGlassModal("Highlight channels and recommended content profiles require an account!", { title: "Account Required", icon: "📅" });
+    return;
+  }
+  window.openGame(currentGameOfDay.page, currentGameOfDay.name);
+};
+
+/* AUTHENTICATION ROUTINES */
+window.logout = function () {
+  isGuest = false;
+  document.getElementById("site").style.display = "none";
+  document.getElementById("loginScreen").style.display = "flex";
+  document.getElementById("email").value = "";
+  document.getElementById("password").value = "";
+  auth.signOut().catch(err => showGlassModal(err.message, { title: "Sign Out Error", icon: "⚠️" }));
+};
+
+window.login = function () {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  signInWithEmailAndPassword(auth, email, password)
+    .then(u => loadUser(u.user.email, false))
+    .catch(err => showGlassModal(err.message, { title: "Login Failed", icon: "⚠️" }));
+};
+
+window.signup = function () {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  createUserWithEmailAndPassword(auth, email, password)
+    .then(u => loadUser(u.user.email, false))
+    .catch(err => showGlassModal(err.message, { title: "Sign Up Failed", icon: "⚠️" }));
+};
+
+window.loginAsGuest = function () {
+  loadUser("Guest Player", true);
+};
+
+function loadUser(email, guestModeStatus) {
+  isGuest = guestModeStatus;
+
+  document.getElementById("loginScreen").style.display = "none";
+  document.getElementById("site").style.display = "block";
+  document.getElementById("username").textContent = email;
+
+  const exclusivesContainer = document.getElementById("exclusivesContainer");
+  const cards = exclusivesContainer.querySelectorAll(".game-card");
+  const gotwBanner = document.getElementById("gotwBanner");
+  const gotwBtn = document.getElementById("gotwBtn");
+
+  setGameOfDay();
+
+  renderSkeletonCards("favoritesGrid", 3);
+  renderSkeletonCards("historyGrid", 3);
+  renderSkeletonCards("mainGameGridSkeleton", 9);
+
+  const skeletonGrid = document.getElementById("mainGameGridSkeleton");
+  const mainGrid = document.getElementById("mainGameGrid");
+
+  if (skeletonGrid) skeletonGrid.style.display = "flex";
+  if (mainGrid) mainGrid.style.display = "none";
+
+  if (isGuest) {
+    document.getElementById("historySection").style.display = "none";
+    document.getElementById("statsBar").style.display = "none";
+    if (gotwBanner) gotwBanner.classList.add("locked-banner");
+    if (gotwBtn) gotwBtn.textContent = "🔒 Locked (Account Required)";
+    cards.forEach(card => {
+      card.classList.add("locked-card");
+      const title = card.querySelector(".ex-title");
+      if (title && !title.textContent.includes("🔒")) title.textContent = "🔒 " + title.textContent;
+      const exBtn = card.querySelector(".ex-btn");
+      if (exBtn) exBtn.textContent = "Locked";
     });
-
-    /* DIALOG MODAL HANDLERS */
-    window.showGlassModal = function (message, opts = {}) {
-      const { title = "Notice", icon = "🔒" } = opts;
-      const titleEl = document.getElementById("glassModalTitle");
-      const msgEl = document.getElementById("glassModalMessage");
-      const iconEl = document.getElementById("glassModalIcon");
-      const overlay = document.getElementById("glassModalOverlay");
-
-      if (titleEl) titleEl.textContent = title;
-      if (msgEl) msgEl.textContent = message;
-      if (iconEl) iconEl.textContent = icon;
-      if (overlay) overlay.classList.add("is-open");
-    };
-
-    window.closeGlassModal = function () {
-      const overlay = document.getElementById("glassModalOverlay");
-      if (overlay) overlay.classList.remove("is-open");
-    };
-
-    document.getElementById("glassModalOverlay").addEventListener("click", (e) => {
-      if (e.target.id === "glassModalOverlay") window.closeGlassModal();
+  } else {
+    document.getElementById("historySection").style.display = "block";
+    document.getElementById("statsBar").style.display = "flex";
+    if (gotwBanner) gotwBanner.classList.remove("locked-banner");
+    if (gotwBtn) gotwBtn.textContent = "Play Game of the Day";
+    cards.forEach(card => {
+      card.classList.remove("locked-card");
+      const title = card.querySelector(".ex-title");
+      if (title) title.textContent = title.textContent.replace("🔒 ", "");
+      const exBtn = card.querySelector(".ex-btn");
+      if (exBtn) exBtn.textContent = "Play";
     });
+  }
 
-    /* SKELETON PLACEHOLDER RENDERING */
-    function renderSkeletonCards(gridId, count) {
-      const grid = document.getElementById(gridId);
-      if (!grid) return;
-      const isExclusiveList = grid.classList.contains("exclusives-list");
-      grid.innerHTML = Array.from({ length: count }).map(() => `
-        <div class="skeleton-card">
-          <div class="skeleton-shimmer-inner" style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:${isExclusiveList ? "90px" : "118px"};">
-            <div class="skeleton-line"></div>
-            <div class="skeleton-line skeleton-btn"></div>
-          </div>
-        </div>`).join("");
-    }
-
-    function revealGrid(gridId) {
-      const grid = document.getElementById(gridId);
-      if (!grid) return;
-      grid.classList.add("grid-fade-in");
-      setTimeout(() => grid.classList.remove("grid-fade-in"), 400);
-    }
-
-    const gamePool = [
-      { id: "snake", name: "Snake", page: "snake.html" },
-      { id: "tetris", name: "Tetris", page: "tetris.html" },
-      { id: "pong", name: "Pong", page: "pong.html" },
-      { id: "flappyblock", name: "Flappy Block", page: "flappyblock.html" },
-      { id: "2048", name: "2048", page: "2048.html" },
-      { id: "memorymatch", name: "Memory Match", page: "memorymatch.html" },
-      { id: "pac-man", name: "Pac-Man", page: "pacman.html" },
-      { id: "wordle", name: "Wordle", page: "wordle.html" },
-      { id: "connectfour", name: "Connect Four", page: "connectfour.html" },
-      { id: "tictactoe", name: "Tic-Tac-Toe", page: "tictactoe.html" },
-      { id: "rockpaperscissors", name: "Rock, Paper, Scissors", page: "rockpaperscissors.html" },
-      { id: "dots&boxes", name: "Dots & Boxes", page: "dotsandboxes.html" },
-      { id: "chess", name: "Chess", page: "chess.html" },
-      { id: "snakesandladders", name: "Portals and Rift Holes", page: "snakesandladders.html" },
-      { id: "flowfree", name: "Flow Free", page: "flowfree.html" },
-      { id: "nonogram", name: "Nonogram", page: "nonogram.html" },
-      { id: "hangman", name: "Hangman", page: "hangman.html" },
-      { id: "simonsays", name: "Simon Says", page: "simonsays.html" },
-      { id: "checkers", name: "Checkers", page: "checkers.html" },
-      { id: "Utictactoe", name: "Ultimate Tic-Tac-Toe", page: "Utictactoe.html" },
-      { id: "hexes", name: "Hexes", page: "hexes.html" },
-      { id: "sudoku", name: "Sudoku", page: "sudoku.html" },
-      { id: "stack", name: "Super Stack", page: "stack.html" },
-      { id: "cookieclicker", name: "Cookie Clicker", page: "cookieclicker.html" },
-      { id: "crossyroad", name: "Crossy Road", page: "crossyroad.html" },
-      { id: "holdit", name: "Hold It!", page: "holdit.html" },
-      { id: "ludo", name: "Ludo", page: "ludo.html" },
-      { id: "subway", name: "Subway Surfers", page: "subway.html" },
-      { id: "shutit", name: "Shut The Box", page: "shutit.html" },
-      { id: "battleship", name: "Battleship", page: "battleship.html" },
-      { id: "reaction", name: "Reaction Test", page: "reaction.html" }, 
-      { id: "lights", name: "Lights Out", page: "lights.html" }, 
-      { id: "21", name: "21", page: "21.html" }, 
-      { id: "monopoly", name: "Monopoly", page: "monopoly.html" }, 
-      { id: "uno", name: "Uno", page: "uno.html" }, 
-      { id: "monopolydeal", name: "Monopoly Deal", page: "monopolydeal.html" }, 
-    ];
-
-    /* STREAK ENGINE */
-    function dateStr(offsetDays = 0) {
-      const d = new Date();
-      d.setDate(d.getDate() + offsetDays);
-      return d.toISOString().slice(0, 10);
-    }
-
-    function renderStreakBadge(streak) {
-      const countEl = document.getElementById("streakCount");
-      const circleEl = document.getElementById("streakCircle");
-      if (countEl) countEl.textContent = streak;
-      if (circleEl) circleEl.classList.toggle("streak-hot", streak >= 3);
-    }
-
-    function updateStreak() {
-      if (isGuest) return;
-      const today = dateStr(0);
-      const yesterday = dateStr(-1);
-      const lastPlayed = localStorage.getItem("riftLastPlayed");
-      let streak = parseInt(localStorage.getItem("riftStreak")) || 0;
-
-      if (lastPlayed && lastPlayed !== today && lastPlayed !== yesterday) {
-        streak = 0;
-        localStorage.setItem("riftStreak", "0");
-      }
-      renderStreakBadge(streak);
-    }
-
-    function recordStreakPlay() {
-      if (isGuest) return;
-      const today = dateStr(0);
-      const yesterday = dateStr(-1);
-      const lastPlayed = localStorage.getItem("riftLastPlayed");
-      let streak = parseInt(localStorage.getItem("riftStreak")) || 0;
-
-      if (lastPlayed === today) {
-        // Logged already
-      } else if (lastPlayed === yesterday) {
-        streak += 1;
-      } else {
-        streak = 1;
-      }
-      localStorage.setItem("riftStreak", String(streak));
-      localStorage.setItem("riftLastPlayed", today);
-      renderStreakBadge(streak);
-    }
-
-    /* VIEWPORT THEME MANAGER */
-    window.toggleTheme = function() {
-      const isLight = document.body.classList.toggle("light-theme");
-      localStorage.setItem("riftTheme", isLight ? "light" : "dark");
-    };
-
-    if (localStorage.getItem("riftTheme") === "light") {
-      document.body.classList.add("light-theme");
-    }
-
-    function setGameOfDay() {
-      const today = new Date();
-      const dayId = today.getFullYear() * 1000 + (today.getMonth() + 1) * 100 + today.getDate();
-      const index = dayId % gamePool.length;
-      currentGameOfDay = gamePool[index];
-      
-      const titleEl = document.getElementById("gotwTitle");
-      if (titleEl) {
-        titleEl.textContent = isGuest ? "🔒 Locked Content" : currentGameOfDay.name;
-      }
-    }
-
-    window.playGameOfDay = function() {
-      if (isGuest) {
-        showGlassModal("Highlight channels and recommended content profiles require an account!", { title: "Account Required", icon: "📅" });
-        return;
-      }
-      window.openGame(currentGameOfDay.page, currentGameOfDay.name);
-    };
-
-    /* AUTHENTICATION ROUTINES */
-    window.logout = function() {
-      isGuest = false;
-      document.getElementById("site").style.display = "none";
-      document.getElementById("loginScreen").style.display = "flex";
-      document.getElementById("email").value = "";
-      document.getElementById("password").value = "";
-      
-      auth.signOut().catch(err => showGlassModal(err.message, { title: "Sign Out Error", icon: "⚠️" }));
-    };
-
-    window.login = function () {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-
-      signInWithEmailAndPassword(auth, email, password)
-        .then(u => loadUser(u.user.email, false))
-        .catch(err => showGlassModal(err.message, { title: "Login Failed", icon: "⚠️" }));
-    };
-
-    window.signup = function () {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-
-      createUserWithEmailAndPassword(auth, email, password)
-        .then(u => loadUser(u.user.email, false))
-        .catch(err => showGlassModal(err.message, { title: "Sign Up Failed", icon: "⚠️" }));
-    };
-
-    window.loginAsGuest = function () {
-      loadUser("Guest Player", true);
-    };
-
-    function loadUser(email, guestModeStatus) {
-      isGuest = guestModeStatus;
-      
-      document.getElementById("loginScreen").style.display = "none";
-      document.getElementById("site").style.display = "block";
-      document.getElementById("username").textContent = email;
-
-      const exclusivesContainer = document.getElementById("exclusivesContainer");
-      const cards = exclusivesContainer.querySelectorAll(".game-card");
-      const gotwBanner = document.getElementById("gotwBanner");
-      const gotwBtn = document.getElementById("gotwBtn");
-
-      setGameOfDay();
-
-      renderSkeletonCards("favoritesGrid", 3);
-      renderSkeletonCards("historyGrid", 3);
-      renderSkeletonCards("mainGameGridSkeleton", 9);
-      
-      const skeletonGrid = document.getElementById("mainGameGridSkeleton");
-      const mainGrid = document.getElementById("mainGameGrid");
-
-      if (skeletonGrid) skeletonGrid.style.display = "flex";
-      if (mainGrid) mainGrid.style.display = "none";
-
-      if (isGuest) {
-        document.getElementById("historySection").style.display = "none"; 
-        document.getElementById("statsBar").style.display = "none";
-        
-        if (gotwBanner) gotwBanner.classList.add("locked-banner");
-        if (gotwBtn) gotwBtn.textContent = "🔒 Locked (Account Required)";
-
-        cards.forEach(card => {
-          card.classList.add("locked-card");
-          const title = card.querySelector(".ex-title");
-          if(title && !title.textContent.includes("🔒")) {
-             title.textContent = "🔒 " + title.textContent;
-          }
-          const exBtn = card.querySelector(".ex-btn");
-          if (exBtn) exBtn.textContent = "Locked";
-        });
-      } else {
-        document.getElementById("historySection").style.display = "block";
-        document.getElementById("statsBar").style.display = "flex";
-        
-        if (gotwBanner) gotwBanner.classList.remove("locked-banner");
-        if (gotwBtn) gotwBtn.textContent = "Play Game of the Day";
-
-        cards.forEach(card => {
-          card.classList.remove("locked-card");
-          const title = card.querySelector(".ex-title");
-          if (title) title.textContent = title.textContent.replace("🔒 ", "");
-          const exBtn = card.querySelector(".ex-btn");
-          if (exBtn) exBtn.textContent = "Play";
-        });
-      }
-
-      setTimeout(() => {
-        try {
-          if (!isGuest) {
-            renderHistory();
-            updateStats();
-            updateStreak();
-          }
-          renderFavorites();
-        } catch (err) {
-          console.error("Rift Hub load error:", err);
-        } finally {
-          if (skeletonGrid) skeletonGrid.style.display = "none";
-          if (mainGrid) mainGrid.style.display = "flex";
-          
-          revealGrid("mainGameGrid");
-          revealGrid("favoritesGrid");
-          revealGrid("historyGrid");
-          applyMainGridControls();
-        }
-      }, 450);
-    }
-
-    onAuthStateChanged(auth, (user) => {
-      if (user) loadUser(user.email, false);
-    });
-
-    /* HISTORY & LAUNCH ENGINE */
-    window.openGame = function (page, name) {
+  setTimeout(() => {
+    try {
       if (!isGuest) {
-        let history = JSON.parse(localStorage.getItem("riftHistory")) || [];
-        history = history.filter(g => g.name !== name);
-        history.unshift({ name, page });
-        history = history.slice(0, 3);
-        localStorage.setItem("riftHistory", JSON.stringify(history));
-
-        let count = parseInt(localStorage.getItem("riftGamesPlayed")) || 0;
-        localStorage.setItem("riftGamesPlayed", count + 1);
-
-        const poolEntry = gamePool.find(g => g.page === page);
-        if (poolEntry) {
-          const playCounts = JSON.parse(localStorage.getItem("riftPlayCounts")) || {};
-          playCounts[poolEntry.id] = (playCounts[poolEntry.id] || 0) + 1;
-          localStorage.setItem("riftPlayCounts", JSON.stringify(playCounts));
-        }
-
-        recordStreakPlay();
+        renderHistory();
+        updateStats();
+        updateStreak();
       }
-      window.location.href = page;
-    };
-
-    window.openExclusive = function (page, name) {
-      if (isGuest) {
-        showGlassModal("Rift configs are only open to Cloud accounts.", { title: "Premium Exclusive", icon: "🔥" });
-        return;
-      }
-      window.openGame(page, name);
-    };
-
-    function updateStats() {
-      if (isGuest) return;
-      const count = localStorage.getItem("riftGamesPlayed") || 0;
-      const countEl = document.getElementById("gamesPlayedCount");
-      if (countEl) countEl.textContent = count;
-    }
-
-    /* FAVORITING SYSTEM */
-    window.toggleFavorite = function (id, name, page) {
-      if (isGuest) {
-        showGlassModal("Global cloud saving for favorites requires a profile registration!", { title: "Account Required", icon: "⭐" });
-        return;
-      }
-      let favs = JSON.parse(localStorage.getItem("riftFavs")) || [];
-      const exists = favs.find(f => f.id === id);
-
-      if (exists) {
-        favs = favs.filter(f => f.id !== id);
-      } else {
-        favs.push({ id, name, page });
-      }
-      localStorage.setItem("riftFavs", JSON.stringify(favs));
       renderFavorites();
-    };
-
-    function renderFavorites() {
-      const grid = document.getElementById("favoritesGrid");
-      const section = document.getElementById("favoritesSection");
-      if (!grid || !section) return;
-      
-      if (isGuest) {
-        grid.innerHTML = `
-          <div class="game-card locked-card" style="width: 100%; max-width: 400px; margin: 0 auto;">
-            <div class="glass-card-inner">
-              <div class="glass-layer"></div>
-              <div class="game-info" style="text-align:center;">
-                <h3>🔒 Favorites Grid Is Locked</h3>
-                <p>Create an account to build your personal dashboard panel.</p>
-              </div>
-            </div>
-          </div>`;
-        section.style.display = "block";
-        return;
-      }
-
-      let favs = JSON.parse(localStorage.getItem("riftFavs")) || [];
-      
-      document.querySelectorAll("#mainGameGrid .game-card").forEach(card => {
-        const button = card.querySelector(".fav-btn");
-        if (!button) return;
-        const clickHandlerString = button.getAttribute("onclick");
-        const targetFav = favs.find(f => clickHandlerString.includes(`'${f.id}'`));
-        
-        if (targetFav) {
-          button.textContent = "★";
-          button.classList.add("is-active");
-        } else {
-          button.textContent = "☆";
-          button.classList.remove("is-active");
-        }
-      });
-
-      if (favs.length === 0) {
-        grid.innerHTML = `<p id="noFavsMsg" style="text-align:center; width: 100%; color: var(--text-muted); padding: 20px;">No favorite games marked yet. Click the star on any game card!</p>`;
-        return;
-      }
-
-      grid.innerHTML = favs.map(g => `
-        <div class="game-card" data-fav-id="${g.id}">
-          <div class="glass-card-inner">
-            <div class="glass-layer"></div>
-            <button class="fav-btn is-active" onclick="window.toggleFavorite('${g.id}','${g.name}','${g.page}')">★</button>
-            <div class="glass-content game-info">
-              <h3>${g.name}</h3>
-              <button onclick="window.openGame('${g.page}','${g.name}')">Play</button>
-            </div>
-          </div>
-        </div>`).join("");
-      
-      const searchEl = document.getElementById("search");
-      if (searchEl) filterFavoritesGrid(searchEl.value.toLowerCase());
+    } catch (err) {
+      console.error("Rift Hub load error:", err);
+    } finally {
+      if (skeletonGrid) skeletonGrid.style.display = "none";
+      if (mainGrid) mainGrid.style.display = "flex";
+      revealGrid("mainGameGrid");
+      revealGrid("favoritesGrid");
+      revealGrid("historyGrid");
+      applyMainGridControls();
     }
+  }, 450);
+}
 
-    function renderHistory() {
-      if (isGuest) return;
-      const grid = document.getElementById("historyGrid");
-      if (!grid) return;
-      let history = JSON.parse(localStorage.getItem("riftHistory")) || [];
+onAuthStateChanged(auth, (user) => {
+  if (user) loadUser(user.email, false);
+});
 
-      if (history.length === 0) {
-        grid.innerHTML = `<p style="text-align:center; width: 100%; color: var(--text-muted); padding: 20px;">No history logged yet.</p>`;
-        return;
-      }
+/* HISTORY & LAUNCH ENGINE */
+window.openGame = function (page, name) {
+  if (!isGuest) {
+    let history = JSON.parse(localStorage.getItem("riftHistory")) || [];
+    history = history.filter(g => g.name !== name);
+    history.unshift({ name, page });
+    history = history.slice(0, 3);
+    localStorage.setItem("riftHistory", JSON.stringify(history));
 
-      grid.innerHTML = history.map(g => `
-        <div class="game-card">
-          <div class="glass-card-inner">
-            <div class="glass-layer"></div>
-            <div class="glass-content game-info">
-              <h3>${g.name}</h3>
-              <button onclick="window.openGame('${g.page}','${g.name}')">Play</button>
-            </div>
-          </div>
-        </div>`).join("");
-    }
+    let count = parseInt(localStorage.getItem("riftGamesPlayed")) || 0;
+    localStorage.setItem("riftGamesPlayed", count + 1);
 
-    function filterFavoritesGrid(queryValue) {
-      const grid = document.getElementById("favoritesGrid");
-      if (!grid || isGuest) return;
-
-      const cards = grid.querySelectorAll(".game-card");
-      let visibleCount = 0;
-
-      const oldSearchMsg = document.getElementById("emptyFavSearchMsg");
-      if (oldSearchMsg) oldSearchMsg.remove();
-      
-      const baseNoFavsMsg = document.getElementById("noFavsMsg");
-      if (baseNoFavsMsg) baseNoFavsMsg.style.display = "block";
-
-      cards.forEach(card => {
-        const favId = card.getAttribute("data-fav-id");
-        if (!favId) return;
-        
-        if (favId.includes(queryValue)) {
-          card.style.display = "";
-          visibleCount++;
-        } else {
-          card.style.display = "none";
-        }
-      });
-
-      if (cards.length > 0 && visibleCount === 0) {
-        if (baseNoFavsMsg) baseNoFavsMsg.style.display = "none";
-        
-        const msg = document.createElement("p");
-        msg.id = "emptyFavSearchMsg";
-        msg.style.cssText = "text-align: center; width: 100%; color: var(--text-muted); padding: 20px;";
-        msg.textContent = "🔍 No matching favorites found.";
-        grid.appendChild(msg);
-      }
-    }
-
-    /* GRID CONTROLS */
-    function applyMainGridControls() {
-      const grid = document.getElementById("mainGameGrid");
-      if (!grid) return;
-
-      const searchVal = document.getElementById("search") ? document.getElementById("search").value.toLowerCase() : "";
-      const sortVal = document.getElementById("sortSelect") ? document.getElementById("sortSelect").value : "az";
-      const categoryVal = document.getElementById("categorySelect") ? document.getElementById("categorySelect").value : "all";
+    const poolEntry = gamePool.find(g => g.page === page);
+    if (poolEntry) {
       const playCounts = JSON.parse(localStorage.getItem("riftPlayCounts")) || {};
-
-      const cards = Array.from(grid.querySelectorAll(".game-card"));
-
-      cards.forEach(card => {
-        const name = card.getAttribute("data-name") || "";
-        const category = card.getAttribute("data-category") || "";
-        const matchesSearch = name.toLowerCase().includes(searchVal);
-        const matchesCategory = categoryVal === "all" || category === categoryVal;
-        card.style.display = (matchesSearch && matchesCategory) ? "" : "none";
-      });
-
-      if (sortVal === "az" || sortVal === "za") {
-        cards.sort((a, b) => {
-          const h3A = a.querySelector("h3");
-          const h3B = b.querySelector("h3");
-          const titleA = h3A ? h3A.textContent.trim().toLowerCase() : "";
-          const titleB = h3B ? h3B.textContent.trim().toLowerCase() : "";
-          return sortVal === "az" ? titleA.localeCompare(titleB) : titleB.localeCompare(titleA);
-        });
-        cards.forEach(card => grid.appendChild(card));
-      } else if (sortVal === "mostplayed") {
-        cards.sort((a, b) => {
-          const idA = a.getAttribute("data-name");
-          const idB = b.getAttribute("data-name");
-          return (playCounts[idB] || 0) - (playCounts[idA] || 0);
-        });
-        cards.forEach(card => grid.appendChild(card));
-      }
-
-      filterFavoritesGrid(searchVal);
+      playCounts[poolEntry.id] = (playCounts[poolEntry.id] || 0) + 1;
+      localStorage.setItem("riftPlayCounts", JSON.stringify(playCounts));
     }
+    recordStreakPlay();
+  }
+  window.location.href = page;
+};
 
-    /* GLOBAL REGISTRATIONS */
-    window.login = login;
-    window.signup = signup;
-    window.loginAsGuest = loginAsGuest;
-    window.openGame = openGame;
-    window.openExclusive = openExclusive;
-    window.logout = logout;
-    window.toggleTheme = toggleTheme;
-    window.playGameOfDay = playGameOfDay;
-    window.toggleFavorite = toggleFavorite;
+window.openExclusive = function (page, name) {
+  if (isGuest) {
+    showGlassModal("Rift configs are only open to Cloud accounts.", { title: "Premium Exclusive", icon: "🔥" });
+    return;
+  }
+  window.openGame(page, name);
+};
 
-    document.getElementById("sortSelect").addEventListener("change", applyMainGridControls);
-    document.getElementById("categorySelect").addEventListener("change", applyMainGridControls);
-    document.getElementById("search").addEventListener("input", applyMainGridControls);
+function updateStats() {
+  if (isGuest) return;
+  const count = localStorage.getItem("riftGamesPlayed") || 0;
+  const countEl = document.getElementById("gamesPlayedCount");
+  if (countEl) countEl.textContent = count;
+}
 
-    const exclusiveSearchInput = document.getElementById("exclusiveSearch");
-    if (exclusiveSearchInput) {
-      exclusiveSearchInput.addEventListener("input", function () {
-        const val = this.value.toLowerCase();
-        document.querySelectorAll("#exclusivesContainer .game-card").forEach(card => {
-          const name = card.getAttribute("data-exclusive-name");
-          if (!name) return;
-          card.style.display = name.toLowerCase().includes(val) ? "" : "none";
-        });
-      });
+/* FAVORITING SYSTEM */
+window.toggleFavorite = function (id, name, page) {
+  if (isGuest) {
+    showGlassModal("Global cloud saving for favorites requires a profile registration!", { title: "Account Required", icon: "⭐" });
+    return;
+  }
+  let favs = JSON.parse(localStorage.getItem("riftFavs")) || [];
+  const exists = favs.find(f => f.id === id);
+  if (exists) favs = favs.filter(f => f.id !== id);
+  else favs.push({ id, name, page });
+  localStorage.setItem("riftFavs", JSON.stringify(favs));
+  renderFavorites();
+};
+
+function renderFavorites() {
+  const grid = document.getElementById("favoritesGrid");
+  const section = document.getElementById("favoritesSection");
+  if (!grid || !section) return;
+
+  if (isGuest) {
+    grid.innerHTML = `
+      <div class="game-card locked-card" style="width: 100%; max-width: 400px; margin: 0 auto;">
+        <div class="glass-card-inner">
+          <div class="glass-layer"></div>
+          <div class="game-info" style="text-align:center;">
+            <h3>🔒 Favorites Grid Is Locked</h3>
+            <p>Create an account to build your personal dashboard panel.</p>
+          </div>
+        </div>
+      </div>`;
+    section.style.display = "block";
+    return;
+  }
+
+  let favs = JSON.parse(localStorage.getItem("riftFavs")) || [];
+
+  document.querySelectorAll("#mainGameGrid .game-card").forEach(card => {
+    const button = card.querySelector(".fav-btn");
+    if (!button) return;
+    const clickHandlerString = button.getAttribute("onclick");
+    const targetFav = favs.find(f => clickHandlerString.includes(`'${f.id}'`));
+    if (targetFav) {
+      button.textContent = "★";
+      button.classList.add("is-active");
+    } else {
+      button.textContent = "☆";
+      button.classList.remove("is-active");
     }
-    const externalSearchInput = document.getElementById("externalSearch");
+  });
+
+  if (favs.length === 0) {
+    grid.innerHTML = `<p id="noFavsMsg" style="text-align:center; width: 100%; color: var(--text-muted); padding: 20px;">No favorite games marked yet. Click the star on any game card!</p>`;
+    return;
+  }
+
+  grid.innerHTML = favs.map(g => `
+    <div class="game-card" data-fav-id="${g.id}">
+      <div class="glass-card-inner">
+        <div class="glass-layer"></div>
+        <button class="fav-btn is-active" onclick="window.toggleFavorite('${g.id}','${g.name}','${g.page}')">★</button>
+        <div class="glass-content game-info">
+          <h3>${g.name}</h3>
+          <button onclick="window.openGame('${g.page}','${g.name}')">Play</button>
+        </div>
+      </div>
+    </div>`).join("");
+
+  const searchEl = document.getElementById("search");
+  if (searchEl) filterFavoritesGrid(searchEl.value.toLowerCase());
+}
+
+function renderHistory() {
+  if (isGuest) return;
+  const grid = document.getElementById("historyGrid");
+  if (!grid) return;
+  let history = JSON.parse(localStorage.getItem("riftHistory")) || [];
+
+  if (history.length === 0) {
+    grid.innerHTML = `<p style="text-align:center; width: 100%; color: var(--text-muted); padding: 20px;">No history logged yet.</p>`;
+    return;
+  }
+
+  grid.innerHTML = history.map(g => `
+    <div class="game-card">
+      <div class="glass-card-inner">
+        <div class="glass-layer"></div>
+        <div class="glass-content game-info">
+          <h3>${g.name}</h3>
+          <button onclick="window.openGame('${g.page}','${g.name}')">Play</button>
+        </div>
+      </div>
+    </div>`).join("");
+}
+
+function filterFavoritesGrid(queryValue) {
+  const grid = document.getElementById("favoritesGrid");
+  if (!grid || isGuest) return;
+
+  const cards = grid.querySelectorAll(".game-card");
+  let visibleCount = 0;
+
+  const oldSearchMsg = document.getElementById("emptyFavSearchMsg");
+  if (oldSearchMsg) oldSearchMsg.remove();
+
+  const baseNoFavsMsg = document.getElementById("noFavsMsg");
+  if (baseNoFavsMsg) baseNoFavsMsg.style.display = "block";
+
+  cards.forEach(card => {
+    const favId = card.getAttribute("data-fav-id");
+    if (!favId) return;
+    if (favId.includes(queryValue)) {
+      card.style.display = "";
+      visibleCount++;
+    } else {
+      card.style.display = "none";
+    }
+  });
+
+  if (cards.length > 0 && visibleCount === 0) {
+    if (baseNoFavsMsg) baseNoFavsMsg.style.display = "none";
+    const msg = document.createElement("p");
+    msg.id = "emptyFavSearchMsg";
+    msg.style.cssText = "text-align: center; width: 100%; color: var(--text-muted); padding: 20px;";
+    msg.textContent = "🔍 No matching favorites found.";
+    grid.appendChild(msg);
+  }
+}
+
+/* GRID CONTROLS */
+function applyMainGridControls() {
+  const grid = document.getElementById("mainGameGrid");
+  if (!grid) return;
+
+  const searchVal = document.getElementById("search") ? document.getElementById("search").value.toLowerCase() : "";
+  const sortVal = document.getElementById("sortSelect") ? document.getElementById("sortSelect").value : "az";
+  const categoryVal = document.getElementById("categorySelect") ? document.getElementById("categorySelect").value : "all";
+  const playCounts = JSON.parse(localStorage.getItem("riftPlayCounts")) || {};
+
+  const cards = Array.from(grid.querySelectorAll(".game-card"));
+
+  cards.forEach(card => {
+    const name = card.getAttribute("data-name") || "";
+    const category = card.getAttribute("data-category") || "";
+    const matchesSearch = name.toLowerCase().includes(searchVal);
+    const matchesCategory = categoryVal === "all" || category === categoryVal;
+    card.style.display = (matchesSearch && matchesCategory) ? "" : "none";
+  });
+
+  if (sortVal === "az" || sortVal === "za") {
+    cards.sort((a, b) => {
+      const h3A = a.querySelector("h3");
+      const h3B = b.querySelector("h3");
+      const titleA = h3A ? h3A.textContent.trim().toLowerCase() : "";
+      const titleB = h3B ? h3B.textContent.trim().toLowerCase() : "";
+      return sortVal === "az" ? titleA.localeCompare(titleB) : titleB.localeCompare(titleA);
+    });
+    cards.forEach(card => grid.appendChild(card));
+  } else if (sortVal === "mostplayed") {
+    cards.sort((a, b) => {
+      const idA = a.getAttribute("data-name");
+      const idB = b.getAttribute("data-name");
+      return (playCounts[idB] || 0) - (playCounts[idA] || 0);
+    });
+    cards.forEach(card => grid.appendChild(card));
+  }
+
+  filterFavoritesGrid(searchVal);
+}
+
+/* GLOBAL REGISTRATIONS */
+window.login = login;
+window.signup = signup;
+window.loginAsGuest = loginAsGuest;
+window.openGame = openGame;
+window.openExclusive = openExclusive;
+window.logout = logout;
+window.toggleTheme = toggleTheme;
+window.playGameOfDay = playGameOfDay;
+window.toggleFavorite = toggleFavorite;
+
+document.getElementById("sortSelect").addEventListener("change", applyMainGridControls);
+document.getElementById("categorySelect").addEventListener("change", applyMainGridControls);
+document.getElementById("search").addEventListener("input", applyMainGridControls);
+
+const exclusiveSearchInput = document.getElementById("exclusiveSearch");
+if (exclusiveSearchInput) {
+  exclusiveSearchInput.addEventListener("input", function () {
+    const val = this.value.toLowerCase();
+    document.querySelectorAll("#exclusivesContainer .game-card").forEach(card => {
+      const name = card.getAttribute("data-exclusive-name");
+      if (!name) return;
+      card.style.display = name.toLowerCase().includes(val) ? "" : "none";
+    });
+  });
+}
+const externalSearchInput = document.getElementById("externalSearch");
 if (externalSearchInput) {
   externalSearchInput.addEventListener("input", function () {
     const val = this.value.toLowerCase();
@@ -2520,12 +2061,214 @@ if (externalSearchInput) {
   });
 }
 
-    const passwordInput = document.getElementById("password");
-    if (passwordInput) {
-      passwordInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") window.login();
-      });
-    }
-  </script>
+const passwordInput = document.getElementById("password");
+if (passwordInput) {
+  passwordInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") window.login();
+  });
+}
+
+</script>
+
+  <script type="module">
+(() => {
+  const KEY = "riftAch2";
+  let S;
+  try { S = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { S = {}; }
+  S.c = S.c || {}; S.s = S.s || {}; S.seen = S.seen || {};
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+  const inc = k => { S.c[k] = (S.c[k] || 0) + 1; };
+  const add = (k, v) => { const a = S.s[k] || (S.s[k] = []); if (!a.includes(v)) a.push(v); };
+  const lsGet = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } };
+  const guest = () => (document.getElementById("username") || {}).textContent === "Guest Player";
+
+  const pages = [...new Set([...document.querySelectorAll("#mainGameGrid .game-info > button")]
+    .map(b => (/openGame\('([^']+)'/.exec(b.getAttribute("onclick")) || [])[1]).filter(Boolean))];
+  const TOTAL = pages.length || 35;
+  const pl = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+
+  /* tiers: 1 = minimum, 5 = max */
+  const TIER = [
+    { n: "Spark", c: "#94a3b8" }, { n: "Flux", c: "#22d3ee" }, { n: "Surge", c: "#a78bfa" },
+    { n: "Nova", c: "#f472b6" }, { n: "Singularity", c: "#fbbf24" }
+  ];
+
+  const A = [
+    { id: "star", icon: "🌠", name: "Star Catcher", desc: "Shooting stars streak across the background. Catch them.",
+      t: [1, 5, 15, 40, 100], q: n => `Click ${pl(n, "shooting star")}`, get: () => S.c.star || 0 },
+    { id: "gold", icon: "🌟", name: "Golden Touch", desc: "A rare golden dot drifts by every so often.",
+      t: [1, 2, 4, 8, 15], q: n => `Catch ${pl(n, "golden dot")}`, get: () => S.c.gold || 0, tip: "It's rare and it doesn't stay long. Keep an eye on the background." },
+    { id: "all", icon: "🏆", name: "Completionist", desc: "Try everything in the Multiverse Game Grid.",
+      t: [3, 10, 20, 30, TOTAL], q: n => n >= TOTAL ? `Play every single game (${TOTAL})` : `Play ${n} different games`, get: () => (S.s.games || []).length },
+    { id: "plays", icon: "🎮", name: "Rift Regular", desc: "Every launch counts, even repeats.",
+      t: [1, 10, 25, 50, 100], q: n => `Launch games ${pl(n, "time")}`, get: () => S.c.plays || 0 },
+    { id: "streak", icon: "🔥", name: "Streak Master", desc: "Play at least one game every day.",
+      t: [2, 3, 7, 14, 30], q: n => `Reach a ${n}-day streak`, get: () => S.c.streakBest || 0 },
+    { id: "favs", icon: "⭐", name: "Collector", desc: "Star your favorite games.",
+      t: [1, 3, 6, 10, 20], q: n => `Have ${pl(n, "favorite")} starred`, get: () => S.c.favsBest || 0 },
+    { id: "excl", icon: "💎", name: "Exclusive Club", desc: "Rift Exclusives are only for account holders.",
+      t: [1, 2, 3, 5, 6], q: n => `Play ${n} different Exclusive${n === 1 ? "" : "s"}`, get: () => (S.s.excl || []).length },
+    { id: "season", icon: "🍂", name: "Season Hopper", desc: "The background changes with the seasons and holidays.",
+      t: [1, 2, 3, 4, 6], q: n => `Discover ${pl(n, "seasonal look")}`, get: () => (S.s.season || []).length,
+      tip: "Peek ahead by adding ?bg=halloween, ?bg=winter, ?bg=spring, ?bg=christmas... to the URL." },
+    { id: "rift", icon: "🕳️", name: "Singularity", desc: "Open a rift and let it collapse.",
+      t: [1, 10, 25, 50, 100], q: n => `Open and release ${pl(n, "rift")}`, get: () => S.c.rift || 0, tip: "Press and hold on empty background, then let go." },
+    { id: "horizon", icon: "🌀", name: "Event Horizon", desc: "Fully charge a rift before releasing it.",
+      t: [1, 3, 10, 25, 50], q: n => `Fully charge and release ${pl(n, "rift")}`, get: () => S.c.horizon || 0, tip: "Hold for over a second until the core starts pulsing." },
+    { id: "storm", icon: "⛈️", name: "Storm Caller", desc: "Something happens if you poke the logo enough.",
+      t: [1, 3, 5, 10, 25], q: n => `Summon the storm ${pl(n, "time")}`, get: () => S.c.storm || 0, tip: "Click the Rift Hub logo 5 times, fast." },
+    { id: "theme", icon: "🌓", name: "Shapeshifter", desc: "Dark or light? Why not both.",
+      t: [1, 5, 15, 30, 60], q: n => `Switch themes ${pl(n, "time")}`, get: () => S.c.theme || 0 },
+    { id: "gotd", icon: "📅", name: "Daily Ritual", desc: "The Game of the Day changes every day.",
+      t: [1, 3, 7, 14, 30], q: n => `Play the Game of the Day ${pl(n, "time")}`, get: () => S.c.gotd || 0 }
+  ];
+  const COL = { star: ["#6366f1", "#4338ca"], gold: ["#fbbf24", "#d97706"], all: ["#f43f5e", "#be123c"], plays: ["#22c55e", "#15803d"],
+    streak: ["#fb923c", "#c2410c"], favs: ["#eab308", "#a16207"], excl: ["#06b6d4", "#0e7490"], season: ["#84cc16", "#4d7c0f"],
+    rift: ["#8b5cf6", "#5b21b6"], horizon: ["#ec4899", "#9d174d"], storm: ["#3b82f6", "#1e40af"], theme: ["#64748b", "#334155"], gotd: ["#14b8a6", "#0f766e"] };
+  const colOf = a => COL[a.id] || ["#6366f1", "#4338ca"];
+  const tierOf = a => { const v = a.get(); return a.t.filter(x => v >= x).length; };
+
+  function sync() {
+    const streak = parseInt(localStorage.getItem("riftStreak")) || 0;
+    if (streak > (S.c.streakBest || 0)) S.c.streakBest = streak;
+    const favs = lsGet("riftFavs", []).length;
+    if (favs > (S.c.favsBest || 0)) S.c.favsBest = favs;
+  }
+
+  const btn = document.getElementById("achBtn");
+  function refresh() { if (btn) btn.style.display = A.some(a => tierOf(a) > 0) ? "block" : "none"; }
+  const touch = () => { sync(); save(); refresh(); };
+
+  /* events from the background (stars, golden dot, rifts, storm, seasons) */
+  window.riftEvent = (n, v) => {
+    if (n === "star") inc("star");
+    else if (n === "gold") inc("gold");
+    else if (n === "rift") { inc("rift"); if (v) inc("horizon"); }
+    else if (n === "storm") inc("storm");
+    else if (n === "season") add("season", v);
+    touch();
+  };
+
+  /* hooks into existing site actions */
+  const wrap = (name, before, after) => {
+    const orig = window[name];
+    if (typeof orig !== "function") return;
+    window[name] = function () {
+      if (before) before.apply(this, arguments);
+      const r = orig.apply(this, arguments);
+      touch();
+      return r;
+    };
+  };
+  wrap("openGame", (page) => {
+    inc("plays");
+    if (pages.includes(page)) add("games", page);
+    else if (/^rift/i.test(page)) add("excl", page);
+  });
+  wrap("toggleTheme", () => inc("theme"));
+  wrap("playGameOfDay", () => { if (!guest()) inc("gotd"); });
+  wrap("toggleFavorite");
+
+  /* ---------- panel ---------- */
+  document.body.insertAdjacentHTML("beforeend", `
+    <div class="glass-modal-overlay" id="achOverlay">
+      <div class="ach-panel"><div class="glass-card-inner"><div class="glass-layer"></div>
+        <div class="glass-content ach-content">
+          <button class="ach-close" data-close aria-label="Close">✕</button>
+          <h3 class="ach-title">🏆 Achievements</h3>
+          <p class="ach-sub" id="achSub"></p>
+          <div class="ach-grid" id="achGrid"></div>
+        </div>
+      </div></div>
+    </div>
+    <div class="glass-modal-overlay" id="achDetailOverlay" style="z-index:1100">
+      <div class="glass-modal ach-detail"><div class="glass-card-inner"><div class="glass-layer"></div>
+        <div class="glass-content" id="achDetail"></div>
+      </div></div>
+    </div>`);
+  const ov = document.getElementById("achOverlay"), dov = document.getElementById("achDetailOverlay");
+  const grid = document.getElementById("achGrid"), sub = document.getElementById("achSub"), det = document.getElementById("achDetail");
+
+  function cardHTML(a, shown) {
+    const tc = shown ? TIER[shown - 1].c : "#94a3b8", [c1, c2] = colOf(a);
+    return `<div class="ach-card${shown ? "" : " locked"}" data-id="${a.id}" style="--tc:${tc};--c1:${c1};--c2:${c2}">
+      <span class="ach-chip">${shown ? "T" + shown : "🔒"}</span>
+      <span class="ach-icon">${a.icon}</span>
+      <div class="ach-name">${a.name}</div>
+      <div class="ach-pips">${[1, 2, 3, 4, 5].map(i => `<i class="${i <= shown ? "on" : ""}"></i>`).join("")}</div>
+      <div class="ach-sparkle"></div>
+    </div>`;
+  }
+  function updateSub() {
+    const u = A.filter(a => (S.seen[a.id] || 0) > 0).length;
+    const st = A.reduce((n, a) => n + (S.seen[a.id] || 0), 0);
+    sub.textContent = `${u}/${A.length} unlocked · ${st}/${A.length * 5} tier stars`;
+  }
+  function sparkle(el) {
+    const box = el.querySelector(".ach-sparkle");
+    box.innerHTML = Array.from({ length: 14 }, (_, i) =>
+      `<i style="--a:${Math.round(i * 360 / 14 + Math.random() * 20)}deg;--d:${44 + Math.round(Math.random() * 40)}px;animation-delay:${(Math.random() * 0.35).toFixed(2)}s"></i>`).join("");
+    setTimeout(() => { box.innerHTML = ""; }, 2000);
+  }
+  /* the slow fade from black & white to full color, with a sparkle */
+  function reveal(el, a, t) {
+    if (!el.isConnected || !ov.classList.contains("is-open")) return;
+    el.style.setProperty("--tc", TIER[t - 1].c);
+    el.querySelector(".ach-chip").textContent = "T" + t;
+    el.classList.remove("locked");
+    el.classList.add("just");
+    el.querySelectorAll(".ach-pips i").forEach((p, i) => { if (i < t) setTimeout(() => p.classList.add("on"), 300 + i * 160); });
+    sparkle(el);
+    S.seen[a.id] = t; save(); updateSub();
+    setTimeout(() => el.classList.remove("just"), 2300);
+  }
+  function openPanel() {
+    touch();
+    grid.innerHTML = A.map(a => cardHTML(a, S.seen[a.id] || 0)).join("");
+    updateSub();
+    ov.classList.add("is-open");
+    let k = 0;
+    A.forEach(a => {
+      const t = tierOf(a);
+      if (t > (S.seen[a.id] || 0)) {
+        const el = grid.querySelector(`[data-id="${a.id}"]`);
+        setTimeout(() => reveal(el, a, t), 800 + (k++) * 500);
+      }
+    });
+  }
+
+  function openDetail(id) {
+    const a = A.find(x => x.id === id);
+    const v = a.get(), t = tierOf(a), shown = S.seen[a.id] || 0, next = a.t[t], prev = a.t[t - 1] || 0;
+    const pct = t >= 5 ? 100 : Math.max(0, Math.min(100, Math.round((v - prev) / (next - prev) * 100)));
+    det.innerHTML = `
+      <span class="ach-big${shown ? "" : " bw"}" style="--c1:${colOf(a)[0]};--c2:${colOf(a)[1]}">${a.icon}</span>
+      <h3>${a.name}</h3>
+      <p class="ach-desc">${a.desc}</p>
+      <div class="ach-prog"><div class="ach-bar"><i style="width:${pct}%"></i></div><span>${t >= 5 ? "MAX TIER" : `${Math.min(v, next)} / ${next}`}</span></div>
+      <ul class="ach-tiers">${a.t.map((n, i) => `
+        <li class="${v >= n ? "done" : ""}"><b style="--tc:${v >= n ? TIER[i].c : "#64748b"}" data-n="${i + 1}"></b>
+        <span><em>Tier ${i + 1} · ${TIER[i].n}</em>${a.q(n)}</span><span class="ck">${v >= n ? "✓" : ""}</span></li>`).join("")}
+      </ul>
+      ${a.tip ? `<p class="ach-tip">💡 ${a.tip}</p>` : ""}
+      <button data-close>Got it</button>`;
+    dov.classList.add("is-open");
+  }
+
+  grid.addEventListener("click", e => { const c = e.target.closest(".ach-card"); if (c) openDetail(c.dataset.id); });
+  ov.addEventListener("click", e => { if (e.target === ov || e.target.closest("[data-close]")) ov.classList.remove("is-open"); });
+  dov.addEventListener("click", e => { if (e.target === dov || e.target.closest("[data-close]")) dov.classList.remove("is-open"); });
+  document.addEventListener("keydown", e => {
+    if (e.key !== "Escape") return;
+    if (dov.classList.contains("is-open")) dov.classList.remove("is-open");
+    else ov.classList.remove("is-open");
+  });
+  if (btn) btn.addEventListener("click", openPanel);
+
+  window.riftAch = { open: openPanel };
+  touch();
+})();
+</script>
+
 </body>
 </html>
