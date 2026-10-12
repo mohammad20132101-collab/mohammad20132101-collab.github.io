@@ -209,7 +209,21 @@ a:hover { color: var(--accent); }
     color: var(--text-muted); opacity: .75; pointer-events: none; letter-spacing: .02em; }
 
   /* achievements button sits under the Theme pill; hidden until you earn one */
-  .ach-toggle-btn { top: 66px; display: none; }
+  /* single settings button + dropdown (Theme, Achievements) */
+  #menuWrap { position: fixed; top: 25px; right: 25px; z-index: 100; }
+  #menuBtn { width: 40px; height: 40px; padding: 0; border-radius: 50%; font-size: 18px; line-height: 1; color: var(--text-main);
+    background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.15); transition: background .2s, border-color .2s, transform .2s; }
+  body.light-theme #menuBtn { background: rgba(255,255,255,.6); border: 1px solid rgba(0,0,0,.15); }
+  #menuBtn:hover { background: rgba(255,255,255,.12); }
+  body.light-theme #menuBtn:hover { background: rgba(0,0,0,.04); }
+  #menuPop { position: absolute; top: 50px; right: 0; width: 176px; padding: 6px; border-radius: 14px; display: flex; flex-direction: column; gap: 2px;
+    background: var(--bg-solid); border: 1px solid rgba(255,255,255,.12); box-shadow: 0 12px 30px rgba(0,0,0,.35); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    opacity: 0; pointer-events: none; transform: translateY(-6px); transition: opacity .18s ease, transform .18s ease; }
+  body.light-theme #menuPop { border-color: rgba(0,0,0,.1); box-shadow: 0 12px 30px rgba(30,58,110,.18); }
+  #menuPop.open { opacity: 1; pointer-events: auto; transform: none; }
+  #menuPop button { width: 100%; text-align: left; padding: 10px 12px; border-radius: 9px; background: transparent; color: var(--text-main); font-size: 13px; font-weight: 500; }
+  #menuPop button:hover { background: var(--input-bg); transform: none; }
+  #achBtn { display: none; }
 
   /* panel */
   .ach-panel { width: 92%; max-width: 880px; border-radius: 24px; box-shadow: 0 25px 60px rgba(0,0,0,.5);
@@ -282,8 +296,13 @@ a:hover { color: var(--accent); }
 
   <canvas id="bgCanvas"></canvas>
 
-  <button onclick="window.toggleTheme()" class="theme-toggle-btn">🌓 Theme</button>
-  <button id="achBtn" class="theme-toggle-btn ach-toggle-btn">🏆 Achievements</button>
+  <div id="menuWrap">
+    <button id="menuBtn" aria-label="Menu">⚙️</button>
+    <div id="menuPop">
+      <button onclick="window.toggleTheme()">🌓 Theme</button>
+      <button id="achBtn">🏆 Achievements</button>
+    </div>
+  </div>
 
   <div id="loginScreen">
     <div class="login-container">
@@ -2134,6 +2153,11 @@ if (passwordInput) {
     const favs = lsGet("riftFavs", []).length;
     if (favs > (S.c.favsBest || 0)) S.c.favsBest = favs;
   }
+
+  const menuBtn = document.getElementById("menuBtn"), pop = document.getElementById("menuPop");
+  menuBtn.addEventListener("click", e => { e.stopPropagation(); pop.classList.toggle("open"); });
+  pop.addEventListener("click", () => pop.classList.remove("open"));
+  document.addEventListener("click", e => { if (!e.target.closest("#menuWrap")) pop.classList.remove("open"); });
 
   const btn = document.getElementById("achBtn");
   function refresh() { if (btn) btn.style.display = A.some(a => tierOf(a) > 0) ? "block" : "none"; }
