@@ -201,9 +201,7 @@ a:hover { color: var(--accent); }
 @media (max-width: 600px) { .game-card { width: 100%; } }
 
   </style>
-  <style> block right before </head>
-===================================================================== -->
-<style>
+  <style>
   /* seasonal tag */
   #seasonTag { position: fixed; left: 16px; bottom: 14px; z-index: 5; font-size: 12px; font-weight: 600;
     color: var(--text-muted); opacity: .75; pointer-events: none; letter-spacing: .02em; }
@@ -2096,10 +2094,15 @@ if (passwordInput) {
   try { S = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { S = {}; }
   S.c = S.c || {}; S.s = S.s || {}; S.seen = S.seen || {};
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
-  const inc = k => { S.c[k] = (S.c[k] || 0) + 1; };
-  const add = (k, v) => { const a = S.s[k] || (S.s[k] = []); if (!a.includes(v)) a.push(v); };
+  /* achievements need a real account: guests and logged-out visitors can't earn them */
+  const uname = () => ((document.getElementById("username") || {}).textContent || "").trim();
+  const guest = () => uname() === "Guest Player";
+  const siteOpen = () => { const el = document.getElementById("site"); return !!el && getComputedStyle(el).display !== "none"; };
+  const can = () => siteOpen() && !!uname() && !guest();
+  const inc = k => { if (!can()) return; S.c[k] = (S.c[k] || 0) + 1; };
+  const add = (k, v) => { if (!can()) return; const a = S.s[k] || (S.s[k] = []); if (!a.includes(v)) a.push(v); };
+  const pend = new Set();   // seasons seen before login, counted once an account is signed in
   const lsGet = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } };
-  const guest = () => (document.getElementById("username") || {}).textContent === "Guest Player";
 
   const pages = [...new Set([...document.querySelectorAll("#mainGameGrid .game-info > button")]
     .map(b => (/openGame\('([^']+)'/.exec(b.getAttribute("onclick")) || [])[1]).filter(Boolean))];
@@ -2148,6 +2151,7 @@ if (passwordInput) {
   const tierOf = a => { const v = a.get(); return a.t.filter(x => v >= x).length; };
 
   function sync() {
+    if (!can()) return;
     const streak = parseInt(localStorage.getItem("riftStreak")) || 0;
     if (streak > (S.c.streakBest || 0)) S.c.streakBest = streak;
     const favs = lsGet("riftFavs", []).length;
@@ -2160,8 +2164,11 @@ if (passwordInput) {
   document.addEventListener("click", e => { if (!e.target.closest("#menuWrap")) pop.classList.remove("open"); });
 
   const btn = document.getElementById("achBtn");
-  function refresh() { if (btn) btn.style.display = A.some(a => tierOf(a) > 0) ? "block" : "none"; }
-  const touch = () => { sync(); save(); refresh(); };
+  /* guests always see the menu item so they get the account notice; accounts see it once they've unlocked something */
+  function refresh() { if (btn) btn.style.display = (guest() || (can() && A.some(a => tierOf(a) > 0))) ? "block" : "none"; }
+  function flush() { if (can() && pend.size) { pend.forEach(v => add("season", v)); pend.clear(); save(); } refresh(); }
+  const touch = () => { sync(); flush(); save(); refresh(); };
+  setInterval(flush, 1500);
 
   /* events from the background (stars, golden dot, rifts, storm, seasons) */
   window.riftEvent = (n, v) => {
@@ -2169,7 +2176,7 @@ if (passwordInput) {
     else if (n === "gold") inc("gold");
     else if (n === "rift") { inc("rift"); if (v) inc("horizon"); }
     else if (n === "storm") inc("storm");
-    else if (n === "season") add("season", v);
+    else if (n === "season") pend.add(v);
     touch();
   };
 
@@ -2247,6 +2254,10 @@ if (passwordInput) {
     setTimeout(() => el.classList.remove("just"), 2300);
   }
   function openPanel() {
+    if (guest()) {
+      window.showGlassModal("Create an account to earn and track achievements!", { title: "Account Required", icon: "🏆" });
+      return;
+    }
     touch();
     grid.innerHTML = A.map(a => cardHTML(a, S.seen[a.id] || 0)).join("");
     updateSub();
