@@ -194,11 +194,12 @@ a:hover { color: var(--accent); }
 @media (max-width: 900px) { .game-card { width: calc(50% - 10px); } }
 @media (max-width: 600px) { .game-card { width: 100%; } }
 
-  /* seasonal tag */
+  /* SEASON TAG */
   #seasonTag { position: fixed; left: 16px; bottom: 14px; z-index: 5; font-size: 12px; font-weight: 600;
-    color: var(--text-muted); opacity: .75; pointer-events: none; letter-spacing: .02em; }
+    color: var(--text-muted); opacity: .85; cursor: pointer; pointer-events: auto; letter-spacing: .02em; transition: color .2s, opacity .2s; }
+  #seasonTag:hover { opacity: 1; color: var(--accent); }
 
-  /* single settings button + dropdown (Theme, Achievements) */
+  /* SINGLE SETTINGS BUTTON + DROPDOWN */
   #menuWrap { position: fixed; top: 25px; right: 25px; z-index: 100; }
   #menuBtn { width: 40px; height: 40px; padding: 0; border-radius: 50%; font-size: 18px; line-height: 1; color: var(--text-main);
     background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.15); transition: background .2s, border-color .2s, transform .2s; }
@@ -210,16 +211,16 @@ a:hover { color: var(--accent); }
     opacity: 0; pointer-events: none; transform: translateY(-6px); transition: opacity .18s ease, transform .18s ease; }
   body.light-theme #menuPop { border-color: rgba(0,0,0,.1); box-shadow: 0 12px 30px rgba(30,58,110,.18); }
   #menuPop.open { opacity: 1; pointer-events: auto; transform: none; }
-  #menuPop button { width: 100%; text-align: left; padding: 10px 12px; border-radius: 9px; background: transparent; color: var(--text-main); font-size: 13px; font-weight: 500; }
+  #menuPop button { width: 100%; text-align: left; padding: 10px 12px; border-radius: 99px; background: transparent; color: var(--text-main); font-size: 13px; font-weight: 500; }
   #menuPop button:hover { background: var(--input-bg); transform: none; }
   #achBtn { display: none; }
 
-  /* panel */
-  .ach-panel { width: 92%; max-width: 880px; border-radius: 24px; box-shadow: 0 25px 60px rgba(0,0,0,.5);
+  /* FIXED ACHIEVEMENT PANEL SCROLLING & HEIGHT */
+  .ach-panel { width: 92%; max-width: 880px; max-height: 85vh; height: 85vh; display: flex; flex-direction: column; border-radius: 24px; box-shadow: 0 25px 60px rgba(0,0,0,.5);
     transform: translateY(16px) scale(.97); transition: transform .25s cubic-bezier(.16,1,.3,1); }
   .glass-modal-overlay.is-open .ach-panel { transform: none; }
-  .ach-panel .glass-card-inner { max-height: 88vh; }
-  .ach-content { max-height: 88vh; overflow-y: auto; padding: 28px 26px 30px; }
+  .ach-panel .glass-card-inner { display: flex; flex-direction: column; height: 100%; max-height: 85vh; overflow: hidden; }
+  .ach-content { flex: 1; overflow-y: auto; padding: 28px 26px 40px; box-sizing: border-box; -webkit-overflow-scrolling: touch; }
   .ach-title { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -.02em; text-align: center; }
   .ach-sub { margin: 6px 0 0; text-align: center; color: var(--text-muted); font-size: 13.5px; }
   .ach-close { position: absolute; top: 16px; right: 16px; padding: 0; width: 34px; height: 34px; border-radius: 50%;
@@ -227,7 +228,7 @@ a:hover { color: var(--accent); }
   body.light-theme .ach-close { background: rgba(0,0,0,.05); border-color: rgba(0,0,0,.12); }
   .ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 14px; margin-top: 22px; }
 
-  /* cards: chunky colored tiles with a 3D bottom edge */
+  /* CARDS */
   .ach-card { --tc: #64748b; --c1: #6366f1; --c2: #4338ca; position: relative; text-align: center; padding: 26px 8px 12px; border-radius: 16px; cursor: pointer;
     background: linear-gradient(180deg, var(--c1), var(--c2)); border: 3px solid rgba(0,0,0,.38); border-bottom-width: 8px; overflow: hidden;
     box-shadow: 0 6px 14px rgba(0,0,0,.25); transition: filter 2.6s ease, transform .15s ease, border-bottom-width .15s ease; }
@@ -247,7 +248,7 @@ a:hover { color: var(--accent); }
   .ach-card.just { animation: achPulse 1.9s ease-out; }
   @keyframes achPulse { 0% { box-shadow: 0 0 0 0 var(--tc); } 100% { box-shadow: 0 0 34px 16px transparent; } }
 
-  /* sparkle burst */
+  /* SPARKLE BURST */
   .ach-sparkle { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
   .ach-sparkle i { position: absolute; left: 50%; top: 50%; width: 10px; height: 10px; opacity: 0; background: #fde68a;
     clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
@@ -258,8 +259,8 @@ a:hover { color: var(--accent); }
     100% { opacity: 0; transform: translate(-50%,-50%) rotate(var(--a)) translateX(var(--d)) scale(1.1); }
   }
 
-  /* detail sheet */
-  .ach-detail { max-width: 400px; }
+  /* DETAIL SHEET */
+  .ach-detail { max-width: 400px; max-height: 85vh; overflow-y: auto; }
   .ach-big { display: flex; align-items: center; justify-content: center; width: 84px; height: 84px; margin: 0 auto 12px; border-radius: 20px; font-size: 44px;
     background: linear-gradient(180deg, var(--c1), var(--c2)); border: 3px solid rgba(0,0,0,.38); border-bottom-width: 7px; }
   .ach-big.bw { filter: grayscale(1) brightness(.8); }
@@ -278,8 +279,6 @@ a:hover { color: var(--accent); }
   .ach-tiers .ck { flex: none; flex-grow: 0; color: #22c55e; font-weight: 800; }
   .ach-tip { margin: 0 0 16px !important; font-size: 13px !important; }
 </style>
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7292845069394911"
-     crossorigin="anonymous"></script>
 </head>
 <body>
 
@@ -885,7 +884,7 @@ a:hover { color: var(--accent); }
             <div class="glass-layer"></div>
             <div class="glass-content game-info">
               <h3 class="ex-title">Papa Louie Games</h3>
-              <button class="ex-btn" onclick="window.location.href='papalouie.html'">Explore</button>
+              <button class="ex-btn" onclick="window.openExternal('papalouie.html','Papa Louie Games')">Explore</button>
             </div>
           </div>
         </div>
@@ -905,7 +904,7 @@ a:hover { color: var(--accent); }
         <div class="glass-content">
           <span class="glass-modal-icon" id="glassModalIcon">🔒</span>
           <h3 id="glassModalTitle">Notice</h3>
-          <p id="glassModalMessage"></p>
+          <p id="glassModalMessage" style="white-space: pre-line;"></p>
           <button onclick="window.closeGlassModal()">Got it</button>
         </div>
       </div>
@@ -916,10 +915,10 @@ a:hover { color: var(--accent); }
     <h3>Rift Hub</h3>
     <p>Free browser game platform.</p>
     <div>
-      <a href="about.html">About</a>
-      <a href="contact.html">Contact</a>
-      <a href="privacy.html">Privacy Policy</a>
-      <a href="creators.html">Creators</a>
+      <a href="about.html" onclick="window.trackArchivist()">About</a>
+      <a href="contact.html" onclick="window.trackArchivist()">Contact</a>
+      <a href="privacy.html" onclick="window.trackArchivist()">Privacy Policy</a>
+      <a href="creators.html" onclick="window.trackArchivist()">Creators</a>
     </div>
   </footer>
 
@@ -936,15 +935,11 @@ a:hover { color: var(--accent); }
   const mouse = { x: -9999, y: -9999, down: false, downAt: 0 };
   let t = 0, ra = 0, flash = 0;
 
-  const LINK_DIST = 130;     // dot-to-dot line distance
-  const CURSOR_LINK = 170;   // cursor-to-dot line distance
-  const HOLD_RADIUS = 360;   // how far the rift reaches while holding
-  const MAX_CHARGE = 1100;   // ms to reach a full charge
+  const LINK_DIST = 130;
+  const CURSOR_LINK = 170;
+  const HOLD_RADIUS = 360;
+  const MAX_CHARGE = 1100;
 
-  /* ---------- SEASONS & HOLIDAYS ----------
-     Preview any look with ?bg=winter | spring | summer | autumn | newyear | valentine |
-     stpatrick | earth | july4 | halloween | thanksgiving | christmas | dawn | day | dusk | night |
-     nebula | cherryblossom | cyber | aurora | solstice */
   const base = { name: "Night", icon: "🌙", hue: 205, range: 70, fx: "dots", fall: 0, sway: 0, links: 1, acc: [59, 130, 246] };
   const P = {
     night: { ...base, a: [59, 130, 246], b: [139, 92, 246] },
@@ -952,13 +947,11 @@ a:hover { color: var(--accent); }
     day:   { ...base, name: "Day", icon: "☀️", hue: 195, range: 60, a: [59, 130, 246], b: [99, 102, 241] },
     dusk:  { ...base, name: "Dusk", icon: "🌇", hue: 310, range: 75, a: [168, 85, 247], b: [251, 113, 133], acc: [147, 51, 234] },
 
-    // the four seasons
     winter: { name: "Winter", icon: "❄️", hue: 200, range: 30, a: [125, 211, 252], b: [199, 210, 254], acc: [37, 99, 235], fx: "snow", fall: 0.006, sway: 0.004, links: 0.6, seasonal: true },
     spring: { name: "Spring", icon: "🌸", hue: 335, range: 25, a: [244, 114, 182], b: [134, 239, 172], acc: [219, 39, 119], fx: "petals", fall: 0.02, sway: 0.006, links: 0.12, seasonal: true },
     summer: { name: "Summer", icon: "☀️", hue: 52, range: 28, a: [250, 204, 21], b: [251, 146, 60], acc: [217, 119, 6], fx: "fireflies", fall: 0, sway: 0, links: 0.45, seasonal: true },
     autumn: { name: "Autumn", icon: "🍂", hue: 18, range: 38, a: [234, 88, 12], b: [180, 83, 9], acc: [194, 65, 12], fx: "leaves", fall: 0.028, sway: 0.007, links: 0.08, seasonal: true },
 
-    // holidays & special themes
     newyear:     { name: "New Year", icon: "🎆", hues: [45, 50, 200, 330, 280], range: 0, hue: 45, a: [251, 191, 36], b: [236, 72, 153], acc: [217, 119, 6], fx: "confetti", fall: 0.03, sway: 0.005, links: 0.1 },
     valentine:   { name: "Valentine's", icon: "💖", hue: 335, range: 25, a: [244, 63, 94], b: [236, 72, 153], acc: [225, 29, 72], fx: "hearts", fall: -0.02, sway: 0.006, links: 0.1 },
     stpatrick:   { name: "St. Patrick's", icon: "🍀", hues: [120, 140, 95, 48], range: 0, hue: 120, a: [34, 197, 94], b: [250, 204, 21], acc: [22, 163, 74], fx: "confetti", fall: 0.025, sway: 0.005, links: 0.15 },
@@ -968,7 +961,6 @@ a:hover { color: var(--accent); }
     thanksgiving:{ name: "Thanksgiving", icon: "🦃", hue: 28, range: 30, a: [217, 119, 6], b: [153, 27, 27], acc: [180, 83, 9], fx: "leaves", fall: 0.03, sway: 0.007, links: 0.06 },
     christmas:   { name: "Holidays", icon: "🎄", hues: [0, 130, 0, 130, 45], range: 0, hue: 0, a: [239, 68, 68], b: [34, 197, 94], acc: [220, 38, 38], fx: "snow", fx2: "dots", fx2p: 0.35, fall: 0.008, sway: 0.004, links: 0.35 },
     
-    // NEW SEASONAL & COSMIC THEMES
     nebula:        { name: "Nebula", icon: "🌌", hues: [270, 290, 320, 210], range: 50, hue: 280, a: [147, 51, 234], b: [236, 72, 153], acc: [168, 85, 247], fx: "dots", fall: 0.002, sway: 0.005, links: 0.8 },
     cherryblossom: { name: "Cherry Blossom", icon: "🌸", hue: 340, range: 20, a: [251, 113, 133], b: [244, 114, 182], acc: [225, 29, 72], fx: "petals", fall: 0.018, sway: 0.008, links: 0.2 },
     cyber:         { name: "Cyberpunk", icon: "⚡", hues: [180, 300, 190, 320], range: 60, hue: 180, a: [6, 182, 212], b: [217, 70, 239], acc: [14, 165, 233], fx: "confetti", fall: 0.01, sway: 0.002, links: 0.9 },
@@ -987,7 +979,7 @@ a:hover { color: var(--accent); }
     if (q && P[q]) id = q;
     else {
       const d = new Date(), m = d.getMonth(), day = d.getDate();
-      const th = 1 + ((4 - new Date(d.getFullYear(), 10, 1).getDay() + 7) % 7) + 21;   // 4th Thursday of Nov
+      const th = 1 + ((4 - new Date(d.getFullYear(), 10, 1).getDay() + 7) % 7) + 21;
       if ((m === 11 && day === 31) || (m === 0 && day <= 2)) id = "newyear";
       else if (m === 1 && day >= 10 && day <= 14) id = "valentine";
       else if (m === 2 && day >= 15 && day <= 17) id = "stpatrick";
@@ -1012,10 +1004,31 @@ a:hover { color: var(--accent); }
   tag.id = "seasonTag";
   document.body.appendChild(tag);
 
+  tag.addEventListener("click", () => {
+    emit("schedule");
+    const dates = `
+    🎆 New Year: Dec 31 – Jan 2
+    💖 Valentine's: Feb 10 – Feb 14
+    🍀 St. Patrick's: Mar 15 – Mar 17
+    🌍 Earth Day: Apr 20 – Apr 22
+    🎇 Fireworks / July 4th: Jul 1 – Jul 4
+    🎃 Halloween: Oct 25 – Oct 31
+    🦃 Thanksgiving: 4th Thursday of Nov
+    🎄 Holidays / Christmas: Dec 18 – Dec 26
+
+    ❄️ Winter: Dec – Feb
+    🌸 Spring: Mar – May
+    ☀️ Summer: Jun – Aug
+    🍂 Autumn: Sep – Nov
+
+    💡 Tip: Preview any theme anytime by adding "?bg=theme" (e.g. ?bg=halloween, ?bg=aurora) to your URL!`;
+    window.showGlassModal(dates, { title: "📅 Seasonal Background Schedule", icon: "🗓️" });
+  });
+
   function applyTarget() {
     FX.fx = target.fx; FX.fx2 = target.fx2 || null; FX.fx2p = target.fx2p || 0; FX.hues = target.hues || null;
     particles.forEach(p => { p.alt = FX.fx2 ? Math.random() < FX.fx2p : false; });
-    tag.textContent = `${target.icon} ${target.name}`;
+    tag.textContent = `${target.icon} ${target.name} (Click for schedule)`;
     const [r, g, b] = target.acc;
     document.body.style.setProperty("--accent", `rgb(${r},${g},${b})`);
     document.body.style.setProperty("--accent-glow", `rgba(${r},${g},${b},0.25)`);
@@ -1037,7 +1050,6 @@ a:hover { color: var(--accent); }
   }
   const rgb = arr => `${Math.round(arr[0])},${Math.round(arr[1])},${Math.round(arr[2])}`;
 
-  /* ---------- PARTICLES ---------- */
   function resize() {
     dpr = Math.min(window.devicePixelRatio || 1, 2);
     w = window.innerWidth;
@@ -1048,7 +1060,7 @@ a:hover { color: var(--accent); }
 
     const count = Math.min(230, Math.floor((w * h) / 7500));
     particles = Array.from({ length: count }, (_, i) => {
-      const z = 0.2 + Math.random() * 0.8;       // depth: 0.2 far -> 1 near
+      const z = 0.2 + Math.random() * 0.8;
       return {
         x: Math.random() * w, y: Math.random() * h, vx: 0, vy: 0, z,
         r: 0.5 + z * 1.7, hf: Math.random(), phase: Math.random() * Math.PI * 2, i,
@@ -1058,7 +1070,6 @@ a:hover { color: var(--accent); }
     });
   }
 
-  /* ---------- SHOOTING STARS (click them!) ---------- */
   function spawnStar(x, y, ang, sp, max, nc) {
     stars.push({ x, y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, life: 0, max, nc });
   }
@@ -1073,7 +1084,6 @@ a:hover { color: var(--accent); }
     );
   }
 
-  /* ---------- RARE GOLDEN DOT ---------- */
   function spawnGold() {
     if (gold) return;
     const fromLeft = Math.random() < 0.5;
@@ -1110,7 +1120,6 @@ a:hover { color: var(--accent); }
     return mouse.down ? Math.min((performance.now() - mouse.downAt) / MAX_CHARGE, 1) : 0;
   }
 
-  /* ---------- BLACK HOLE: hold to open a rift, release to collapse it ---------- */
   function collapse(power) {
     flares.push({ x: mouse.x, y: mouse.y, life: 0, max: 30 + power * 22, power });
     const R = 260 + power * 340;
@@ -1128,7 +1137,6 @@ a:hover { color: var(--accent); }
     for (let i = 0; i < n; i++) spawnStar(mouse.x, mouse.y, off + (i / n) * 6.283, 9 + Math.random() * 6, 24 + Math.random() * 18, true);
   }
 
-  /* ---------- STORM EASTER EGG: click the logo 5 times ---------- */
   const rain = { until: 0 };
   function storm() {
     if (reduceMotion) return;
@@ -1137,7 +1145,6 @@ a:hover { color: var(--accent); }
     emit("storm");
   }
 
-  /* ---------- DRAWING ---------- */
   function drawParticle(p, fx, hue, light, al, boost) {
     const r = p.r;
     const hs = (s, l, a) => `hsla(${hue},${s}%,${l}%,${Math.max(0, Math.min(1, a))})`;
@@ -1207,7 +1214,6 @@ a:hover { color: var(--accent); }
       ctx.restore();
       return;
     }
-    // default glowing dot
     const tw = 0.6 + 0.4 * Math.sin(t * 6 + p.phase), l = light ? 48 : 70;
     ctx.fillStyle = hs(90, l, 0.1 * tw * al);
     ctx.beginPath(); ctx.arc(p.x, p.y, r * 4, 0, 6.283); ctx.fill();
@@ -1222,7 +1228,6 @@ a:hover { color: var(--accent); }
     ctx.closePath(); ctx.fill(); ctx.restore();
   }
 
-  /* ---------- FRAME ---------- */
   function frame() {
     const light = document.body.classList.contains("light-theme");
     const now = performance.now();
@@ -1232,7 +1237,6 @@ a:hover { color: var(--accent); }
     easeTheme();
     ra += ((now < rain.until ? 1 : 0) - ra) * 0.06;
 
-    // soft ambient glows tinted by the season
     [
       { x: w * (0.25 + 0.1 * Math.sin(t * 1.3)), y: h * (0.3 + 0.1 * Math.cos(t)), c: rgb(cur.a) },
       { x: w * (0.75 + 0.1 * Math.cos(t * 1.1)), y: h * (0.7 + 0.1 * Math.sin(t * 0.9)), c: rgb(cur.b) }
@@ -1255,7 +1259,6 @@ a:hover { color: var(--accent); }
     const hasMouse = mouse.x > -9000;
     const c = charge();
 
-    // update particles
     for (const p of particles) {
       let damp = 0.96;
       const a = (Math.sin(p.x * 0.0028 + t * 2) + Math.cos(p.y * 0.0032 - t * 1.6)) * Math.PI;
@@ -1265,7 +1268,7 @@ a:hover { color: var(--accent); }
       p.vy += cur.fall * (0.4 + p.z);
       p.vx += Math.sin(t * 3 + p.phase) * cur.sway;
 
-      if (ra > 0.02) {                       // storm: dots fall as rain
+      if (ra > 0.02) {
         p.vy += 0.12 * ra * (0.4 + p.z * 0.8);
         p.vx += 0.01 * ra;
         damp = 0.97;
@@ -1274,7 +1277,7 @@ a:hover { color: var(--accent); }
       if (hasMouse) {
         const dx = p.x - mouse.x, dy = p.y - mouse.y, d2 = dx * dx + dy * dy;
         if (mouse.down) {
-          if (d2 < HOLD_RADIUS * HOLD_RADIUS) {          // the rift: fall inward while orbiting
+          if (d2 < HOLD_RADIUS * HOLD_RADIUS) {
             const d = Math.sqrt(d2) || 1, k = 1 - d / HOLD_RADIUS;
             const inward = k * (0.35 + c * 0.9), spin = k * (0.55 + c * 0.9);
             p.vx += (-dx / d) * inward + (-dy / d) * spin;
@@ -1298,7 +1301,6 @@ a:hover { color: var(--accent); }
       if (p.y > h + 20) p.y = -20;
     }
 
-    // dot-to-dot lines
     const lineBase = (light ? 0.2 : 0.17) * cur.links * (1 - 0.7 * ra);
     if (lineBase > 0.004) {
       ctx.lineWidth = 1;
@@ -1318,7 +1320,6 @@ a:hover { color: var(--accent); }
       }
     }
 
-    // cursor constellation
     if (hasMouse && !mouse.down && ra < 0.3) {
       for (const p of particles) {
         const dx = p.x - mouse.x, dy = p.y - mouse.y, d = Math.sqrt(dx * dx + dy * dy);
@@ -1329,7 +1330,6 @@ a:hover { color: var(--accent); }
       }
     }
 
-    // particles
     for (const p of particles) {
       const depthA = 0.3 + p.z * 0.7;
       const hue = FX.hues ? FX.hues[p.i % FX.hues.length] : cur.hue + p.hf * cur.range;
@@ -1339,11 +1339,11 @@ a:hover { color: var(--accent); }
         if (d < CURSOR_LINK) boost += (1 - d / CURSOR_LINK) * 0.8;
       }
       const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
-      if (ra > 0.05) {                                       // rain streaks
+      if (ra > 0.05) {
         ctx.strokeStyle = `hsla(${hue},95%,${light ? 45 : 78}%,${0.45 * ra * depthA})`;
         ctx.lineWidth = p.r * 0.6 + 0.3;
         ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.vx * 3, p.y - p.vy * 3); ctx.stroke();
-      } else if (speed > 1.8) {                               // motion streaks
+      } else if (speed > 1.8) {
         ctx.strokeStyle = `hsla(${hue},95%,${light ? 45 : 78}%,${Math.min(0.7, (speed - 1.8) * 0.12) * depthA})`;
         ctx.lineWidth = p.r * 0.9 + 0.4; ctx.lineCap = "round";
         ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.vx * 4, p.y - p.vy * 4); ctx.stroke();
@@ -1352,7 +1352,6 @@ a:hover { color: var(--accent); }
       drawParticle(p, p.alt ? FX.fx2 : FX.fx, hue, light, Math.min(1, depthA * boost), boost);
     }
 
-    // the rift
     if (mouse.down && hasMouse) {
       const pulse = 1 + (c >= 1 ? 0.07 * Math.sin(now / 55) : 0);
       const cr = (6 + c * 16) * pulse, R = cr * 4.5;
@@ -1375,13 +1374,12 @@ a:hover { color: var(--accent); }
         ctx.lineDashOffset = -spin * 60 * (n ? -1 : 1);
         ctx.strokeStyle = `rgba(${discCol},${(0.25 + c * 0.45) * (n ? 0.7 : 1)})`;
         ctx.lineWidth = n ? 1 : 1.6;
-        ctx.beginPath(); ctx.ellipse(0, 0, cr * (n ? 4.4 : 3.4), cr * (n ? 1.5 : 1.15), 0, 0, 6.283); ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(0, 0, cr * (n ? 4.4 : 3.4), cr * (n ? 1.1 : 1.15), 0, 0, 6.283); ctx.stroke();
         ctx.restore();
       }
       ctx.setLineDash([]);
     }
 
-    // collapse bloom
     for (let i = flares.length - 1; i >= 0; i--) {
       const f = flares[i];
       f.life++;
@@ -1398,7 +1396,6 @@ a:hover { color: var(--accent); }
     }
 
     if (!reduceMotion) {
-      // shooting stars
       if (--nextStar <= 0) {
         randomStar();
         if (Math.random() < 0.35) randomStar();
@@ -1418,7 +1415,6 @@ a:hover { color: var(--accent); }
         ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(tx, ty); ctx.stroke();
       }
 
-      // golden dot
       if (!gold && --nextGold <= 0) {
         if (Math.random() < 0.3) spawnGold();
         nextGold = 1200 + Math.random() * 1200;
@@ -1452,7 +1448,6 @@ a:hover { color: var(--accent); }
       }
     }
 
-    // click pops
     for (let i = sparks.length - 1; i >= 0; i--) {
       const s = sparks[i];
       s.life++; s.x += s.vx; s.y += s.vy; s.vx *= 0.95; s.vy *= 0.95; s.vy += 0.04;
@@ -1465,7 +1460,6 @@ a:hover { color: var(--accent); }
     if (!reduceMotion) requestAnimationFrame(frame);
   }
 
-  /* ---------- INPUT ---------- */
   const isUI = el => el && el.closest && el.closest("button, input, select, a, textarea, .glass-modal-overlay");
 
   window.addEventListener("resize", resize);
@@ -1473,18 +1467,17 @@ a:hover { color: var(--accent); }
     mouse.x = e.clientX; mouse.y = e.clientY;
     const over = !isUI(e.target) && (hitStar(e.clientX, e.clientY) >= 0 || hitGold(e.clientX, e.clientY));
     document.documentElement.style.cursor = over ? "pointer" : "";
-    if (!isUI(e.target)) emit("hover");
   });
   window.addEventListener("pointerdown", e => {
     if (isUI(e.target)) return;
     const si = hitStar(e.clientX, e.clientY);
-    if (si >= 0) {                                    // caught a shooting star
+    if (si >= 0) {
       pop(stars[si].x, stars[si].y, "255,235,170", 18);
       stars.splice(si, 1);
       emit("star");
       return;
     }
-    if (hitGold(e.clientX, e.clientY)) {             // caught the golden dot
+    if (hitGold(e.clientX, e.clientY)) {
       pop(gold.x, gold.y, "255,200,40", 50);
       gold = null;
       emit("gold");
@@ -1507,7 +1500,6 @@ a:hover { color: var(--accent); }
     if (!document.hidden && !reduceMotion) requestAnimationFrame(frame);
   });
 
-  // click the logo 5 times quickly
   let logoClicks = 0, lastLogoClick = 0;
   document.querySelectorAll("header h1, .login-container h2, footer h3").forEach(el => {
     el.style.userSelect = "none";
@@ -1546,7 +1538,6 @@ const auth = getAuth(app);
 let isGuest = false;
 let currentGameOfDay = {};
 
-/* CATEGORY & HARDWARE SCHEME ASSIGNMENT MATRIX */
 const categoryMap = {
   snake: "arcade", tetris: "puzzle", pong: "arcade", flappyblock: "arcade",
   "2048": "puzzle", memorymatch: "puzzle", "pac-man": "arcade", wordle: "word",
@@ -1595,7 +1586,6 @@ document.querySelectorAll("#mainGameGrid .game-card").forEach(card => {
   }
 });
 
-/* DIALOG MODAL HANDLERS */
 window.showGlassModal = function (message, opts = {}) {
   const { title = "Notice", icon = "🔒" } = opts;
   const titleEl = document.getElementById("glassModalTitle");
@@ -1617,7 +1607,6 @@ document.getElementById("glassModalOverlay").addEventListener("click", (e) => {
   if (e.target.id === "glassModalOverlay") window.closeGlassModal();
 });
 
-/* SKELETON PLACEHOLDER RENDERING */
 function renderSkeletonCards(gridId, count) {
   const grid = document.getElementById(gridId);
   if (!grid) return;
@@ -1680,7 +1669,6 @@ const gamePool = [
   { id: "scrabble", name: "Scrabble", page: "scrabble.html" },
 ];
 
-/* STREAK ENGINE */
 function dateStr(offsetDays = 0) {
   const d = new Date();
   d.setDate(d.getDate() + offsetDays);
@@ -1714,7 +1702,6 @@ function recordStreakPlay() {
   const lastPlayed = localStorage.getItem("riftLastPlayed");
   let streak = parseInt(localStorage.getItem("riftStreak")) || 0;
   if (lastPlayed === today) {
-    // Logged already
   } else if (lastPlayed === yesterday) {
     streak += 1;
   } else {
@@ -1725,7 +1712,6 @@ function recordStreakPlay() {
   renderStreakBadge(streak);
 }
 
-/* VIEWPORT THEME MANAGER */
 window.toggleTheme = function () {
   const isLight = document.body.classList.toggle("light-theme");
   localStorage.setItem("riftTheme", isLight ? "light" : "dark");
@@ -1752,7 +1738,6 @@ window.playGameOfDay = function () {
   window.openGame(currentGameOfDay.page, currentGameOfDay.name);
 };
 
-/* AUTHENTICATION ROUTINES */
 window.logout = function () {
   isGuest = false;
   document.getElementById("site").style.display = "none";
@@ -1857,7 +1842,6 @@ onAuthStateChanged(auth, (user) => {
   if (user) loadUser(user.email, false);
 });
 
-/* HISTORY & LAUNCH ENGINE */
 window.openGame = function (page, name) {
   if (!isGuest) {
     let history = JSON.parse(localStorage.getItem("riftHistory")) || [];
@@ -1888,6 +1872,27 @@ window.openExclusive = function (page, name) {
   window.openGame(page, name);
 };
 
+window.openExternal = function (page, name) {
+  if (!isGuest) {
+    try {
+      const externalPlays = parseInt(localStorage.getItem("riftExternalPlays")) || 0;
+      localStorage.setItem("riftExternalPlays", externalPlays + 1);
+      if (window.riftEvent) window.riftEvent("external");
+    } catch (e) {}
+  }
+  window.location.href = page;
+};
+
+window.trackArchivist = function() {
+  if (!isGuest) {
+    try {
+      const footClicks = parseInt(localStorage.getItem("riftFootClicks")) || 0;
+      localStorage.setItem("riftFootClicks", footClicks + 1);
+      if (window.riftEvent) window.riftEvent("archivist");
+    } catch (e) {}
+  }
+};
+
 function updateStats() {
   if (isGuest) return;
   const count = localStorage.getItem("riftGamesPlayed") || 0;
@@ -1895,7 +1900,6 @@ function updateStats() {
   if (countEl) countEl.textContent = count;
 }
 
-/* FAVORITING SYSTEM */
 window.toggleFavorite = function (id, name, page) {
   if (isGuest) {
     showGlassModal("Global cloud saving for favorites requires a profile registration!", { title: "Account Required", icon: "⭐" });
@@ -2023,7 +2027,6 @@ function filterFavoritesGrid(queryValue) {
   }
 }
 
-/* GRID CONTROLS */
 function applyMainGridControls() {
   const grid = document.getElementById("mainGameGrid");
   if (!grid) return;
@@ -2064,12 +2067,13 @@ function applyMainGridControls() {
   filterFavoritesGrid(searchVal);
 }
 
-/* GLOBAL REGISTRATIONS */
 window.login = login;
 window.signup = signup;
 window.loginAsGuest = loginAsGuest;
 window.openGame = openGame;
 window.openExclusive = openExclusive;
+window.openExternal = openExternal;
+window.trackArchivist = trackArchivist;
 window.logout = logout;
 window.toggleTheme = toggleTheme;
 window.playGameOfDay = playGameOfDay;
@@ -2108,7 +2112,6 @@ if (passwordInput) {
     if (e.key === "Enter") window.login();
   });
 }
-
 </script>
 
   <script type="module">
@@ -2137,56 +2140,59 @@ if (passwordInput) {
     { n: "Nova", c: "#f472b6" }, { n: "Singularity", c: "#fbbf24" }
   ];
 
+  /* UPDATED ACHIEVEMENTS: REPLACED VETERAN WITH SCHEDULE CHECKER */
   const A = [
-    { id: "star", icon: "🌠", name: "Star Catcher", desc: "Shooting stars streak across the background. Catch them.",
-      t: [1, 5, 15, 40, 100], q: n => `Click ${pl(n, "shooting star")}`, get: () => S.c.star || 0 },
-    { id: "gold", icon: "🌟", name: "Golden Touch", desc: "A rare golden dot drifts by every so often.",
-      t: [1, 2, 4, 8, 15], q: n => `Catch ${pl(n, "golden dot")}`, get: () => S.c.gold || 0, tip: "It's rare and it doesn't stay long. Keep an eye on the background." },
-    { id: "all", icon: "🏆", name: "Completionist", desc: "Try everything in the Multiverse Game Grid.",
-      t: [3, 10, 20, 30, TOTAL], q: n => n >= TOTAL ? `Play every single game (${TOTAL})` : `Play ${n} different games`, get: () => (S.s.games || []).length },
-    { id: "plays", icon: "🎮", name: "Rift Regular", desc: "Every launch counts, even repeats.",
-      t: [1, 10, 25, 50, 100], q: n => `Launch games ${pl(n, "time")}`, get: () => S.c.plays || 0 },
-    { id: "streak", icon: "🔥", name: "Streak Master", desc: "Play at least one game every day.",
-      t: [2, 3, 7, 14, 30], q: n => `Reach a ${n}-day streak`, get: () => S.c.streakBest || 0 },
-    { id: "favs", icon: "⭐", name: "Collector", desc: "Star your favorite games.",
-      t: [1, 3, 6, 10, 20], q: n => `Have ${pl(n, "favorite")} starred`, get: () => S.c.favsBest || 0 },
-    { id: "excl", icon: "💎", name: "Exclusive Club", desc: "Rift Exclusives are only for account holders.",
-      t: [1, 2, 3, 5, 6], q: n => `Play ${n} different Exclusive${n === 1 ? "" : "s"}`, get: () => (S.s.excl || []).length },
-    { id: "season", icon: "🍂", name: "Season Hopper", desc: "The background changes with the seasons and holidays.",
+    { id: "star", icon: "🌠", name: "Star Catcher", desc: "Shooting stars streak across the background. Catch them by clicking on their glowing trails.",
+      t: [1, 3, 7, 15, 30], q: n => `Click ${pl(n, "shooting star")}`, get: () => S.c.star || 0, tip: "Shooting stars spawn periodically across the screen. Click directly on them!" },
+    { id: "gold", icon: "🌟", name: "Golden Touch", desc: "A rare golden dot drifts by every so often. Click it before it fades away.",
+      t: [1, 2, 3, 5, 10], q: n => `Catch ${pl(n, "golden dot")}`, get: () => S.c.gold || 0, tip: "Keep an eye on the background—it is rare and moves in a wave pattern." },
+    { id: "all", icon: "🏆", name: "Completionist", desc: "Try different games in the Multiverse Game Grid.",
+      t: [1, 3, 5, 10, 20], q: n => `Play ${pl(n, "different game")}`, get: () => (S.s.games || []).length, tip: "Launch unique games from the main dashboard to build your count." },
+    { id: "plays", icon: "🎮", name: "Rift Regular", desc: "Launch games from the grid. Every launch counts towards progress.",
+      t: [1, 5, 15, 30, 50], q: n => `Launch games ${pl(n, "time")}`, get: () => S.c.plays || 0 },
+    { id: "streak", icon: "🔥", name: "Streak Master", desc: "Maintain a consecutive daily login and play streak.",
+      t: [1, 2, 4, 7, 14], q: n => `Reach a ${n}-day streak`, get: () => S.c.streakBest || 0, tip: "Play at least one game each day to grow your streak circle." },
+    { id: "favs", icon: "⭐", name: "Collector", desc: "Star your favorite games to pin them to your top dashboard.",
+      t: [1, 2, 4, 7, 12], q: n => `Have ${pl(n, "favorite")} starred`, get: () => S.c.favsBest || 0, tip: "Click the star icon on any game card to add it to your favorites." },
+    { id: "excl", icon: "💎", name: "Exclusive Club", desc: "Play games from the Rift Exclusives section.",
+      t: [1, 2, 3, 4, 6], q: n => `Play ${n} different Exclusive${n === 1 ? "" : "s"}`, get: () => (S.s.excl || []).length, tip: "Exclusives require a registered account." },
+    { id: "season", icon: "🍂", name: "Season Hopper", desc: "Experience different seasonal looks on the site background.",
       t: [1, 2, 3, 4, 6], q: n => `Discover ${pl(n, "seasonal look")}`, get: () => (S.s.season || []).length,
-      tip: "Peek ahead by adding ?bg=halloween, ?bg=winter, ?bg=spring, ?bg=christmas... to the URL." },
-    { id: "rift", icon: "🕳️", name: "Singularity", desc: "Open a rift and let it collapse.",
-      t: [1, 10, 25, 50, 100], q: n => `Open and release ${pl(n, "rift")}`, get: () => S.c.rift || 0, tip: "Press and hold on empty background, then let go." },
+      tip: "Click the seasonal text in the bottom left or append ?bg=halloween, ?bg=winter, ?bg=aurora, etc. to your URL." },
+    { id: "rift", icon: "🕳️", name: "Singularity", desc: "Press and hold on any empty spot on the background canvas to open a rift, then let go.",
+      t: [1, 5, 15, 30, 50], q: n => `Open and release ${pl(n, "rift")}`, get: () => S.c.rift || 0, tip: "Click and hold the canvas until a vortex forms, then release!" },
     { id: "horizon", icon: "🌀", name: "Event Horizon", desc: "Fully charge a rift before releasing it.",
-      t: [1, 3, 10, 25, 50], q: n => `Fully charge and release ${pl(n, "rift")}`, get: () => S.c.horizon || 0, tip: "Hold for over a second until the core starts pulsing." },
-    { id: "storm", icon: "⛈️", name: "Storm Caller", desc: "Something happens if you poke the logo enough.",
-      t: [1, 3, 5, 10, 25], q: n => `Summon the storm ${pl(n, "time")}`, get: () => S.c.storm || 0, tip: "Click the Rift Hub logo 5 times, fast." },
-    { id: "theme", icon: "🌓", name: "Shapeshifter", desc: "Dark or light? Why not both.",
-      t: [1, 5, 15, 30, 60], q: n => `Switch themes ${pl(n, "time")}`, get: () => S.c.theme || 0 },
-    { id: "gotd", icon: "📅", name: "Daily Ritual", desc: "The Game of the Day changes every day.",
-      t: [1, 3, 7, 14, 30], q: n => `Play the Game of the Day ${pl(n, "time")}`, get: () => S.c.gotd || 0 },
+      t: [1, 2, 5, 12, 25], q: n => `Fully charge and release ${pl(n, "rift")}`, get: () => S.c.horizon || 0, tip: "Hold the rift for over a second until the core starts pulsing brightly." },
+    { id: "storm", icon: "⛈️", name: "Storm Caller", desc: "Summon a lightning storm over the hub.",
+      t: [1, 2, 4, 8, 15], q: n => `Summon the storm ${pl(n, "time")}`, get: () => S.c.storm || 0, tip: "Click the 'Rift Hub' logo 5 times in rapid succession!" },
+    { id: "theme", icon: "🌓", name: "Shapeshifter", desc: "Toggle between Dark and Light visual themes.",
+      t: [1, 3, 8, 15, 30], q: n => `Switch themes ${pl(n, "time")}`, get: () => S.c.theme || 0, tip: "Use the top right settings menu to switch themes." },
+    { id: "gotd", icon: "📅", name: "Daily Ritual", desc: "Play the highlighted Game of the Day.",
+      t: [1, 2, 5, 10, 20], q: n => `Play the Game of the Day ${pl(n, "time")}`, get: () => S.c.gotd || 0, tip: "Click the 'Play Game of the Day' banner on your dashboard." },
     
-    // NEW ACHIEVEMENTS
-    { id: "speedrunner", icon: "⚡", name: "Speedrunner", desc: "Search and filter through games quickly.",
-      t: [1, 5, 15, 30, 50], q: n => `Perform ${pl(n, "search query")}`, get: () => S.c.search || 0 },
-    { id: "nightowl", icon: "🦉", name: "Night Owl", desc: "Play games late into the night.",
-      t: [1, 3, 7, 15, 30], q: n => `Play ${pl(n, "late night session")} (10 PM - 4 AM)`, get: () => S.c.night || 0 },
-    { id: "explorer", icon: "🔍", name: "Category Explorer", desc: "Filter games across different genres.",
-      t: [1, 3, 5, 10, 20], q: n => `Filter by genre ${pl(n, "time")}`, get: () => S.c.catFilter || 0 },
-    { id: "multiverse", icon: "🌌", name: "Multiverse Navigator", desc: "Sort games using different sorting orders.",
-      t: [1, 3, 8, 15, 30], q: n => `Change grid sorting ${pl(n, "time")}`, get: () => S.c.sortChange || 0 },
-    { id: "curator", icon: "🎨", name: "Master Curator", desc: "Hover over background particles to interact with the environment.",
-      t: [10, 50, 150, 300, 600], q: n => `Interact with ${pl(n, "background particle")}`, get: () => S.c.hover || 0 },
-    { id: "stargazer", icon: "✨", name: "Stargazer", desc: "Interact with interactive elements across the platform.",
-      t: [5, 20, 50, 100, 200], q: n => `Trigger ${pl(n, "hub interaction")}`, get: () => S.c.interact || 0 },
-    { id: "veteran", icon: "🎖️", name: "Rift Veteran", desc: "Accumulate total gameplay milestones.",
-      t: [5, 20, 50, 100, 250], q: n => `Reach ${pl(n, "total play")} score`, get: () => (S.c.plays || 0) + (S.c.gotd || 0) }
+    { id: "nightowl", icon: "🦉", name: "Night Owl", desc: "Launch games late at night.",
+      t: [1, 2, 4, 8, 15], q: n => `Play ${pl(n, "session")} late at night (10 PM - 4 AM)`, get: () => S.c.night || 0, tip: "Open and play any game between 10:00 PM and 4:00 AM." },
+    { id: "earlybird", icon: "🌅", name: "Early Bird", desc: "Launch games in the early morning hours.",
+      t: [1, 2, 4, 8, 15], q: n => `Play ${pl(n, "session")} in the morning (5 AM - 10 AM)`, get: () => S.c.early || 0, tip: "Open and play any game between 5:00 AM and 10:00 AM." },
+    { id: "explorer", icon: "🔍", name: "Category Explorer", desc: "Filter games by genre dropdown.",
+      t: [1, 2, 4, 8, 15], q: n => `Filter by genre ${pl(n, "time")}`, get: () => S.c.catFilter || 0, tip: "Select different options in the 'All Genres' dropdown menu." },
+    { id: "multiverse", icon: "🌌", name: "Multiverse Navigator", desc: "Sort games using the sort selector.",
+      t: [1, 2, 4, 8, 15], q: n => `Change grid sorting ${pl(n, "time")}`, get: () => S.c.sortChange || 0, tip: "Toggle between A-Z, Z-A, or Most Played sorting options." },
+    
+    { id: "portalvisitor", icon: "🌐", name: "Portal Visitor", desc: "Explore external games from the External Games section.",
+      t: [1, 3, 5, 10, 20], q: n => `Launch ${pl(n, "external game")}`, get: () => S.c.externalPlays || 0, tip: "Click 'Explore' on External Games like Papa Louie Games." },
+    { id: "archivist", icon: "📚", name: "Archivist", desc: "Visit footer pages like About, Contact, Privacy Policy, or Creators.",
+      t: [1, 3, 6, 12, 25], q: n => `Visit footer information pages ${pl(n, "time")}`, get: () => S.c.footClicks || 0, tip: "Click the links in the footer at the bottom of the page." },
+    
+    { id: "schedule", icon: "🗓️", name: "Schedule Checker", desc: "Check the seasonal background theme schedule.",
+      t: [1, 2, 4, 8, 15], q: n => `View background schedule ${pl(n, "time")}`, get: () => S.c.schedViews || 0, tip: "Click the seasonal tag in the bottom left corner to view the schedule!" }
   ];
+
   const COL = { star: ["#6366f1", "#4338ca"], gold: ["#fbbf24", "#d97706"], all: ["#f43f5e", "#be123c"], plays: ["#22c55e", "#15803d"],
     streak: ["#fb923c", "#c2410c"], favs: ["#eab308", "#a16207"], excl: ["#06b6d4", "#0e7490"], season: ["#84cc16", "#4d7c0f"],
     rift: ["#8b5cf6", "#5b21b6"], horizon: ["#ec4899", "#9d174d"], storm: ["#3b82f6", "#1e40af"], theme: ["#64748b", "#334155"], gotd: ["#14b8a6", "#0f766e"],
-    speedrunner: ["#06b6d4", "#0284c7"], nightowl: ["#6366f1", "#3730a3"], explorer: ["#10b981", "#047857"], multiverse: ["#a855f7", "#7e22ce"],
-    curator: ["#f43f5e", "#be123c"], stargazer: ["#f59e0b", "#b45309"], veteran: ["#e11d48", "#9f1239"] };
+    nightowl: ["#6366f1", "#3730a3"], earlybird: ["#f59e0b", "#d97706"], explorer: ["#10b981", "#047857"], multiverse: ["#a855f7", "#7e22ce"],
+    portalvisitor: ["#06b6d4", "#0284c7"], archivist: ["#84cc16", "#3f6212"], schedule: ["#ec4899", "#be185d"] };
   const colOf = a => COL[a.id] || ["#6366f1", "#4338ca"];
   const tierOf = a => { const v = a.get(); return a.t.filter(x => v >= x).length; };
 
@@ -2215,7 +2221,9 @@ if (passwordInput) {
     else if (n === "rift") { inc("rift"); if (v) inc("horizon"); }
     else if (n === "storm") inc("storm");
     else if (n === "season") pend.add(v);
-    else if (n === "hover") inc("curator");
+    else if (n === "external") inc("externalPlays");
+    else if (n === "archivist") inc("footClicks");
+    else if (n === "schedule") inc("schedViews");
     touch();
   };
 
@@ -2231,21 +2239,21 @@ if (passwordInput) {
   };
   wrap("openGame", (page) => {
     inc("plays");
-    inc("stargazer");
     const hr = new Date().getHours();
     if (hr >= 22 || hr < 4) inc("night");
+    if (hr >= 5 && hr < 10) inc("early");
     if (pages.includes(page)) add("games", page);
     else if (/^rift/i.test(page)) add("excl", page);
   });
-  wrap("toggleTheme", () => inc("theme"));
+  wrap("toggleTheme", () => {
+    inc("theme");
+  });
   wrap("playGameOfDay", () => { if (!guest()) inc("gotd"); });
   wrap("toggleFavorite");
 
-  document.getElementById("search")?.addEventListener("input", () => inc("speedrunner"));
   document.getElementById("categorySelect")?.addEventListener("change", () => inc("catFilter"));
   document.getElementById("sortSelect")?.addEventListener("change", () => inc("sortChange"));
 
-  /* ---------- panel ---------- */
   document.body.insertAdjacentHTML("beforeend", `
     <div class="glass-modal-overlay" id="achOverlay">
       <div class="ach-panel"><div class="glass-card-inner"><div class="glass-layer"></div>
@@ -2324,12 +2332,13 @@ if (passwordInput) {
       <span class="ach-big${shown ? "" : " bw"}" style="--c1:${colOf(a)[0]};--c2:${colOf(a)[1]}">${a.icon}</span>
       <h3>${a.name}</h3>
       <p class="ach-desc">${a.desc}</p>
-      <div class="ach-prog"><div class="ach-bar"><i style="width:${pct}%"></i></div><span>${t >= 5 ? "MAX TIER" : `${Math.min(v, next)} / ${next}`}</span></div>
+      <div class="ach-prog"><div class="ach-bar"><i style="width:${pct}%"></i></div><span>${t >= 5 ? "MAX TIER COMPLETED" : `Current Progress: ${v} / ${next}`}</span></div>
+      <p style="font-size: 13px; color: var(--accent); font-weight: 600; margin-bottom: 14px; text-align: center;">🎯 Next Goal: ${t >= 5 ? "Fully Completed!" : a.q(next)}</p>
       <ul class="ach-tiers">${a.t.map((n, i) => `
         <li class="${v >= n ? "done" : ""}"><b style="--tc:${v >= n ? TIER[i].c : "#64748b"}" data-n="${i + 1}"></b>
-        <span><em>Tier ${i + 1} · ${TIER[i].n}</em>${a.q(n)}</span><span class="ck">${v >= n ? "✓" : ""}</span></li>`).join("")}
+        <span><em>Tier ${i + 1} · ${TIER[i].n}</em>${a.q(n)}</span><span class="ck">${v >= n ? "✓" : "🔒"}</span></li>`).join("")}
       </ul>
-      ${a.tip ? `<p class="ach-tip">💡 ${a.tip}</p>` : ""}
+      ${a.tip ? `<p class="ach-tip">💡 <strong>How to unlock:</strong> ${a.tip}</p>` : ""}
       <button data-close>Got it</button>`;
     dov.classList.add("is-open");
   }
