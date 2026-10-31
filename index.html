@@ -79,12 +79,6 @@ header h1 { font-weight: 700; font-size: 34px; margin: 0; letter-spacing: -0.03e
 .user-profile { display: flex; align-items: center; gap: 16px; }
 .logout-btn { background: none; border: none; color: #ef4444; cursor: pointer; font-weight: 600; padding: 0; }
 .logout-btn:hover { text-decoration: underline; }
-/* THEME PILL */
-.theme-toggle-btn { position: fixed; top: 25px; right: 25px; z-index: 100; padding: 8px 14px; font-size: 13px; background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.15); color: var(--text-main); border-radius: 20px; cursor: pointer; font-weight: 500; transition: background 0.2s, border-color 0.2s; }
-body.light-theme .theme-toggle-btn { background: rgba(255,255,255,0.6); border: 1px solid rgba(0,0,0,0.15); }
-.theme-toggle-btn:hover { background: rgba(255,255,255,0.12); }
-body.light-theme .theme-toggle-btn:hover { background: rgba(0,0,0,0.04); }
 .search-input { margin-top: 15px; padding: 12px 20px; width: 100%; max-width: 500px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.1);
   background: var(--input-bg); color: var(--input-text); font-family: inherit; font-size: 15px; transition: all 0.2s ease; }
 body.light-theme .search-input { border: 1px solid #cbd5e1; }
@@ -200,13 +194,10 @@ a:hover { color: var(--accent); }
 @media (max-width: 900px) { .game-card { width: calc(50% - 10px); } }
 @media (max-width: 600px) { .game-card { width: 100%; } }
 
-  </style>
-  <style>
   /* seasonal tag */
   #seasonTag { position: fixed; left: 16px; bottom: 14px; z-index: 5; font-size: 12px; font-weight: 600;
     color: var(--text-muted); opacity: .75; pointer-events: none; letter-spacing: .02em; }
 
-  /* achievements button sits under the Theme pill; hidden until you earn one */
   /* single settings button + dropdown (Theme, Achievements) */
   #menuWrap { position: fixed; top: 25px; right: 25px; z-index: 100; }
   #menuBtn { width: 40px; height: 40px; padding: 0; border-radius: 50%; font-size: 18px; line-height: 1; color: var(--text-main);
@@ -898,15 +889,6 @@ a:hover { color: var(--accent); }
             </div>
           </div>
         </div>
-        <!--<div class="game-card" data-external-name="neal.fun games">
-          <div class="glass-card-inner">
-            <div class="glass-layer"></div>
-            <div class="glass-content game-info">
-              <h3 class="ex-title">Neal.Fun Games</h3>
-              <button class="ex-btn" onclick="window.location.href='neal_fun.html'">Explore</button>
-            </div>
-          </div>
-        </div>-->
       </div>
     </section>
 
@@ -961,7 +943,8 @@ a:hover { color: var(--accent); }
 
   /* ---------- SEASONS & HOLIDAYS ----------
      Preview any look with ?bg=winter | spring | summer | autumn | newyear | valentine |
-     stpatrick | earth | july4 | halloween | thanksgiving | christmas | dawn | day | dusk | night */
+     stpatrick | earth | july4 | halloween | thanksgiving | christmas | dawn | day | dusk | night |
+     nebula | cherryblossom | cyber | aurora | solstice */
   const base = { name: "Night", icon: "🌙", hue: 205, range: 70, fx: "dots", fall: 0, sway: 0, links: 1, acc: [59, 130, 246] };
   const P = {
     night: { ...base, a: [59, 130, 246], b: [139, 92, 246] },
@@ -969,13 +952,13 @@ a:hover { color: var(--accent); }
     day:   { ...base, name: "Day", icon: "☀️", hue: 195, range: 60, a: [59, 130, 246], b: [99, 102, 241] },
     dusk:  { ...base, name: "Dusk", icon: "🌇", hue: 310, range: 75, a: [168, 85, 247], b: [251, 113, 133], acc: [147, 51, 234] },
 
-    // the four seasons (gently tinted by the time of day)
+    // the four seasons
     winter: { name: "Winter", icon: "❄️", hue: 200, range: 30, a: [125, 211, 252], b: [199, 210, 254], acc: [37, 99, 235], fx: "snow", fall: 0.006, sway: 0.004, links: 0.6, seasonal: true },
     spring: { name: "Spring", icon: "🌸", hue: 335, range: 25, a: [244, 114, 182], b: [134, 239, 172], acc: [219, 39, 119], fx: "petals", fall: 0.02, sway: 0.006, links: 0.12, seasonal: true },
     summer: { name: "Summer", icon: "☀️", hue: 52, range: 28, a: [250, 204, 21], b: [251, 146, 60], acc: [217, 119, 6], fx: "fireflies", fall: 0, sway: 0, links: 0.45, seasonal: true },
     autumn: { name: "Autumn", icon: "🍂", hue: 18, range: 38, a: [234, 88, 12], b: [180, 83, 9], acc: [194, 65, 12], fx: "leaves", fall: 0.028, sway: 0.007, links: 0.08, seasonal: true },
 
-    // holidays
+    // holidays & special themes
     newyear:     { name: "New Year", icon: "🎆", hues: [45, 50, 200, 330, 280], range: 0, hue: 45, a: [251, 191, 36], b: [236, 72, 153], acc: [217, 119, 6], fx: "confetti", fall: 0.03, sway: 0.005, links: 0.1 },
     valentine:   { name: "Valentine's", icon: "💖", hue: 335, range: 25, a: [244, 63, 94], b: [236, 72, 153], acc: [225, 29, 72], fx: "hearts", fall: -0.02, sway: 0.006, links: 0.1 },
     stpatrick:   { name: "St. Patrick's", icon: "🍀", hues: [120, 140, 95, 48], range: 0, hue: 120, a: [34, 197, 94], b: [250, 204, 21], acc: [22, 163, 74], fx: "confetti", fall: 0.025, sway: 0.005, links: 0.15 },
@@ -983,7 +966,14 @@ a:hover { color: var(--accent); }
     july4:       { name: "Fireworks", icon: "🎇", hues: [0, 220, 0, 220, 45], range: 0, hue: 0, a: [239, 68, 68], b: [59, 130, 246], acc: [37, 99, 235], fx: "confetti", fall: 0.025, sway: 0.004, links: 0.1 },
     halloween:   { name: "Halloween", icon: "🎃", hue: 18, range: 35, a: [249, 115, 22], b: [147, 51, 234], acc: [234, 88, 12], fx: "embers", fx2: "bats", fx2p: 0.1, fall: -0.012, sway: 0.004, links: 0.25 },
     thanksgiving:{ name: "Thanksgiving", icon: "🦃", hue: 28, range: 30, a: [217, 119, 6], b: [153, 27, 27], acc: [180, 83, 9], fx: "leaves", fall: 0.03, sway: 0.007, links: 0.06 },
-    christmas:   { name: "Holidays", icon: "🎄", hues: [0, 130, 0, 130, 45], range: 0, hue: 0, a: [239, 68, 68], b: [34, 197, 94], acc: [220, 38, 38], fx: "snow", fx2: "dots", fx2p: 0.35, fall: 0.008, sway: 0.004, links: 0.35 }
+    christmas:   { name: "Holidays", icon: "🎄", hues: [0, 130, 0, 130, 45], range: 0, hue: 0, a: [239, 68, 68], b: [34, 197, 94], acc: [220, 38, 38], fx: "snow", fx2: "dots", fx2p: 0.35, fall: 0.008, sway: 0.004, links: 0.35 },
+    
+    // NEW SEASONAL & COSMIC THEMES
+    nebula:        { name: "Nebula", icon: "🌌", hues: [270, 290, 320, 210], range: 50, hue: 280, a: [147, 51, 234], b: [236, 72, 153], acc: [168, 85, 247], fx: "dots", fall: 0.002, sway: 0.005, links: 0.8 },
+    cherryblossom: { name: "Cherry Blossom", icon: "🌸", hue: 340, range: 20, a: [251, 113, 133], b: [244, 114, 182], acc: [225, 29, 72], fx: "petals", fall: 0.018, sway: 0.008, links: 0.2 },
+    cyber:         { name: "Cyberpunk", icon: "⚡", hues: [180, 300, 190, 320], range: 60, hue: 180, a: [6, 182, 212], b: [217, 70, 239], acc: [14, 165, 233], fx: "confetti", fall: 0.01, sway: 0.002, links: 0.9 },
+    aurora:        { name: "Aurora", icon: "🌌", hues: [140, 170, 260, 120], range: 60, hue: 150, a: [16, 185, 129], b: [99, 102, 241], acc: [5, 150, 105], fx: "snow", fall: -0.005, sway: 0.006, links: 0.7 },
+    solstice:      { name: "Solstice", icon: "☀️", hues: [40, 20, 50, 10], range: 40, hue: 35, a: [245, 158, 11], b: [239, 68, 68], acc: [217, 119, 6], fx: "embers", fall: -0.008, sway: 0.005, links: 0.5 }
   };
 
   const mix = (x, y, k) => x.map((v, i) => v + (y[i] - v) * k);
@@ -1308,7 +1298,7 @@ a:hover { color: var(--accent); }
       if (p.y > h + 20) p.y = -20;
     }
 
-    // dot-to-dot lines (season decides how many)
+    // dot-to-dot lines
     const lineBase = (light ? 0.2 : 0.17) * cur.links * (1 - 0.7 * ra);
     if (lineBase > 0.004) {
       ctx.lineWidth = 1;
@@ -1328,7 +1318,7 @@ a:hover { color: var(--accent); }
       }
     }
 
-    // cursor constellation (hidden while the rift is open)
+    // cursor constellation
     if (hasMouse && !mouse.down && ra < 0.3) {
       for (const p of particles) {
         const dx = p.x - mouse.x, dy = p.y - mouse.y, d = Math.sqrt(dx * dx + dy * dy);
@@ -1353,7 +1343,7 @@ a:hover { color: var(--accent); }
         ctx.strokeStyle = `hsla(${hue},95%,${light ? 45 : 78}%,${0.45 * ra * depthA})`;
         ctx.lineWidth = p.r * 0.6 + 0.3;
         ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.vx * 3, p.y - p.vy * 3); ctx.stroke();
-      } else if (speed > 1.8) {                              // motion streaks (rift / collapse)
+      } else if (speed > 1.8) {                               // motion streaks
         ctx.strokeStyle = `hsla(${hue},95%,${light ? 45 : 78}%,${Math.min(0.7, (speed - 1.8) * 0.12) * depthA})`;
         ctx.lineWidth = p.r * 0.9 + 0.4; ctx.lineCap = "round";
         ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.vx * 4, p.y - p.vy * 4); ctx.stroke();
@@ -1362,7 +1352,7 @@ a:hover { color: var(--accent); }
       drawParticle(p, p.alt ? FX.fx2 : FX.fx, hue, light, Math.min(1, depthA * boost), boost);
     }
 
-    // the rift: dark core, glowing rim, spinning tilted discs
+    // the rift
     if (mouse.down && hasMouse) {
       const pulse = 1 + (c >= 1 ? 0.07 * Math.sin(now / 55) : 0);
       const cr = (6 + c * 16) * pulse, R = cr * 4.5;
@@ -1428,7 +1418,7 @@ a:hover { color: var(--accent); }
         ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(tx, ty); ctx.stroke();
       }
 
-      // the rare golden dot
+      // golden dot
       if (!gold && --nextGold <= 0) {
         if (Math.random() < 0.3) spawnGold();
         nextGold = 1200 + Math.random() * 1200;
@@ -1483,11 +1473,12 @@ a:hover { color: var(--accent); }
     mouse.x = e.clientX; mouse.y = e.clientY;
     const over = !isUI(e.target) && (hitStar(e.clientX, e.clientY) >= 0 || hitGold(e.clientX, e.clientY));
     document.documentElement.style.cursor = over ? "pointer" : "";
+    if (!isUI(e.target)) emit("hover");
   });
   window.addEventListener("pointerdown", e => {
     if (isUI(e.target)) return;
     const si = hitStar(e.clientX, e.clientY);
-    if (si >= 0) {                                   // caught a shooting star
+    if (si >= 0) {                                    // caught a shooting star
       pop(stars[si].x, stars[si].y, "255,235,170", 18);
       stars.splice(si, 1);
       emit("star");
@@ -1516,7 +1507,7 @@ a:hover { color: var(--accent); }
     if (!document.hidden && !reduceMotion) requestAnimationFrame(frame);
   });
 
-  // click the Rift Hub logo 5 times quickly for a storm
+  // click the logo 5 times quickly
   let logoClicks = 0, lastLogoClick = 0;
   document.querySelectorAll("header h1, .login-container h2, footer h3").forEach(el => {
     el.style.userSelect = "none";
@@ -1529,15 +1520,13 @@ a:hover { color: var(--accent); }
     });
   });
 
-  window.riftBg = { storm, gold: spawnGold, star: randomStar };   // handy for testing in the console
+  window.riftBg = { storm, gold: spawnGold, star: randomStar };
 
   applyTarget();
   resize();
   frame();
 })();
 </script>
-
-
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
@@ -1589,7 +1578,6 @@ const controlIconInfo = {
   space: { icon: "␣", label: "Spacebar" }
 };
 
-// Inject categories and controller hint pills
 document.querySelectorAll("#mainGameGrid .game-card").forEach(card => {
   const name = card.getAttribute("data-name");
   if (!name) return;
@@ -2130,14 +2118,13 @@ if (passwordInput) {
   try { S = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { S = {}; }
   S.c = S.c || {}; S.s = S.s || {}; S.seen = S.seen || {};
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
-  /* achievements need a real account: guests and logged-out visitors can't earn them */
   const uname = () => ((document.getElementById("username") || {}).textContent || "").trim();
   const guest = () => uname() === "Guest Player";
   const siteOpen = () => { const el = document.getElementById("site"); return !!el && getComputedStyle(el).display !== "none"; };
   const can = () => siteOpen() && !!uname() && !guest();
   const inc = k => { if (!can()) return; S.c[k] = (S.c[k] || 0) + 1; };
   const add = (k, v) => { if (!can()) return; const a = S.s[k] || (S.s[k] = []); if (!a.includes(v)) a.push(v); };
-  const pend = new Set();   // seasons seen before login, counted once an account is signed in
+  const pend = new Set();
   const lsGet = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } };
 
   const pages = [...new Set([...document.querySelectorAll("#mainGameGrid .game-info > button")]
@@ -2145,7 +2132,6 @@ if (passwordInput) {
   const TOTAL = pages.length || 35;
   const pl = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
 
-  /* tiers: 1 = minimum, 5 = max */
   const TIER = [
     { n: "Spark", c: "#94a3b8" }, { n: "Flux", c: "#22d3ee" }, { n: "Surge", c: "#a78bfa" },
     { n: "Nova", c: "#f472b6" }, { n: "Singularity", c: "#fbbf24" }
@@ -2178,11 +2164,29 @@ if (passwordInput) {
     { id: "theme", icon: "🌓", name: "Shapeshifter", desc: "Dark or light? Why not both.",
       t: [1, 5, 15, 30, 60], q: n => `Switch themes ${pl(n, "time")}`, get: () => S.c.theme || 0 },
     { id: "gotd", icon: "📅", name: "Daily Ritual", desc: "The Game of the Day changes every day.",
-      t: [1, 3, 7, 14, 30], q: n => `Play the Game of the Day ${pl(n, "time")}`, get: () => S.c.gotd || 0 }
+      t: [1, 3, 7, 14, 30], q: n => `Play the Game of the Day ${pl(n, "time")}`, get: () => S.c.gotd || 0 },
+    
+    // NEW ACHIEVEMENTS
+    { id: "speedrunner", icon: "⚡", name: "Speedrunner", desc: "Search and filter through games quickly.",
+      t: [1, 5, 15, 30, 50], q: n => `Perform ${pl(n, "search query")}`, get: () => S.c.search || 0 },
+    { id: "nightowl", icon: "🦉", name: "Night Owl", desc: "Play games late into the night.",
+      t: [1, 3, 7, 15, 30], q: n => `Play ${pl(n, "late night session")} (10 PM - 4 AM)`, get: () => S.c.night || 0 },
+    { id: "explorer", icon: "🔍", name: "Category Explorer", desc: "Filter games across different genres.",
+      t: [1, 3, 5, 10, 20], q: n => `Filter by genre ${pl(n, "time")}`, get: () => S.c.catFilter || 0 },
+    { id: "multiverse", icon: "🌌", name: "Multiverse Navigator", desc: "Sort games using different sorting orders.",
+      t: [1, 3, 8, 15, 30], q: n => `Change grid sorting ${pl(n, "time")}`, get: () => S.c.sortChange || 0 },
+    { id: "curator", icon: "🎨", name: "Master Curator", desc: "Hover over background particles to interact with the environment.",
+      t: [10, 50, 150, 300, 600], q: n => `Interact with ${pl(n, "background particle")}`, get: () => S.c.hover || 0 },
+    { id: "stargazer", icon: "✨", name: "Stargazer", desc: "Interact with interactive elements across the platform.",
+      t: [5, 20, 50, 100, 200], q: n => `Trigger ${pl(n, "hub interaction")}`, get: () => S.c.interact || 0 },
+    { id: "veteran", icon: "🎖️", name: "Rift Veteran", desc: "Accumulate total gameplay milestones.",
+      t: [5, 20, 50, 100, 250], q: n => `Reach ${pl(n, "total play")} score`, get: () => (S.c.plays || 0) + (S.c.gotd || 0) }
   ];
   const COL = { star: ["#6366f1", "#4338ca"], gold: ["#fbbf24", "#d97706"], all: ["#f43f5e", "#be123c"], plays: ["#22c55e", "#15803d"],
     streak: ["#fb923c", "#c2410c"], favs: ["#eab308", "#a16207"], excl: ["#06b6d4", "#0e7490"], season: ["#84cc16", "#4d7c0f"],
-    rift: ["#8b5cf6", "#5b21b6"], horizon: ["#ec4899", "#9d174d"], storm: ["#3b82f6", "#1e40af"], theme: ["#64748b", "#334155"], gotd: ["#14b8a6", "#0f766e"] };
+    rift: ["#8b5cf6", "#5b21b6"], horizon: ["#ec4899", "#9d174d"], storm: ["#3b82f6", "#1e40af"], theme: ["#64748b", "#334155"], gotd: ["#14b8a6", "#0f766e"],
+    speedrunner: ["#06b6d4", "#0284c7"], nightowl: ["#6366f1", "#3730a3"], explorer: ["#10b981", "#047857"], multiverse: ["#a855f7", "#7e22ce"],
+    curator: ["#f43f5e", "#be123c"], stargazer: ["#f59e0b", "#b45309"], veteran: ["#e11d48", "#9f1239"] };
   const colOf = a => COL[a.id] || ["#6366f1", "#4338ca"];
   const tierOf = a => { const v = a.get(); return a.t.filter(x => v >= x).length; };
 
@@ -2200,24 +2204,22 @@ if (passwordInput) {
   document.addEventListener("click", e => { if (!e.target.closest("#menuWrap")) pop.classList.remove("open"); });
 
   const btn = document.getElementById("achBtn");
-  /* guests always see the menu item so they get the account notice; accounts see it once they've unlocked something */
   function refresh() { if (btn) btn.style.display = (guest() || (can() && A.some(a => tierOf(a) > 0))) ? "block" : "none"; }
   function flush() { if (can() && pend.size) { pend.forEach(v => add("season", v)); pend.clear(); save(); } refresh(); }
   const touch = () => { sync(); flush(); save(); refresh(); };
   setInterval(flush, 1500);
 
-  /* events from the background (stars, golden dot, rifts, storm, seasons) */
   window.riftEvent = (n, v) => {
     if (n === "star") inc("star");
     else if (n === "gold") inc("gold");
     else if (n === "rift") { inc("rift"); if (v) inc("horizon"); }
     else if (n === "storm") inc("storm");
     else if (n === "season") pend.add(v);
+    else if (n === "hover") inc("curator");
     touch();
   };
 
-  /* hooks into existing site actions */
-  const wrap = (name, before, after) => {
+  const wrap = (name, before) => {
     const orig = window[name];
     if (typeof orig !== "function") return;
     window[name] = function () {
@@ -2229,12 +2231,19 @@ if (passwordInput) {
   };
   wrap("openGame", (page) => {
     inc("plays");
+    inc("stargazer");
+    const hr = new Date().getHours();
+    if (hr >= 22 || hr < 4) inc("night");
     if (pages.includes(page)) add("games", page);
     else if (/^rift/i.test(page)) add("excl", page);
   });
   wrap("toggleTheme", () => inc("theme"));
   wrap("playGameOfDay", () => { if (!guest()) inc("gotd"); });
   wrap("toggleFavorite");
+
+  document.getElementById("search")?.addEventListener("input", () => inc("speedrunner"));
+  document.getElementById("categorySelect")?.addEventListener("change", () => inc("catFilter"));
+  document.getElementById("sortSelect")?.addEventListener("change", () => inc("sortChange"));
 
   /* ---------- panel ---------- */
   document.body.insertAdjacentHTML("beforeend", `
@@ -2277,7 +2286,6 @@ if (passwordInput) {
       `<i style="--a:${Math.round(i * 360 / 14 + Math.random() * 20)}deg;--d:${44 + Math.round(Math.random() * 40)}px;animation-delay:${(Math.random() * 0.35).toFixed(2)}s"></i>`).join("");
     setTimeout(() => { box.innerHTML = ""; }, 2000);
   }
-  /* the slow fade from black & white to full color, with a sparkle */
   function reveal(el, a, t) {
     if (!el.isConnected || !ov.classList.contains("is-open")) return;
     el.style.setProperty("--tc", TIER[t - 1].c);
