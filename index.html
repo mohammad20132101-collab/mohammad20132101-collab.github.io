@@ -122,6 +122,10 @@ body.light-theme .streak-circle.streak-hot { box-shadow: 0 8px 22px rgba(255,94,
   font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; -webkit-appearance: none; appearance: none; }
 body.light-theme .controls-bar select { border: 1px solid #cbd5e1; }
 .controls-bar select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+.controls-bar button { padding: 10px 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: var(--input-bg); color: var(--input-text);
+  font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; }
+body.light-theme .controls-bar button { border: 1px solid #cbd5e1; }
+.controls-bar button:hover { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); transform: none; opacity: 1; }
 /* GRID AND CARDS */
 .game-grid { display: flex; flex-wrap: wrap; gap: 20px; padding: 20px 0; justify-content: flex-start; }
 .game-card { position: relative; border-radius: 24px; text-align: center; width: calc(33.333% - 14px); box-sizing: border-box; border: 1px solid transparent;
@@ -358,6 +362,7 @@ a:hover { color: var(--accent); }
         <option value="za">Z-A Name Sort</option>
         <option value="mostplayed">My Most Played</option>
       </select>
+      <button id="surpriseBtn" onclick="window.surpriseMe()">🎲 Surprise Me</button>
     </div>
 
     <section id="favoritesSection">
@@ -2066,6 +2071,14 @@ function applyMainGridControls() {
 
   filterFavoritesGrid(searchVal);
 }
+
+window.surpriseMe = function () {
+  const cat = document.getElementById("categorySelect").value;
+  const pool = gamePool.filter(g => cat === "all" || categoryMap[g.id] === cat);
+  if (!pool.length) return;
+  const g = pool[Math.floor(Math.random() * pool.length)];
+  window.openGame(g.page, g.name);
+};
 
 window.login = login;
 window.signup = signup;
