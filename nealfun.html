@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neal.fun Vault - Rift Hub</title>
+  <style>
+    /* THEME VARIABLES - DARK MODE (DEFAULT) */
+    :root {
+      --bg-main: #06070d;
+      --bg-card: rgba(255, 255, 255, 0.06);
+      --bg-solid: #0d0e15;
+      --text-main: #ffffff;
+      --text-muted: #94a3b8;
+      --accent: #3b82f6;
+      --accent-glow: rgba(59, 130, 246, 0.25);
+      --input-bg: rgba(255, 255, 255, 0.05);
+      --input-text: #ffffff;
+      --card-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+    }
+
+    /* LIGHT MODE */
+    body.light-theme {
+      --bg-main: #eef1f7;
+      --bg-card: rgba(219, 234, 254, 0.45);
+      --bg-solid: rgba(255, 255, 255, 0.8);
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --accent: #0066ff;
+      --accent-glow: rgba(0, 102, 255, 0.15);
+      --input-bg: rgba(0, 0, 0, 0.05);
+      --input-text: #0f172a;
+      --card-shadow: 0 16px 40px rgba(30, 58, 110, 0.16), 0 3px 10px rgba(30, 58, 110, 0.12);
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg-main);
+      color: var(--text-main);
+      transition: background 0.3s ease, color 0.3s ease;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    body.light-theme {
+      background: linear-gradient(160deg, #fbfcfe 0%, #eef1f8 45%, #dfe6f2 100%);
+      background-attachment: fixed;
+    }
+
+    .glass-card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 24px;
+      overflow: hidden;
+      clip-path: inset(0 round 24px);
+      transform: translateZ(0);
+      isolation: isolate;
+    }
+
+    .glass-layer {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 1;
+      background: var(--bg-card);
+      backdrop-filter: blur(30px) saturate(220%);
+      -webkit-backdrop-filter: blur(30px) saturate(220%);
+      pointer-events: none;
+    }
+
+    .glass-content {
+      position: relative;
+      z-index: 2;
+      pointer-events: auto;
+    }
+
+    .glass-card-inner::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      border-radius: 24px;
+      padding: 1.5px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.22) 45%, rgba(255, 255, 255, 0.1) 100%);
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+
+    body.light-theme .glass-card-inner::before {
+      background: linear-gradient(180deg, rgba(59, 130, 246, 0.6) 0%, rgba(59, 130, 246, 0.25) 45%, rgba(59, 130, 246, 0.12) 100%);
+    }
+
+    #site {
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    header {
+      padding: 30px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-solid);
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      margin-bottom: 30px;
+    }
+
+    body.light-theme header {
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      background: rgba(255, 255, 255, 0.5);
+      backdrop-filter: blur(10px);
+    }
+
+    header h1 {
+      font-weight: 700;
+      font-size: 34px;
+      margin: 0;
+      letter-spacing: -0.03em;
+    }
+
+    .theme-toggle-btn {
+      padding: 8px 16px;
+      font-size: 13px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--text-main);
+      border-radius: 20px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    body.light-theme .theme-toggle-btn {
+      background: rgba(255, 255, 255, 0.6);
+      border: 1px solid rgba(0, 0, 0, 0.15);
+    }
+
+    .search-input {
+      padding: 12px 20px;
+      width: 100%;
+      max-width: 320px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: var(--input-bg);
+      color: var(--input-text);
+      font-family: inherit;
+      font-size: 15px;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .search-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .section-title-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 20px 0;
+    }
+
+    .section-title-container h2 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .game-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      padding: 10px 0;
+    }
+
+    .game-card {
+      position: relative;
+      border-radius: 24px;
+      text-align: center;
+      width: calc(33.333% - 14px);
+      box-sizing: border-box;
+      border: 1px solid transparent;
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease, border-color 0.4s ease;
+      box-shadow: var(--card-shadow);
+    }
+
+    .game-card:hover {
+      transform: translateY(-6px);
+      border-color: var(--accent);
+      box-shadow: 0 15px 30px var(--accent-glow);
+    }
+
+    .game-info {
+      padding: 30px 20px;
+    }
+
+    .game-info h3 {
+      margin: 0 0 16px 0;
+      font-size: 19px;
+      font-weight: 600;
+    }
+
+    .play-btn {
+      display: inline-block;
+      padding: 10px 24px;
+      border: none;
+      background: var(--accent);
+      color: #ffffff;
+      border-radius: 12px;
+      font-weight: 600;
+      font-family: inherit;
+      font-size: 14px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: opacity 0.2s;
+    }
+
+    .play-btn:hover { opacity: 0.9; }
+
+    footer {
+      margin-top: 80px;
+      padding: 40px 20px;
+      background: var(--bg-solid);
+      text-align: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    footer h3 { margin: 0 0 8px 0; font-size: 1.25rem; }
+    footer p { color: var(--text-muted); margin: 0; font-size: 0.9rem; }
+
+    a.back-link {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    a.back-link:hover { color: var(--accent); }
+
+    @media (max-width: 900px) { .game-card { width: calc(50% - 10px); } }
+    @media (max-width: 600px) { .game-card { width: 100%; } }
+  </style>
+</head>
+<body>
+
+  <button class="theme-toggle-btn" onclick="toggleTheme()" style="position: fixed; top: 25px; right: 25px; z-index: 100;">🌓 Theme</button>
+
+  <div id="site">
+    <header>
+      <h1>⚡ Neal.fun Vault</h1>
+      <a href="index.html" class="back-link">← Back to Hub</a>
+    </header>
+
+    <div class="section-title-container">
+      <h2>All Neal.fun Games & Toys</h2>
+      <input type="text" id="nealSearch" class="search-input" placeholder="Search games...">
+    </div>
+
+    <div class="game-grid" id="nealGrid">
+
+      <!-- Row 1 -->
+      <div class="game-card" data-name="unusual suspects"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>Unusual Suspects</h3><a href="https://neal.fun/unusual-suspects/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+      <div class="game-card" data-name="wiki spy"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>Wiki Spy</h3><a href="https://neal.fun/wiki-spy/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+      <div class="game-card" data-name="cursor camp"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>Cursor Camp</h3><a href="https://neal.fun/cursor-camp/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+
+      <!-- Row 2 -->
+      <div class="game-card" data-name="infinite craft"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>Infinite Craft</h3><a href="https://neal.fun/infinite-craft/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+      <div class="game-card" data-name="sandboxels"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>Sandboxels</h3><a href="https://neal.fun/sandboxels/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+      <div class="game-card" data-name="size of life"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>Size of Life</h3><a href="https://neal.fun/size-of-life/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+
+      <!-- Row 3 -->
+      <div class="game-card" data-name="the password game"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>The Password Game</h3><a href="https://neal.fun/password-game/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+      <div class="game-card" data-name="i'm not a robot"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>I'm Not a Robot</h3><a href="https://neal.fun/im-not-a-robot/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+      <div class="game-card" data-name="stimulation clicker"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>Stimulation Clicker</h3><a href="https://neal.fun/stimulation-clicker/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+
+      <!-- Row 4 -->
+      <div class="game-card" data-name="spend elon's money"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>Spend Elon's Money</h3><a href="https://neal.fun/spend/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+      <div class="game-card" data-name="internet artifacts"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>Internet Artifacts</h3><a href="https://neal.fun/internet-artifacts/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+      <div class="game-card" data-name="space elevator"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>Space Elevator</h3><a href="https://neal.fun/space-elevator/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+
+      <!-- Row 5 -->
+      <div class="game-card" data-name="asteroid launcher"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>Asteroid Launcher</h3><a href="https://neal.fun/asteroid-launcher/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+      <div class="game-card" data-name="internet roadtrip"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>Internet Roadtrip</h3><a href="https://neal.fun/internet-roadtrip/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+      <div class="game-card" data-name="draw a perfect circle"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>Draw a Perfect Circle</h3><a href="https://neal.fun/perfect-circle/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+
+      <!-- Row 6 -->
+      <div class="game-card" data-name="wonders of street view"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>Wonders of Street View</h3><a href="https://neal.fun/wonders-of-street-view/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+      <div class="game-card" data-name="constellation draw"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>Constellation Draw</h3><a href="https://neal.fun/constellation-draw/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+      <div class="game-card" data-name="design the next iphone"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>Design the Next iPhone</h3><a href="https://neal.fun/design-the-next-iphone/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+
+      <!-- Row 7 -->
+      <div class="game-card" data-name="absurd trolley problems"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>Absurd Trolley Problems</h3><a href="https://neal.fun/absurd-trolley-problems/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+      <div class="game-card" data-name="earth reviews"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>Earth Reviews</h3><a href="https://neal.fun/earth-reviews/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+      <div class="game-card" data-name="days since incident"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>Days Since Incident</h3><a href="https://neal.fun/days-since-incident/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+
+      <!-- Row 8 -->
+      <div class="game-card" data-name="let's settle this"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>Let's Settle This</h3><a href="https://neal.fun/lets-settle-this/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+      <div class="game-card" data-name="ambient chaos"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>Ambient Chaos</h3><a href="https://neal.fun/ambient-chaos/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+      <div class="game-card" data-name="rocks"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>Rocks</h3><a href="https://neal.fun/rocks/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+
+      <!-- Row 9 -->
+      <div class="game-card" data-name="sell sell sell"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>Sell Sell Sell!</h3><a href="https://neal.fun/sell-sell-sell/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+      <div class="game-card" data-name="universe forecast"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>Universe Forecast</h3><a href="https://neal.fun/universe-forecast/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+      <div class="game-card" data-name="the auction game"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>The Auction Game</h3><a href="https://neal.fun/auction-game/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+
+      <!-- Row 10 -->
+      <div class="game-card" data-name="printing money"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>Printing Money</h3><a href="https://neal.fun/printing-money/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+      <div class="game-card" data-name="life stats"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>Life Stats</h3><a href="https://neal.fun/life-stats/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+      <div class="game-card" data-name="the deep sea"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>The Deep Sea</h3><a href="https://neal.fun/deep-sea/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+
+      <!-- Row 11 -->
+      <div class="game-card" data-name="the size of space"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>The Size of Space</h3><a href="https://neal.fun/size-of-space/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+      <div class="game-card" data-name="dark patterns"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>Dark Patterns</h3><a href="https://neal.fun/dark-patterns/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+      <div class="game-card" data-name="draw logos from memory"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>Draw Logos From Memory</h3><a href="https://neal.fun/logos-from-memory/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+
+      <!-- Row 12 -->
+      <div class="game-card" data-name="who was alive"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>Who Was Alive?</h3><a href="https://neal.fun/who-was-alive/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+      <div class="game-card" data-name="where does the day go"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>Where does the day go?</h3><a href="https://neal.fun/where-does-the-day-go/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+      <div class="game-card" data-name="life checklist"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>Life Checklist</h3><a href="https://neal.fun/life-checklist/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+
+      <!-- Row 13 -->
+      <div class="game-card" data-name="speed"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>Speed</h3><a href="https://neal.fun/speed/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+      <div class="game-card" data-name="paper"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>Paper</h3><a href="https://neal.fun/paper/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+      <div class="game-card" data-name="baby map"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content game-info"><h3>Baby Map</h3><a href="https://neal.fun/baby-map/" target="_blank" class="play-btn">Visit Website</a></div></div></div>
+
+    </div>
+  </div>
+
+  <footer>
+    <h3>Rift Hub</h3>
+    <p>Complete Neal.fun Collection</p>
+  </footer>
+
+  <script>
+    function toggleTheme() {
+      const isLight = document.body.classList.toggle("light-theme");
+      localStorage.setItem("riftTheme", isLight ? "light" : "dark");
+    }
+
+    if (localStorage.getItem("riftTheme") === "light") {
+      document.body.classList.add("light-theme");
+    }
+
+    document.getElementById("nealSearch").addEventListener("input", function () {
+      const val = this.value.toLowerCase();
+      document.querySelectorAll("#nealGrid .game-card").forEach(card => {
+        const name = card.getAttribute("data-name");
+        card.style.display = name.toLowerCase().includes(val) ? "block" : "none";
+      });
+    });
+  </script>
+</body>
+</html>
