@@ -126,6 +126,26 @@ body.light-theme .controls-bar select { border: 1px solid #cbd5e1; }
   font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; }
 body.light-theme .controls-bar button { border: 1px solid #cbd5e1; }
 .controls-bar button:hover { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); transform: none; opacity: 1; }
+/* EXTRA THEMES: CRIMSON & EMERALD */
+body.theme-crimson { --bg-main:#0d0507; --bg-card:rgba(255,120,130,0.06); --bg-solid:#16080b; --text-muted:#b99aa0; --accent:#e11d48 !important; --accent-glow:rgba(225,29,72,0.3) !important; --input-bg:rgba(255,120,130,0.06); --card-shadow:0 12px 40px rgba(20,0,5,0.7);
+  background: linear-gradient(160deg,#15070b 0%,#0d0507 50%,#1b080e 100%); background-attachment: fixed; }
+body.theme-emerald { --bg-main:#04100b; --bg-card:rgba(110,231,183,0.06); --bg-solid:#08170f; --text-muted:#8fb5a4; --accent:#10b981 !important; --accent-glow:rgba(16,185,129,0.28) !important; --input-bg:rgba(110,231,183,0.06); --card-shadow:0 12px 40px rgba(0,15,8,0.7);
+  background: linear-gradient(160deg,#071a12 0%,#04100b 50%,#082015 100%); background-attachment: fixed; }
+body.theme-crimson .glass-card-inner { background: rgba(22,6,10,0.55); }
+body.theme-emerald .glass-card-inner { background: rgba(4,20,14,0.55); }
+body.theme-crimson .glass-card-inner::before { background: linear-gradient(180deg, rgba(251,113,133,0.7) 0%, rgba(251,113,133,0.2) 45%, rgba(251,113,133,0.1) 100%); }
+body.theme-emerald .glass-card-inner::before { background: linear-gradient(180deg, rgba(52,211,153,0.7) 0%, rgba(52,211,153,0.2) 45%, rgba(52,211,153,0.1) 100%); }
+body.theme-crimson .glass-card-inner::after { background: linear-gradient(160deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 40%), radial-gradient(90% 70% at 100% 100%, rgba(244,63,94,0.14) 0%, rgba(244,63,94,0) 60%); }
+body.theme-emerald .glass-card-inner::after { background: linear-gradient(160deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 40%), radial-gradient(90% 70% at 100% 100%, rgba(16,185,129,0.14) 0%, rgba(16,185,129,0) 60%); }
+body.theme-crimson header h1 { background-image: linear-gradient(to right,#fb7185,#e11d48) !important; }
+body.theme-emerald header h1 { background-image: linear-gradient(to right,#6ee7b7,#10b981) !important; }
+/* THEME PICKER */
+.theme-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+.theme-opt { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 10px 14px; background: var(--input-bg); color: var(--text-main); border: 1px solid rgba(255,255,255,0.1); font-size: 14px; font-weight: 500; }
+body.light-theme .theme-opt { border-color: #cbd5e1; }
+.theme-opt i { flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--sw); border: 1px solid rgba(255,255,255,0.25); }
+.theme-opt:hover { transform: none; border-color: var(--accent); }
+.theme-opt.active { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
 /* GRID AND CARDS */
 .game-grid { display: flex; flex-wrap: wrap; gap: 20px; padding: 20px 0; justify-content: flex-start; }
 .game-card { position: relative; border-radius: 24px; text-align: center; width: calc(33.333% - 14px); box-sizing: border-box; border: 1px solid transparent;
@@ -291,7 +311,7 @@ a:hover { color: var(--accent); }
   <div id="menuWrap">
     <button id="menuBtn" aria-label="Menu">⚙️</button>
     <div id="menuPop">
-      <button onclick="window.toggleTheme()">🌓 Theme</button>
+      <button onclick="window.openThemePicker()">🎨 Theme</button>
       <button id="achBtn">🏆 Achievements</button>
     </div>
   </div>
@@ -916,6 +936,25 @@ a:hover { color: var(--accent); }
     </div>
   </div>
 
+  <div class="glass-modal-overlay" id="themeOverlay">
+    <div class="glass-modal">
+      <div class="glass-card-inner">
+        <div class="glass-layer"></div>
+        <div class="glass-content">
+          <span class="glass-modal-icon">🎨</span>
+          <h3>Choose Theme</h3>
+          <div class="theme-list">
+            <button class="theme-opt" data-t="dark"><i style="--sw:linear-gradient(135deg,#0d0e15,#3b82f6)"></i>Dark</button>
+            <button class="theme-opt" data-t="light"><i style="--sw:linear-gradient(135deg,#eef1f7,#0066ff)"></i>Light</button>
+            <button class="theme-opt" data-t="crimson"><i style="--sw:linear-gradient(135deg,#16080b,#e11d48)"></i>Crimson</button>
+            <button class="theme-opt" data-t="emerald"><i style="--sw:linear-gradient(135deg,#08170f,#10b981)"></i>Emerald</button>
+          </div>
+          <button data-close>Done</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <footer>
     <h3>Rift Hub</h3>
     <p>Free browser game platform.</p>
@@ -1047,10 +1086,11 @@ a:hover { color: var(--accent); }
 
   const lerp = (a, b, k) => a + (b - a) * k;
   function easeTheme() {
-    for (const k of ["hue", "range", "fall", "sway", "links"]) cur[k] = lerp(cur[k], target[k], 0.02);
+    const T = window.riftTint || target;
+    for (const k of ["hue", "range", "fall", "sway", "links"]) cur[k] = lerp(cur[k], T[k] ?? target[k], 0.02);
     for (let i = 0; i < 3; i++) {
-      cur.a[i] = lerp(cur.a[i], target.a[i], 0.02);
-      cur.b[i] = lerp(cur.b[i], target.b[i], 0.02);
+      cur.a[i] = lerp(cur.a[i], T.a[i], 0.02);
+      cur.b[i] = lerp(cur.b[i], T.b[i], 0.02);
     }
   }
   const rgb = arr => `${Math.round(arr[0])},${Math.round(arr[1])},${Math.round(arr[2])}`;
@@ -1318,7 +1358,7 @@ a:hover { color: var(--accent); }
           const dx = p.x - q.x, dy = p.y - q.y, d2 = dx * dx + dy * dy;
           if (d2 < LINK_DIST * LINK_DIST) {
             const alpha = (1 - Math.sqrt(d2) / LINK_DIST) * lineBase;
-            ctx.strokeStyle = light ? `rgba(0,102,255,${alpha})` : `rgba(150,180,255,${alpha})`;
+            ctx.strokeStyle = light ? `rgba(0,102,255,${alpha})` : `rgba(${(window.riftTint || {}).link || "150,180,255"},${alpha})`;
             ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke();
           }
         }
@@ -1337,7 +1377,7 @@ a:hover { color: var(--accent); }
 
     for (const p of particles) {
       const depthA = 0.3 + p.z * 0.7;
-      const hue = FX.hues ? FX.hues[p.i % FX.hues.length] : cur.hue + p.hf * cur.range;
+      const hue = FX.hues && !window.riftTint ? FX.hues[p.i % FX.hues.length] : cur.hue + p.hf * cur.range;
       let boost = 1;
       if (hasMouse && !mouse.down) {
         const dx = p.x - mouse.x, dy = p.y - mouse.y, d = Math.sqrt(dx * dx + dy * dy);
@@ -1717,14 +1757,33 @@ function recordStreakPlay() {
   renderStreakBadge(streak);
 }
 
-window.toggleTheme = function () {
-  const isLight = document.body.classList.toggle("light-theme");
-  localStorage.setItem("riftTheme", isLight ? "light" : "dark");
+const TINTS = {
+  crimson: { a: [225, 29, 72], b: [127, 29, 29], hue: 350, range: 18, link: "251,113,133" },
+  emerald: { a: [16, 185, 129], b: [6, 95, 70], hue: 155, range: 25, link: "110,231,183" }
 };
 
-if (localStorage.getItem("riftTheme") === "light") {
-  document.body.classList.add("light-theme");
+function applyTheme(t) {
+  document.body.classList.remove("light-theme", "theme-crimson", "theme-emerald");
+  if (t === "light") document.body.classList.add("light-theme");
+  else if (TINTS[t]) document.body.classList.add("theme-" + t);
+  window.riftTint = TINTS[t] || null;
+  localStorage.setItem("riftTheme", t);
+  document.querySelectorAll(".theme-opt").forEach(b => b.classList.toggle("active", b.dataset.t === t));
 }
+
+window.toggleTheme = function (t) {
+  applyTheme(typeof t === "string" ? t : (document.body.classList.contains("light-theme") ? "dark" : "light"));
+};
+
+applyTheme(localStorage.getItem("riftTheme") || "dark");
+
+const themeOverlay = document.getElementById("themeOverlay");
+window.openThemePicker = () => themeOverlay.classList.add("is-open");
+themeOverlay.addEventListener("click", e => {
+  const b = e.target.closest(".theme-opt");
+  if (b) window.toggleTheme(b.dataset.t);
+  if (b || e.target === themeOverlay || e.target.closest("[data-close]")) themeOverlay.classList.remove("is-open");
+});
 
 function setGameOfDay() {
   const today = new Date();
