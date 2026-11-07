@@ -905,7 +905,7 @@ body:not(.in-app) #profBtn{display:none}
          <div class="game-card" data-name="scrabble">
           <div class="glass-card-inner">
             <div class="glass-layer"></div>
-            <button class="fav-btn" onclick="window.toggleFavorite('scrabblel', 'Scrabble', 'scrabble.html')">☆</button>
+            <button class="fav-btn" onclick="window.toggleFavorite('scrabble', 'Scrabble', 'scrabble.html')">☆</button>
             <div class="glass-content game-info">
               <h3>Scrabble</h3>
               <button onclick="window.openGame('scrabble.html','Scrabble')">Play</button>
@@ -913,8 +913,17 @@ body:not(.in-app) #profBtn{display:none}
           </div>
         </div>
 
+         <div class="game-card" data-name="typetest">
+          <div class="glass-card-inner">
+            <div class="glass-layer"></div>
+            <button class="fav-btn" onclick="window.toggleFavorite('typetest', 'Typing Test', 'typetest.html')">☆</button>
+            <div class="glass-content game-info">
+              <h3>Typing Test</h3>
+              <button onclick="window.openGame('typetest.html','Typing Test')">Play</button>
+            </div>
+          </div>
+        </div>
       </div>
-    </section>
 
     <section>
       <div class="section-title-container">
@@ -1693,7 +1702,7 @@ const categoryMap = {
   simonsays: "arcade", checkers: "strategy", Utictactoe: "strategy",
   hexes: "strategy", sudoku: "puzzle", stack: "arcade", cookieclicker: "arcade",
   crossyroad: "arcade", holdit: "arcade", ludo: "board", subway: "arcade", shutit: "board", battleship: "board", reaction: "arcade", lights: "puzzle", 21: "strategy",
-  monopoly: "board", uno: "strategy", monopolydeal: "strategy", carrom: "strategy", "8ballpool": "arcade", scrabble: "word"
+  monopoly: "board", uno: "strategy", monopolydeal: "strategy", carrom: "strategy", "8ballpool": "arcade", scrabble: "word", typetest: "word"
 };
 
 const controlsMap = {
@@ -1705,7 +1714,7 @@ const controlsMap = {
   simonsays: "click", checkers: "click", Utictactoe: "click",
   hexes: "click", sudoku: "keyboard", stack: "space", cookieclicker: "click",
   crossyroad: "arrows", holdit: "space", ludo: "click", subway: "arrows", shutit: "click", battleship: "click", reaction: "click", lights: "click", 21: "click",
-  monopoly: "click", uno: "click", monopolydeal: "click", carrom: "click", "8ballpool": "click", scrabble: "click"
+  monopoly: "click", uno: "click", monopolydeal: "click", carrom: "click", "8ballpool": "click", scrabble: "click", typetest: "keyboard"
 };
 
 const controlIconInfo = {
@@ -1813,6 +1822,7 @@ const gamePool = [
   { id: "carrom", name: "Carrom", page: "carrom.html" },
   { id: "8ballpool", name: "8 Ball Pool", page: "8ballpool.html" },
   { id: "scrabble", name: "Scrabble", page: "scrabble.html" },
+  { id: "typetest", name: "Typing Test", page: "typetest.html" },
 ];
 
 function dateStr(offsetDays = 0) {
