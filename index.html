@@ -1738,7 +1738,7 @@ body.low-power .glass-layer{background:var(--bg-solid)}
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyD2XQWUKM4SQO8azXkm2XwG_e9ZQWpYJi0",
@@ -1784,6 +1784,7 @@ async function cloudPull(user) {
     let changed = false;
     syncApplying = true;
     const last = localStorage.getItem("riftSyncUid");
+    XPDOC = null;
     if (last && last !== user.uid) {            // different account on this device: wipe old account's data
       Object.keys(localStorage).filter(isSynced).forEach(k => localStorage.removeItem(k));
       changed = true;
@@ -1800,7 +1801,7 @@ async function cloudPull(user) {
     syncApplying = false;
     syncReady = true;
     if (!exists) cloudPush();                   // first time: upload what this device already has
-    if (changed) location.reload();             // reload once so achievements/streak/etc. read the new data
+    if (changed) location.reload(); else xpSync();         // reload once so achievements/streak/etc. read the new data
   } catch (e) {
     syncApplying = false;
     console.error("Cloud pull failed", e);
@@ -2037,13 +2038,45 @@ themeOverlay.addEventListener("click", e => {
 const FRAMES = [{id:"none",n:"None",l:1},{id:"ring",n:"Ring",l:3},{id:"glow",n:"Glow",l:5},{id:"rainbow",n:"Rainbow",l:7},{id:"fire",n:"Fire",l:9},{id:"gold",n:"Gold",l:12}];
 const XC = [{c:"#14b8a6",l:2},{c:"#f97316",l:3},{c:"#a3e635",l:4},{c:"#f43f5e",l:6},{c:"#facc15",l:8}];
 const xpAt = n => 30 * (n - 1) * (n - 1);
-function xpInfo() {
-  if (isGuest) return { xp: 0, lvl: 1, cur: 0, next: xpAt(2) };
+let XPDOC = null, xpBusy = false;
+const xpDerived = () => {
   const tiers = ((window.riftAch && window.riftAch.earned()) || []).reduce((n, a) => n + a.t, 0);
-  const xp = (parseInt(localStorage.getItem("riftGamesPlayed")) || 0) * 10 + tiers * 40;
+  return (parseInt(localStorage.getItem("riftGamesPlayed")) || 0) * 10 + tiers * 40;
+};
+function xpInfo() {
+  if (isGuest) return { xp: 0, spent: 0, avail: 0, lvl: 1, cur: 0, next: xpAt(2) };
+  const xp = XPDOC ? XPDOC.lifetime : xpDerived(), spent = XPDOC ? XPDOC.spent : 0;
   let lvl = 1; while (xp >= xpAt(lvl + 1)) lvl++;
-  return { xp, lvl, cur: xpAt(lvl), next: xpAt(lvl + 1) };
+  return { xp, spent, avail: xp - spent, lvl, cur: xpAt(lvl), next: xpAt(lvl + 1) };
 }
+async function xpSync() {
+  const u = auth.currentUser;
+  if (!u || isGuest || !syncReady || xpBusy) return;
+  xpBusy = true;
+  try {
+    const ref = doc(db, "xp", u.uid), day = Math.floor(Date.now() / 86400000);
+    if (!XPDOC) {
+      const s = await getDoc(ref);
+      if (s.exists()) XPDOC = s.data();
+      else {
+        const d0 = xpDerived();
+        await setDoc(ref, { lifetime: d0, spent: 0, synced: d0, day, dayXp: 0, updated: serverTimestamp() });
+        XPDOC = { lifetime: d0, spent: 0, synced: d0, day, dayXp: 0 };
+      }
+    }
+    for (let g = 0; g < 20 && xpDerived() > XPDOC.synced; g++) {
+      if (g) await new Promise(r => setTimeout(r, 3100));
+      const dl = Math.min(xpDerived() - XPDOC.synced, 100);
+      const n = { lifetime: XPDOC.lifetime + dl, synced: XPDOC.synced + dl, day,
+        dayXp: (XPDOC.day === day ? XPDOC.dayXp : 0) + dl, updated: serverTimestamp() };
+      await updateDoc(ref, n);
+      XPDOC = { ...XPDOC, lifetime: n.lifetime, synced: n.synced, day, dayXp: n.dayXp };
+    }
+    if (profOv.classList.contains("is-open")) window.openProfile();
+  } catch (e) { console.error("XP sync", e); }
+  finally { xpBusy = false; }
+}
+setInterval(xpSync, 20000);
 
 /* PROFILE (per-account, stored under riftProfile:<email>) */
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -2141,7 +2174,7 @@ window.openProfile = function () {
         <div class="pf-av pf-lg" id="pfAv" data-f="${fr}" style="--av:${col}">${esc((name[0] || "?").toUpperCase())}</div>
         <input id="pfName" class="pf-name" maxlength="20" value="${esc(name)}" placeholder="Username" aria-label="Username"${dis}>
         <span class="pf-mail">${isGuest ? "Guest session" : esc(em)}</span>
-        <div class="pf-lv"><b>Level ${lv}</b><div class="pf-xp"><i style="width:${pct}%"></i></div><span>${X.xp} XP · ${X.next - X.xp} to level ${lv + 1}</span></div>
+        <div class="pf-lv"><b>Level ${lv}</b><div class="pf-xp"><i style="width:${pct}%"></i></div><span>Total earned ${X.xp} XP · Available ${X.avail} XP<br>${X.next - X.xp} to level ${lv + 1}</span></div>
         <div class="pf-lbl">Avatar colour</div>
         <div class="pf-cols">${[...AVC.map(c => ({ c, l: 1 })), ...XC].map(o => o.l <= lv
           ? `<button class="pf-sw${o.c === col ? " on" : ""}" data-c="${o.c}" style="background:${o.c}" aria-label="Colour ${o.c}"></button>`
@@ -2212,6 +2245,7 @@ window.playGameOfDay = function () {
 
 window.logout = function () {
   isGuest = false;
+  XPDOC = null;
   document.body.classList.remove("in-app");
   document.getElementById("profileOverlay").classList.remove("is-open");
   document.getElementById("site").style.display = "none";
