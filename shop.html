@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rift Shop</title>
+<style>
+/* Rift Hub shop cosmetics: avatar frames and profile themes */
+[data-f="frame_sky"]{outline:3px solid #38bdf8;outline-offset:3px}
+[data-f="frame_rose"]{outline:3px solid #fb7185;outline-offset:3px}
+[data-f="frame_violet"]{outline:3px solid #a78bfa;outline-offset:3px;box-shadow:0 0 18px 3px rgba(167,139,250,.55)}
+[data-f="frame_pulse"]{outline:3px solid #22d3ee;outline-offset:3px;animation:cosPulse 1.8s ease-in-out infinite}
+[data-f="frame_royal"]{outline:3px solid #fbbf24;outline-offset:3px;box-shadow:0 0 0 8px rgba(251,191,36,.22),0 0 22px 4px rgba(251,191,36,.45)}
+[data-f="frame_prism"]{outline:3px solid #f0abfc;outline-offset:3px;animation:cosHue 5s linear infinite}
+@keyframes cosPulse{0%,100%{box-shadow:0 0 6px 1px rgba(34,211,238,.35)}50%{box-shadow:0 0 22px 6px rgba(34,211,238,.75)}}
+@keyframes cosHue{0%,100%{outline-color:#f0abfc}33%{outline-color:#67e8f9}66%{outline-color:#fde047}}
+[data-pt="theme_dusk"]{background:linear-gradient(160deg,#3b1d5e,#7a2e6e 60%,#d9622b)!important}
+[data-pt="theme_forest"]{background:linear-gradient(160deg,#052e1c,#14532d 60%,#4d7c0f)!important}
+[data-pt="theme_ocean"]{background:linear-gradient(160deg,#04223f,#0c4a8a 60%,#0e7490)!important}
+[data-pt="theme_nebula"]{background:radial-gradient(60% 60% at 20% 10%,#7c3aed,transparent),radial-gradient(60% 60% at 90% 90%,#db2777,transparent),#150b2e!important}
+[data-pt="theme_rift"]{background:linear-gradient(135deg,#4c6fff,#9b5cff)!important}
+.pf-title{margin-top:-6px;font-size:12.5px;font-weight:600;color:var(--text-muted)}
+@media (prefers-reduced-motion:reduce){[data-f]{animation:none!important}}
+</style>
+<style>
+:root{--bg:#0f0f1a;--panel:#1a1a2e;--menu:#141428;--blue:#4c6fff;--purple:#9b5cff;--text:#fff;--muted:#94a3b8;--line:rgba(255,255,255,.08);--text-muted:#94a3b8}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+a{color:inherit;text-decoration:none}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:16px 24px;background:var(--menu);border-bottom:1px solid var(--line)}
+.top h1{margin:0;font-size:22px;letter-spacing:-.02em;background:linear-gradient(90deg,var(--blue),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.left{display:flex;align-items:center;gap:16px}
+.chips{display:flex;gap:10px;flex-wrap:wrap}
+.chip{padding:8px 14px;border-radius:999px;background:var(--panel);border:1px solid var(--line);font-size:13px;color:var(--muted)}
+.chip b{color:var(--text)}
+.btn{border:0;border-radius:10px;padding:9px 16px;font-weight:600;font-size:13px;cursor:pointer;color:#fff;background:var(--blue);font-family:inherit;transition:filter .15s}
+.btn:hover:not(:disabled){filter:brightness(1.12)}
+.btn.alt{background:transparent;border:1px solid var(--line)}
+.btn.buy{background:linear-gradient(90deg,var(--blue),var(--purple))}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.sm{padding:7px 12px;font-size:12px}
+.wrap{max-width:1150px;margin:0 auto;padding:24px;display:grid;grid-template-columns:280px minmax(0,1fr);gap:24px;align-items:start}
+.pv{position:sticky;top:16px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px 18px;text-align:center}
+.pv h2{margin:0 0 16px;font-size:13px;color:var(--muted);font-weight:600}
+.cav{width:104px;height:104px;margin:6px auto 16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:44px;font-weight:800;color:#fff;background:linear-gradient(135deg,rgba(255,255,255,.25),rgba(0,0,0,.25)),var(--av,#3b82f6)}
+.cav.sm{width:56px;height:56px;font-size:24px;margin:0}
+#pvName{font-size:19px;font-weight:700}
+#pvTitle{min-height:18px;margin:4px 0 14px;font-size:13px;color:var(--muted)}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.tab{padding:9px 16px;border-radius:999px;background:var(--panel);border:1px solid var(--line);color:var(--muted);font-weight:600;font-size:13px;cursor:pointer;font-family:inherit}
+.tab.on{color:#fff;border-color:var(--blue);background:var(--menu)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+.it{background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--rc);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.it[data-r=c]{--rc:#64748b}.it[data-r=r]{--rc:var(--blue)}.it[data-r=e]{--rc:var(--purple)}.it[data-r=l]{--rc:#f59e0b}
+.th{height:90px;display:flex;align-items:center;justify-content:center;border-radius:10px;background:var(--menu);overflow:hidden}
+.tb{width:100%;height:100%}
+.tt{padding:6px 12px;border-radius:999px;background:var(--panel);font-size:13px;font-weight:600}
+.meta{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.meta b{font-size:15px}
+.rar{font-size:11px;font-weight:700;color:var(--rc)}
+.it p{margin:0;font-size:12.5px;line-height:1.4;color:var(--muted);flex:1}
+.state{font-size:12px;font-weight:600;color:var(--muted)}
+.state.on{color:#34d399}
+.row{display:flex;gap:8px}
+.row .btn{flex:1}
+.note{padding:18px;border-radius:14px;border:1px dashed var(--line);color:var(--muted);font-size:14px;text-align:center}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--panel);border:1px solid var(--blue);padding:10px 18px;border-radius:12px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s}
+#toast.on{opacity:1}
+@media (max-width:820px){.wrap{grid-template-columns:1fr;padding:16px}.pv{position:static}.top{padding:14px 16px}}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="left"><a class="btn alt" href="index.html">Back to hub</a><h1>Rift Shop</h1></div>
+  <div class="chips">
+    <span class="chip">Available XP <b id="cAvail">0</b></span>
+    <span class="chip">Total earned <b id="cTotal">0</b></span>
+    <span class="chip">Level <b id="cLvl">1</b></span>
+  </div>
+</div>
+<div class="wrap" id="app">
+  <aside class="pv" id="pv">
+    <h2>Preview</h2>
+    <div class="cav" id="pvAv"></div>
+    <div id="pvName"></div>
+    <div id="pvTitle"></div>
+    <button class="btn alt sm" id="pvClear" style="display:none">Clear preview</button>
+  </aside>
+  <main>
+    <div class="tabs" id="tabs"></div>
+    <div id="msg"></div>
+    <div class="grid" id="grid"></div>
+  </main>
+</div>
+<div id="toast"></div>
+
+<script>
+/* Rift Hub cosmetics catalogue. Prices must match the price() map in the Firestore rules. */
+window.RIFT_CAT = (() => {
+  // id, slot, name, description, price, rarity (c/r/e/l), value (colours), special flag
+  const items = [
+    ["frame_sky", "frame", "Sky Ring", "A calm sky-blue ring around your avatar.", 150, "c"],
+    ["frame_rose", "frame", "Rose Ring", "A soft rose-pink ring.", 150, "c"],
+    ["frame_violet", "frame", "Violet Glow", "A violet ring with a gentle glow.", 400, "r"],
+    ["frame_pulse", "frame", "Pulse", "A cyan ring that slowly pulses.", 900, "e"],
+    ["frame_royal", "frame", "Royal Gold", "A double gold ring with a warm glow.", 2000, "l"],
+    ["frame_prism", "frame", "Prism", "Exclusive. A ring that shifts between colours.", 1500, "e", null, 1],
+    ["theme_dusk", "theme", "Dusk", "Purple fading into orange.", 150, "c"],
+    ["theme_forest", "theme", "Forest", "Deep greens.", 150, "c"],
+    ["theme_ocean", "theme", "Ocean", "Dark blues and teal.", 400, "r"],
+    ["theme_nebula", "theme", "Nebula", "Violet and pink space glow.", 900, "e"],
+    ["theme_rift", "theme", "Rift", "The Rift Hub blue-to-purple signature.", 2000, "l"],
+    ["col_mint", "color", "Mint Avatar", "A fresh mint avatar colour.", 150, "c", "#34d399"],
+    ["col_lilac", "color", "Lilac Avatar", "A soft lilac avatar colour.", 150, "c", "#c4b5fd"],
+    ["col_ruby", "color", "Ruby Avatar", "A deep ruby avatar colour.", 400, "r", "#be123c"],
+    ["col_cobalt", "color", "Cobalt Avatar", "A rich cobalt avatar colour.", 900, "e", "#1d4ed8"],
+    ["nc_sky", "ncolor", "Sky Name", "Light blue username.", 150, "c", "#7dd3fc"],
+    ["nc_lime", "ncolor", "Lime Name", "Bright lime username.", 150, "c", "#bef264"],
+    ["nc_rose", "ncolor", "Rose Name", "Soft rose username.", 400, "r", "#fda4af"],
+    ["nc_gold", "ncolor", "Gold Name", "Warm gold username.", 900, "e", "#fcd34d"],
+    ["title_walker", "title", "Rift Walker", "A title shown under your name.", 150, "c"],
+    ["title_grinder", "title", "Grinder", "For players who keep coming back.", 150, "c"],
+    ["title_strategist", "title", "Strategist", "For the thinkers.", 400, "r"],
+    ["title_champion", "title", "Champion", "For those at the top.", 900, "e"],
+    ["title_legend", "title", "Rift Legend", "The rarest title in the hub.", 2000, "l"],
+    ["title_founder", "title", "Founder", "Exclusive. Shows you were here early.", 1000, "e", null, 1]
+  ].map(([id, slot, n, d, p, r, v, sp]) => ({ id, slot, n, d, p, r, v: v || "", sp: !!sp }));
+  return {
+    items,
+    get: id => items.find(i => i.id === id),
+    rarity: { c: "Common", r: "Rare", e: "Epic", l: "Legendary" }
+  };
+})();
+</script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, getDocs, collection, setDoc, writeBatch, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+
+const app = initializeApp({
+  apiKey: "AIzaSyD2XQWUKM4SQO8azXkm2XwG_e9ZQWpYJi0", authDomain: "rifthub-4275a.firebaseapp.com", projectId: "rifthub-4275a",
+  storageBucket: "rifthub-4275a.firebasestorage.app", messagingSenderId: "56609352786", appId: "1:56609352786:web:55dc5d3b32412bf1e3838b"
+});
+const auth = getAuth(app), db = getFirestore(app), C = window.RIFT_CAT, $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const xpAt = n => 30 * (n - 1) * (n - 1);
+const TABS = [["frame", "Avatar frames"], ["theme", "Profile themes"], ["color", "Colours"], ["title", "Player titles"], ["special", "Special items"]];
+const catOf = it => it.sp ? "special" : it.slot === "ncolor" ? "color" : it.slot;
+const SLOT_NAME = { frame: "frame", theme: "theme", color: "avatar colour", ncolor: "username colour", title: "title" };
+
+let uid = null, X = null, OWN = new Set(), EQ = { frame: "", theme: "", color: "", ncolor: "", title: "" }, PV = {};
+let tab = "frame", name = "Player", base = "#3b82f6", busy = false, tt;
+
+const avail = () => X ? X.lifetime - X.spent : 0;
+function toast(t) { const e = $("toast"); e.textContent = t; e.classList.add("on"); clearTimeout(tt); tt = setTimeout(() => e.classList.remove("on"), 2600); }
+
+async function load() {
+  const [x, iv, items] = await Promise.all([
+    getDoc(doc(db, "xp", uid)), getDoc(doc(db, "inventory", uid)), getDocs(collection(db, "inventory", uid, "items"))
+  ]);
+  X = x.exists() ? x.data() : null;
+  OWN = new Set(items.docs.map(d => d.id));
+  EQ = { frame: "", theme: "", color: "", ncolor: "", title: "", ...((iv.exists() && iv.data().equipped) || {}) };
+}
+
+function thumb(it) {
+  const ini = esc((name[0] || "?").toUpperCase());
+  if (it.slot === "frame") return `<div class="cav sm" data-f="${it.id}" style="--av:${base}">${ini}</div>`;
+  if (it.slot === "theme") return `<div class="tb" data-pt="${it.id}"></div>`;
+  if (it.slot === "color") return `<div class="cav sm" style="--av:${it.v}">${ini}</div>`;
+  if (it.slot === "ncolor") return `<b style="color:${it.v};font-size:18px">${esc(name)}</b>`;
+  return `<span class="tt">${esc(it.n)}</span>`;
+}
+
+function action(it) {
+  if (EQ[it.slot] === it.id) return `<button class="btn alt" data-a="un" data-id="${it.id}">Unequip</button>`;
+  if (OWN.has(it.id)) return `<button class="btn" data-a="eq" data-id="${it.id}">Equip</button>`;
+  if (avail() < it.p) return `<button class="btn" disabled>Need ${it.p - avail()} more XP</button>`;
+  return `<button class="btn buy" data-a="buy" data-id="${it.id}">Buy for ${it.p} XP</button>`;
+}
+
+function renderPv() {
+  const e = { ...EQ, ...PV }, c = e.color && C.get(e.color), n = e.ncolor && C.get(e.ncolor), t = e.title && C.get(e.title);
+  $("pv").dataset.pt = e.theme || "";
+  const av = $("pvAv"); av.dataset.f = e.frame || ""; av.style.setProperty("--av", (c && c.v) || base); av.textContent = (name[0] || "?").toUpperCase();
+  const nm = $("pvName"); nm.textContent = name; nm.style.color = (n && n.v) || "";
+  $("pvTitle").textContent = t ? t.n : "";
+  $("pvClear").style.display = Object.keys(PV).length ? "" : "none";
+}
+
+function render() {
+  const tot = X ? X.lifetime : 0; let l = 1; while (tot >= xpAt(l + 1)) l++;
+  $("cAvail").textContent = avail(); $("cTotal").textContent = tot; $("cLvl").textContent = l;
+  $("tabs").innerHTML = TABS.map(([k, n]) => `<button class="tab${k === tab ? " on" : ""}" data-tab="${k}">${n}</button>`).join("");
+  $("msg").innerHTML = X ? "" : `<p class="note">Your XP isn't set up yet. Open the hub once while logged in, then come back.</p>`;
+  $("grid").innerHTML = C.items.filter(i => catOf(i) === tab).map(it => {
+    const eq = EQ[it.slot] === it.id, own = OWN.has(it.id);
+    return `<div class="it" data-r="${it.r}">
+      <div class="th">${thumb(it)}</div>
+      <div class="meta"><b>${esc(it.n)}</b><span class="rar">${C.rarity[it.r]}</span></div>
+      <p>${esc(it.d)}${it.slot === "ncolor" ? " Changes your username colour." : it.slot === "color" ? " Replaces your chosen avatar colour while equipped." : ""}</p>
+      <span class="state${eq ? " on" : ""}">${eq ? "Equipped" : own ? "Owned" : it.p + " XP"}</span>
+      <div class="row">${action(it)}<button class="btn alt" data-a="pv" data-id="${it.id}">Preview</button></div>
+    </div>`;
+  }).join("");
+  renderPv();
+}
+
+async function buy(it) {
+  if (busy) return; busy = true;
+  try {
+    const b = writeBatch(db);
+    b.update(doc(db, "xp", uid), { spent: increment(it.p), buy: it.id, updated: serverTimestamp() });
+    b.set(doc(db, "inventory", uid, "items", it.id), { price: it.p, at: serverTimestamp() });
+    b.set(doc(db, "xp", uid, "ledger", "buy_" + it.id), { type: "spend", amount: it.p, reason: "Shop: " + it.n, item: it.id, at: serverTimestamp() });
+    await b.commit();
+    X.spent += it.p; OWN.add(it.id); delete PV[it.slot];
+    toast(it.n + " purchased");
+  } catch (e) { console.error(e); toast("Purchase failed. Check your XP and try again."); try { await load(); } catch (_) {} }
+  busy = false; render();
+}
+
+async function setEq(slot, id) {
+  const e = { ...EQ, [slot]: id };
+  try { await setDoc(doc(db, "inventory", uid), { equipped: e }); EQ = e; delete PV[slot]; toast(id ? "Equipped" : "Unequipped"); }
+  catch (er) { console.error(er); toast("Couldn't change your equipment."); }
+  render();
+}
+
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-tab]");
+  if (t) { tab = t.dataset.tab; render(); return; }
+  if (e.target.closest("#pvClear")) { PV = {}; renderPv(); return; }
+  const b = e.target.closest("[data-a]"); if (!b) return;
+  const it = C.get(b.dataset.id); if (!it) return;
+  if (b.dataset.a === "pv") { PV[it.slot] = it.id; renderPv(); }
+  else if (b.dataset.a === "buy") buy(it);
+  else if (b.dataset.a === "eq") setEq(it.slot, it.id);
+  else if (b.dataset.a === "un") setEq(it.slot, "");
+});
+
+onAuthStateChanged(auth, async u => {
+  if (!u) { $("app").innerHTML = `<p class="note" style="grid-column:1/-1">Log in on the hub to use the shop. <a href="index.html" style="color:var(--blue)">Go to the hub</a></p>`; return; }
+  uid = u.uid;
+  try { const p = JSON.parse(localStorage.getItem("riftProfile:" + u.email)) || {}; name = p.name || u.email.split("@")[0]; base = p.color || base; } catch (e) { name = u.email.split("@")[0]; }
+  try { await load(); } catch (e) { console.error(e); toast("Couldn't load your data."); }
+  render();
+});
+</script>
+</body>
+</html>
