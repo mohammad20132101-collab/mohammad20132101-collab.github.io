@@ -423,7 +423,10 @@ body.low-power .glass-layer{background:var(--bg-solid)}
         <input type="text" id="search" class="search-input" placeholder="Search across all games... (press /)">
       </div>
       <div class="user-profile">
-        <span class="pf-av sm" id="hdrAv" onclick="window.openProfile()" title="Profile"></span>
+        <span class="pf-av sm" id="hdrAv" onclick="window.openP
+          
+          
+          rofile()" title="Profile"></span>
         <span id="username" style="font-weight: 600; font-size: 0.95rem;"></span>
         <button class="pf-share" onclick="location.href='shop.html'">🛒 Shop</button>
         <button onclick="window.logout()" class="logout-btn">Log Out</button>
@@ -2168,9 +2171,7 @@ window.openProfile = function () {
         <div class="pf-lbl">Avatar colour</div>
         <div class="pf-cols">${[...AVC.map(c => ({ c, l: 1 })), ...XC].map(o => o.l <= lv
           ? `<button class="pf-sw${o.c === col ? " on" : ""}" data-c="${o.c}" style="background:${o.c}" aria-label="Colour ${o.c}"></button>`
-          : `<button class="pf-sw pf-lock" disabled title="Unlocks at level ${o.l}" style="background:${o.c}">🔒</button>`).join("")}${lv >= 10
-          ? `<label class="pf-sw pf-custom" title="Custom colour">+<input type="color" id="pfCol" value="${col}"></label>`
-          : `<button class="pf-sw pf-custom pf-lock" disabled title="Custom colour unlocks at level 10">🔒</button>`}</div>
+          : `<button class="pf-sw pf-lock" disabled title="Unlocks at level ${o.l}" style="background:${o.c}">🔒</button>`).join("")}</div>
         <div class="pf-lbl">Avatar frame</div>
         <div class="pf-frames">${FRAMES.map(f => f.l <= lv
           ? `<button class="pf-fr${f.id === fr ? " on" : ""}" data-f="${f.id}">${f.n}</button>`
