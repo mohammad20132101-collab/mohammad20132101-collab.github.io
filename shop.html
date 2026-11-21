@@ -226,7 +226,7 @@ function render() {
     renderPv(); return;
   }
   if (tab === "history") {
-    $("grid").innerHTML = (LOG || []).map(l => `<div class="it" style="grid-column:1/-1;flex-direction:row;justify-content:space-between;align-items:center;--rc:${l.type === "spend" ? "#ef4444" : "#34d399"}"><span>${esc(l.reason)}<br><small style="color:var(--muted)">${l.at ? l.at.toDate().toLocaleString() : ""}</small></span><b>${l.type === "spend" ? "-" : "+"}${l.amount} XP</b></div>`).join("") || `<p class="note" style="grid-column:1/-1">${LOG ? "No transactions yet." : "Loading..."}</p>`;
+    $("grid").innerHTML = (LOG || []).map(l => `<div class="it" style="grid-column:1/-1;flex-direction:row;justify-content:space-between;align-items:center;--rc:${l.type === "spend" ? "#ef4444" : "#34d399"}"><span>${esc(l.reason)}<br><small style="color:var(--muted)">${l.at ? l.at.toDate().toLocaleString() : ""}</small></span><b>${l.type === "spend" ? "-" : l.amount < 0 ? "" : "+"}${l.amount} XP</b></div>`).join("") || `<p class="note" style="grid-column:1/-1">${LOG ? "No transactions yet." : "Loading..."}</p>`;
     renderPv(); return;
   }
   $("grid").innerHTML = C.items.filter(i => catOf(i) === tab).map(it => {
