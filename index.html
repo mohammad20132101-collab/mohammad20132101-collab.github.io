@@ -1033,16 +1033,17 @@ body.low-power .glass-layer{background:var(--bg-solid)}
   </div>
 
   <div class="glass-modal-overlay" id="reqOverlay">
-    <div class="glass-modal">
+    <div class="glass-modal" style="max-width:480px">
       <div class="glass-card-inner">
         <div class="glass-layer"></div>
-        <div class="glass-content">
+        <div class="glass-content" style="max-height:85vh;overflow-y:auto">
           <span class="glass-modal-icon">💡</span>
           <h3>Request a Game</h3>
           <p>Tell us what to add next.</p>
           <div class="input-group"><input id="reqName" maxlength="60" placeholder="Game name"></div>
           <div class="input-group"><textarea id="reqNote" maxlength="300" rows="3" placeholder="Anything else? (optional)"></textarea></div>
           <button id="reqSend">Send</button>
+          <div id="reqList" style="text-align:left;margin-top:20px"></div>
         </div>
       </div>
     </div>
@@ -1720,7 +1721,7 @@ window.RIFT_CAT = { get: id => ({
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, getDocs, setDoc, updateDoc, writeBatch, increment, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, getDocs, query, orderBy, limit, setDoc, updateDoc, writeBatch, increment, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyD2XQWUKM4SQO8azXkm2XwG_e9ZQWpYJi0",
@@ -2691,19 +2692,41 @@ const reqOv = document.getElementById("reqOverlay");
 window.openRequest = () => {
   if (isGuest) { showGlassModal("Game requests need an account.", { title: "Account Required", icon: "💡" }); return; }
   reqOv.classList.add("is-open");
-  document.getElementById("reqName").focus();
+  document.getElementById("reqName").focus(); loadReqs();
 };
 reqOv.addEventListener("click", e => { if (e.target === reqOv) reqOv.classList.remove("is-open"); });
+const STAT = { pending: "Pending", review: "Under Review", approved: "Approved", rejected: "Rejected", completed: "Completed" };
+const rList = document.getElementById("reqList"), rKey = n => n.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 60);
+let RK = new Set();
+async function loadReqs() {
+  try {
+    const s = await getDocs(query(collection(db, "gameRequests"), orderBy("votes", "desc"), limit(30))), u = auth.currentUser;
+    const rs = s.docs.map(d => ({ id: d.id, ...d.data() }));
+    const v = await Promise.all(rs.map(r => getDoc(doc(db, "gameRequests", r.id, "votes", u.uid))));
+    rs.forEach((r, i) => { r.me = v[i].exists(); });
+    RK = new Set(rs.map(r => r.key));
+    rList.innerHTML = rs.length ? `<h4 class="pf-lbl" style="margin:0 0 8px">Community requests</h4>` + rs.map(r => `<div class="pf-row" style="margin-bottom:8px"><span>${esc(r.name)}<br><small style="color:var(--text-muted)">${esc(r.by || "")}${r.uid === u.uid ? " (you)" : ""} · ${STAT[r.status] || "Pending"}</small></span><button class="pf-play" data-v="${r.id}" data-h="${r.me ? 1 : 0}">${r.me ? "▲" : "△"} ${r.votes || 0}</button></div>`).join("") : "";
+  } catch (e) { console.error(e); }
+}
+rList.addEventListener("click", async e => {
+  const b = e.target.closest("[data-v]"); if (!b) return; b.disabled = true;
+  const u = auth.currentUser, has = b.dataset.h === "1", w = writeBatch(db), vr = doc(db, "gameRequests", b.dataset.v, "votes", u.uid);
+  w.update(doc(db, "gameRequests", b.dataset.v), { votes: increment(has ? -1 : 1) });
+  if (has) w.delete(vr); else w.set(vr, { at: serverTimestamp() });
+  try { await w.commit(); } catch (er) { console.error(er); }
+  loadReqs();
+});
 document.getElementById("reqSend").addEventListener("click", async () => {
-  const name = document.getElementById("reqName").value.trim();
-  const note = document.getElementById("reqNote").value.trim();
-  if (name.length < 2) { showGlassModal("Enter a game name.", { title: "Missing name", icon: "⚠️" }); return; }
+  const name = document.getElementById("reqName").value.trim(), note = document.getElementById("reqNote").value.trim(), key = rKey(name);
+  if (name.length < 2 || !key) { showGlassModal("Enter a game name.", { title: "Missing name", icon: "⚠️" }); return; }
+  if (gamePool.some(g => rKey(g.name) === key)) { showGlassModal("That game is already on Rift Hub.", { title: "Already added", icon: "✅" }); return; }
+  if (RK.has(key)) { showGlassModal("Someone already requested that. Vote for it in the list below.", { title: "Already requested", icon: "💡" }); return; }
   if (Date.now() - (+localStorage.getItem("riftReqAt") || 0) < 60000) { showGlassModal("Wait a minute before sending another.", { title: "Slow down", icon: "⏳" }); return; }
   try {
-    await addDoc(collection(db, "gameRequests"), { name, note, uid: auth.currentUser.uid, email: auth.currentUser.email, at: serverTimestamp() });
+    await addDoc(collection(db, "gameRequests"), { name, note, key, by: profInfo().name.slice(0, 30), uid: auth.currentUser.uid, status: "pending", votes: 0, at: serverTimestamp() });
     localStorage.setItem("riftReqAt", Date.now());
     document.getElementById("reqName").value = ""; document.getElementById("reqNote").value = "";
-    reqOv.classList.remove("is-open");
+    loadReqs();
     showGlassModal("Thanks, your request was sent.", { title: "Request sent", icon: "✅" });
   } catch (e) { showGlassModal("Couldn't send. Try again later.", { title: "Error", icon: "⚠️" }); }
 });
