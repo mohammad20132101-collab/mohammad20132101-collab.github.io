@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Rift Hub Admin</title>
+<style>
+:root{--bg:#0f0f1a;--panel:#1a1a2e;--menu:#141428;--blue:#4c6fff;--purple:#9b5cff;--text:#fff;--muted:#94a3b8;--line:rgba(255,255,255,.08)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 24px;background:var(--menu);border-bottom:1px solid var(--line)}
+.top h1{margin:0;font-size:18px;background:linear-gradient(90deg,var(--blue),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.wrap{max-width:1100px;margin:0 auto;padding:24px}
+.bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+input,select{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font:inherit;font-size:13px}
+input{flex:1;min-width:200px}
+.btn{border:0;border-radius:10px;padding:9px 14px;font-weight:600;font-size:13px;cursor:pointer;color:#fff;background:var(--blue);font-family:inherit;text-decoration:none}
+.btn.alt{background:transparent;border:1px solid var(--line)}
+.btn.del{background:#b91c1c}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.row{display:grid;grid-template-columns:minmax(0,2.4fr) 70px 140px 130px 70px;gap:12px;align-items:center;padding:12px 16px;border-top:1px solid var(--line);font-size:13px}
+.row.h{border-top:0;background:var(--menu);color:var(--muted);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase}
+.row small{color:var(--muted);display:block;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.msg{padding:40px;text-align:center;color:var(--muted)}
+@media(max-width:760px){.row{grid-template-columns:1fr 1fr}.row.h{display:none}}
+</style>
+</head>
+<body>
+<div class="top"><h1>Rift Hub Admin</h1><span><span id="who" style="color:var(--muted);font-size:13px;margin-right:12px"></span><a class="btn alt" href="index.html">Back to hub</a></span></div>
+<div class="wrap" id="app"><p class="msg">Checking access...</p></div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, getDocs, collection, query, orderBy, limit, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+const app = initializeApp({ apiKey: "AIzaSyD2XQWUKM4SQO8azXkm2XwG_e9ZQWpYJi0", authDomain: "rifthub-4275a.firebaseapp.com", projectId: "rifthub-4275a",
+  storageBucket: "rifthub-4275a.firebasestorage.app", messagingSenderId: "56609352786", appId: "1:56609352786:web:55dc5d3b32412bf1e3838b" });
+const auth = getAuth(app), db = getFirestore(app), $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const ST = { pending: "Pending", review: "Under Review", approved: "Approved", rejected: "Rejected", completed: "Completed" };
+let R = [];
+
+function view() {
+  const q = $("q").value.toLowerCase(), f = $("f").value, s = $("s").value;
+  const rs = R.filter(r => (f === "all" || (r.status || "pending") === f) && (r.name || "").toLowerCase().includes(q))
+    .sort((a, b) => s === "votes" ? (b.votes || 0) - (a.votes || 0) : (b.at ? b.at.toMillis() : 0) - (a.at ? a.at.toMillis() : 0));
+  $("list").innerHTML = `<div class="row h"><span>Request</span><span>Votes</span><span>Status</span><span>Date</span><span></span></div>` + (rs.map(r => `
+    <div class="row"><span>${esc(r.name)}<small>${esc(r.by || r.email || "unknown")}${r.note ? " · " + esc(r.note) : ""}</small></span>
+    <span>${r.votes || 0}</span>
+    <select data-s="${r.id}">${Object.entries(ST).map(([k, v]) => `<option value="${k}"${(r.status || "pending") === k ? " selected" : ""}>${v}</option>`).join("")}</select>
+    <span>${r.at ? r.at.toDate().toLocaleDateString() : ""}</span>
+    <button class="btn del" data-d="${r.id}">Delete</button></div>`).join("") || `<p class="msg">No requests found.</p>`);
+}
+async function load() {
+  const s = await getDocs(query(collection(db, "gameRequests"), orderBy("at", "desc"), limit(300)));
+  R = s.docs.map(d => ({ id: d.id, ...d.data() })); view();
+}
+document.addEventListener("change", async e => {
+  const t = e.target.closest("[data-s]"); if (!t) return;
+  try { await updateDoc(doc(db, "gameRequests", t.dataset.s), { status: t.value }); R.find(r => r.id === t.dataset.s).status = t.value; }
+  catch (er) { console.error(er); alert("Couldn't update. Check your admin access."); load(); }
+});
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-d]"); if (!b || !confirm("Delete this request?")) return;
+  try { await deleteDoc(doc(db, "gameRequests", b.dataset.d)); R = R.filter(r => r.id !== b.dataset.d); view(); }
+  catch (er) { console.error(er); alert("Couldn't delete."); }
+});
+onAuthStateChanged(auth, async u => {
+  if (!u) { $("app").innerHTML = `<p class="msg">Log in on the hub first, then reopen this page.</p>`; return; }
+  let ok = false;
+  try { ok = (await getDoc(doc(db, "admins", u.uid))).exists(); } catch (e) {}
+  if (!ok) { $("app").innerHTML = `<p class="msg">Access denied.</p>`; return; }
+  $("who").textContent = u.email;
+  $("app").innerHTML = `<div class="bar"><input id="q" placeholder="Search requests..."><select id="f"><option value="all">All statuses</option>${Object.entries(ST).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select><select id="s"><option value="votes">Most votes</option><option value="date">Newest</option></select></div><div class="panel" id="list"></div>`;
+  ["q", "f", "s"].forEach(i => $(i).addEventListener("input", view));
+  try { await load(); } catch (e) { console.error(e); $("list").innerHTML = `<p class="msg">Couldn't load. Check your rules.</p>`; }
+});
+</script>
+</body>
+</html>
