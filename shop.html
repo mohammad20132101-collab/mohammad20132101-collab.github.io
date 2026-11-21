@@ -21,6 +21,7 @@
 [data-pt="theme_rift"]{background:linear-gradient(135deg,#4c6fff,#9b5cff)!important}
 .pf-title{margin-top:-6px;font-size:12.5px;font-weight:600;color:var(--text-muted)}
 @media (prefers-reduced-motion:reduce){[data-f]{animation:none!important}}
+.pv[data-pt],.tb{border-color:transparent!important;outline:0}
 </style>
 <style>
 :root{--bg:#0f0f1a;--panel:#1a1a2e;--menu:#141428;--blue:#4c6fff;--purple:#9b5cff;--text:#fff;--muted:#94a3b8;--line:rgba(255,255,255,.08);--text-muted:#94a3b8}
@@ -135,7 +136,7 @@ window.RIFT_CAT = (() => {
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, getDocs, collection, setDoc, writeBatch, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, getDocs, collection, query, orderBy, limit, setDoc, writeBatch, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 const app = initializeApp({
   apiKey: "AIzaSyD2XQWUKM4SQO8azXkm2XwG_e9ZQWpYJi0", authDomain: "rifthub-4275a.firebaseapp.com", projectId: "rifthub-4275a",
@@ -144,16 +145,40 @@ const app = initializeApp({
 const auth = getAuth(app), db = getFirestore(app), C = window.RIFT_CAT, $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const xpAt = n => 30 * (n - 1) * (n - 1);
-const TABS = [["frame", "Avatar frames"], ["theme", "Profile themes"], ["color", "Colours"], ["title", "Player titles"], ["special", "Special items"]];
+const TABS = [["frame", "Avatar frames"], ["theme", "Profile themes"], ["color", "Colours"], ["title", "Player titles"], ["special", "Special items"], ["history", "XP history"]];
 const catOf = it => it.sp ? "special" : it.slot === "ncolor" ? "color" : it.slot;
 const SLOT_NAME = { frame: "frame", theme: "theme", color: "avatar colour", ncolor: "username colour", title: "title" };
 
 let uid = null, X = null, OWN = new Set(), EQ = { frame: "", theme: "", color: "", ncolor: "", title: "" }, PV = {};
-let tab = "frame", name = "Player", base = "#3b82f6", busy = false, tt;
+let CL = new Set(), LOG = null, tab = "frame", name = "Player", base = "#3b82f6", busy = false, tt;
 
 const avail = () => X ? X.lifetime - X.spent : 0;
 function toast(t) { const e = $("toast"); e.textContent = t; e.classList.add("on"); clearTimeout(tt); tt = setTimeout(() => e.classList.remove("on"), 2600); }
 
+const QS = [["dp3", "d", "Play 3 games", 3, 30], ["ddiff3", "d", "Play 3 different games", 3, 40], ["dgenre", "d", "Play a puzzle or word game", 1, 25],
+  ["wp15", "w", "Play 15 games", 15, 100], ["wdiff7", "w", "Try 7 different games", 7, 100], ["wdq5", "w", "Claim 5 daily quests", 5, 80]];
+const dayN = () => Math.floor(Date.now() / 864e5), wkN = () => Math.floor((dayN() + 3) / 7);
+const cid = id => (id[0] === "d" ? "d" + dayN() : "w" + wkN()) + "_" + id;
+function prog(id) {
+  let q = {}; try { q = JSON.parse(localStorage.getItem("riftQ")) || {}; } catch (e) {}
+  const d = q.d === dayN(), w = q.w === wkN();
+  return { dp3: d ? q.dn || 0 : 0, ddiff3: d ? (q.dp || []).length : 0, dgenre: d ? q.dg || 0 : 0, wp15: w ? q.wn || 0 : 0, wdiff7: w ? (q.wp || []).length : 0,
+    wdq5: [...CL].filter(c => c[0] === "d" && Math.floor((+c.slice(1).split("_")[0] + 3) / 7) === wkN()).length }[id];
+}
+async function claim(id) {
+  const x = QS.find(a => a[0] === id), c = cid(id), r = x[4];
+  try {
+    const b = writeBatch(db);
+    b.update(doc(db, "xp", uid), { lifetime: increment(r), claim: c, updated: serverTimestamp() });
+    b.set(doc(db, "quests", uid, "claims", c), { q: id, reward: r, at: serverTimestamp() });
+    b.set(doc(collection(db, "xp", uid, "ledger")), { type: "earn", amount: r, reason: "Quest: " + x[2], at: serverTimestamp() });
+    await b.commit(); CL.add(c); X.lifetime += r; LOG = null; toast("+" + r + " XP");
+  } catch (e) { console.error(e); toast("Couldn't claim. Try again."); }
+  render();
+}
+async function loadLog() {
+  try { const s = await getDocs(query(collection(db, "xp", uid, "ledger"), orderBy("at", "desc"), limit(50))); LOG = s.docs.map(d => d.data()); } catch (e) { console.error(e); LOG = []; }
+}
 async function load() {
   const [x, iv, items] = await Promise.all([
     getDoc(doc(db, "xp", uid)), getDoc(doc(db, "inventory", uid)), getDocs(collection(db, "inventory", uid, "items"))
@@ -193,6 +218,17 @@ function render() {
   $("cAvail").textContent = avail(); $("cTotal").textContent = tot; $("cLvl").textContent = l;
   $("tabs").innerHTML = TABS.map(([k, n]) => `<button class="tab${k === tab ? " on" : ""}" data-tab="${k}">${n}</button>`).join("");
   $("msg").innerHTML = X ? "" : `<p class="note">Your XP isn't set up yet. Open the hub once while logged in, then come back.</p>`;
+  if (tab === "quests") {
+    $("grid").innerHTML = ["d", "w"].map(t => `<h3 style="grid-column:1/-1;margin:8px 0 0;font-size:14px;color:var(--muted)">${t === "d" ? "Daily quests (reset 00:00 UTC)" : "Weekly quests (reset Monday 00:00 UTC)"}</h3>` + QS.filter(a => a[1] === t).map(a => {
+      const p = Math.min(prog(a[0]), a[3]), done = p >= a[3], got = CL.has(cid(a[0]));
+      return `<div class="it" style="grid-column:1/-1"><div class="meta"><b>${a[2]}</b><span class="rar">+${a[4]} XP</span></div><div style="height:8px;border-radius:99px;background:var(--menu)"><div style="height:100%;width:${p / a[3] * 100}%;border-radius:99px;background:linear-gradient(90deg,var(--blue),var(--purple))"></div></div><div class="row"><span class="state">${p} / ${a[3]}</span><button class="btn buy" ${done && !got ? "" : "disabled"} data-q="${a[0]}">${got ? "Claimed" : done ? "Claim" : "In progress"}</button></div></div>`;
+    }).join("")).join("");
+    renderPv(); return;
+  }
+  if (tab === "history") {
+    $("grid").innerHTML = (LOG || []).map(l => `<div class="it" style="grid-column:1/-1;flex-direction:row;justify-content:space-between;align-items:center;--rc:${l.type === "spend" ? "#ef4444" : "#34d399"}"><span>${esc(l.reason)}<br><small style="color:var(--muted)">${l.at ? l.at.toDate().toLocaleString() : ""}</small></span><b>${l.type === "spend" ? "-" : "+"}${l.amount} XP</b></div>`).join("") || `<p class="note" style="grid-column:1/-1">${LOG ? "No transactions yet." : "Loading..."}</p>`;
+    renderPv(); return;
+  }
   $("grid").innerHTML = C.items.filter(i => catOf(i) === tab).map(it => {
     const eq = EQ[it.slot] === it.id, own = OWN.has(it.id);
     return `<div class="it" data-r="${it.r}">
@@ -214,7 +250,7 @@ async function buy(it) {
     b.set(doc(db, "inventory", uid, "items", it.id), { price: it.p, at: serverTimestamp() });
     b.set(doc(db, "xp", uid, "ledger", "buy_" + it.id), { type: "spend", amount: it.p, reason: "Shop: " + it.n, item: it.id, at: serverTimestamp() });
     await b.commit();
-    X.spent += it.p; OWN.add(it.id); delete PV[it.slot];
+    LOG = null; X.spent += it.p; OWN.add(it.id); delete PV[it.slot];
     toast(it.n + " purchased");
   } catch (e) { console.error(e); toast("Purchase failed. Check your XP and try again."); try { await load(); } catch (_) {} }
   busy = false; render();
@@ -229,8 +265,9 @@ async function setEq(slot, id) {
 
 document.addEventListener("click", e => {
   const t = e.target.closest("[data-tab]");
-  if (t) { tab = t.dataset.tab; render(); return; }
+  if (t) { tab = t.dataset.tab; if (tab === "history" && !LOG) loadLog().then(render); render(); return; }
   if (e.target.closest("#pvClear")) { PV = {}; renderPv(); return; }
+  const qb = e.target.closest("[data-q]"); if (qb) { claim(qb.dataset.q); return; }
   const b = e.target.closest("[data-a]"); if (!b) return;
   const it = C.get(b.dataset.id); if (!it) return;
   if (b.dataset.a === "pv") { PV[it.slot] = it.id; renderPv(); }
