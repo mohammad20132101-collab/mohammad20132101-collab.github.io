@@ -474,6 +474,7 @@ body.low-power .glass-layer{background:var(--bg-solid)}
       </select>
       <button id="surpriseBtn" onclick="window.surpriseMe()">🎲 Surprise Me</button>
       <button id="requestBtn" onclick="window.openRequest()">💡 Request a Game</button>
+      <button id="adminBtn" style="display:none" onclick="location.href='admin.html'">🛠 Admin</button>
     </div>
 
     <section id="favoritesSection">
@@ -2239,6 +2240,7 @@ window.logout = function () {
   isGuest = false;
   XPDOC = null;
   EQ = {};
+  document.getElementById("adminBtn").style.display = "none";
   document.body.classList.remove("in-app");
   document.getElementById("profileOverlay").classList.remove("is-open");
   document.getElementById("site").style.display = "none";
@@ -2342,7 +2344,7 @@ function loadUser(email, guestModeStatus) {
 }
 
 onAuthStateChanged(auth, (user) => {
-  if (user) { loadUser(user.email, false); cloudPull(user); }
+  if (user) { loadUser(user.email, false); cloudPull(user); getDoc(doc(db, "admins", user.uid)).then(a => { if (a.exists()) document.getElementById("adminBtn").style.display = ""; }).catch(() => {}); }
   else { syncReady = false; }
 });
 
