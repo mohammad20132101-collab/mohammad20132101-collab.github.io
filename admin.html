@@ -19,7 +19,7 @@ input{flex:1;min-width:200px}
 .btn.alt{background:transparent;border:1px solid var(--line)}
 .btn.del{background:#b91c1c}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
-.row{display:grid;grid-template-columns:minmax(0,2.4fr) 70px 140px 130px 70px;gap:12px;align-items:center;padding:12px 16px;border-top:1px solid var(--line);font-size:13px}
+.tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}.tab{background:var(--panel);color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:8px 16px;font-weight:600;font-size:13px;cursor:pointer;font-family:inherit}.tab.on{color:#fff;border-color:var(--blue)}.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:20px}.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}.card b{display:block;font-size:26px;margin-top:4px}.card span{color:var(--muted);font-size:12px}.gl{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;padding:14px}.gl label{display:flex;gap:8px;align-items:center;font-size:13px}.pad{padding:16px}.ur{cursor:pointer}.row{display:grid;grid-template-columns:minmax(0,2.4fr) 70px 140px 130px 70px;gap:12px;align-items:center;padding:12px 16px;border-top:1px solid var(--line);font-size:13px}
 .row.h{border-top:0;background:var(--menu);color:var(--muted);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase}
 .row small{color:var(--muted);display:block;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .msg{padding:40px;text-align:center;color:var(--muted)}
@@ -32,38 +32,81 @@ input{flex:1;min-width:200px}
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, getDocs, collection, query, orderBy, limit, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, getDocs, setDoc, collection, query, where, orderBy, limit, updateDoc, deleteDoc, writeBatch, getCountFromServer, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 const app = initializeApp({ apiKey: "AIzaSyD2XQWUKM4SQO8azXkm2XwG_e9ZQWpYJi0", authDomain: "rifthub-4275a.firebaseapp.com", projectId: "rifthub-4275a",
   storageBucket: "rifthub-4275a.firebasestorage.app", messagingSenderId: "56609352786", appId: "1:56609352786:web:55dc5d3b32412bf1e3838b" });
 const auth = getAuth(app), db = getFirestore(app), $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const ST = { pending: "Pending", review: "Under Review", approved: "Approved", rejected: "Rejected", completed: "Completed" };
-let R = [];
+const GAMES = "snake:Snake;tetris:Tetris;pong:Pong;flappyblock:Flappy Block;2048:2048;memorymatch:Memory Match;pac-man:Pac-Man;wordle:Wordle;connectfour:Connect Four;tictactoe:Tic-Tac-Toe;rockpaperscissors:Rock, Paper, Scissors;dots&boxes:Dots & Boxes;flowfree:Flow Free;chess:Chess;snakesandladders:Portals and Rift Holes;nonogram:Nonogram;hangman:Hangman;simonsays:Simon Says;checkers:Checkers;Utictactoe:Ultimate Tic-Tac-Toe;hexes:Hexes;sudoku:Sudoku;stack:Super Stack;cookieclicker:Cookie Clicker;crossyroad:Crossy Road;holdit:Hold It!;ludo:Ludo;subway:Subway Surfers;shutit:Shut The Box;battleship:Battleship;reaction:Reaction Test;lights:Lights Out;21:21;monopoly:Monopoly;uno:Uno;monopolydeal:Monopoly Deal;carrom:Carrom;8ballpool:8 Ball Pool;scrabble:Scrabble;typetest:Typing Test".split(";").map(x => { const i = x.indexOf(":"); return [x.slice(0, i), x.slice(i + 1)]; });
+const xpAt = n => 30 * (n - 1) * (n - 1), lvl = xp => { let l = 1; while (xp >= xpAt(l + 1)) l++; return l; };
+let R = [], U = [], XP = {};
 
+async function ovw() {
+  const c = async q => (await getCountFromServer(q)).data().count;
+  const [u, x, r, p] = await Promise.all([c(collection(db, "profiles")), c(collection(db, "xp")), c(collection(db, "gameRequests")), c(query(collection(db, "gameRequests"), where("status", "==", "pending")))]);
+  $("t_o").innerHTML = `<div class="cards">${[["Users with a profile", u], ["Accounts with XP data", x], ["Game requests", r], ["Pending requests", p]].map(a => `<div class="card"><span>${a[0]}</span><b>${a[1]}</b></div>`).join("")}</div>
+  <p style="color:var(--muted);font-size:13px">Plays and daily active users come with analytics in the next stage. Profiles are created when a user next logs in, so older accounts appear gradually.</p>`;
+}
 function view() {
   const q = $("q").value.toLowerCase(), f = $("f").value, s = $("s").value;
   const rs = R.filter(r => (f === "all" || (r.status || "pending") === f) && (r.name || "").toLowerCase().includes(q))
     .sort((a, b) => s === "votes" ? (b.votes || 0) - (a.votes || 0) : (b.at ? b.at.toMillis() : 0) - (a.at ? a.at.toMillis() : 0));
   $("list").innerHTML = `<div class="row h"><span>Request</span><span>Votes</span><span>Status</span><span>Date</span><span></span></div>` + (rs.map(r => `
-    <div class="row"><span>${esc(r.name)}<small>${esc(r.by || r.email || "unknown")}${r.note ? " · " + esc(r.note) : ""}</small></span>
-    <span>${r.votes || 0}</span>
+    <div class="row"><span>${esc(r.name)}<small>${esc(r.by || r.email || "unknown")}${r.note ? " · " + esc(r.note) : ""}</small></span><span>${r.votes || 0}</span>
     <select data-s="${r.id}">${Object.entries(ST).map(([k, v]) => `<option value="${k}"${(r.status || "pending") === k ? " selected" : ""}>${v}</option>`).join("")}</select>
-    <span>${r.at ? r.at.toDate().toLocaleDateString() : ""}</span>
-    <button class="btn del" data-d="${r.id}">Delete</button></div>`).join("") || `<p class="msg">No requests found.</p>`);
+    <span>${r.at ? r.at.toDate().toLocaleDateString() : ""}</span><button class="btn del" data-d="${r.id}">Delete</button></div>`).join("") || `<p class="msg">No requests found.</p>`);
 }
-async function load() {
-  const s = await getDocs(query(collection(db, "gameRequests"), orderBy("at", "desc"), limit(300)));
-  R = s.docs.map(d => ({ id: d.id, ...d.data() })); view();
+async function loadR() { const s = await getDocs(query(collection(db, "gameRequests"), orderBy("at", "desc"), limit(300))); R = s.docs.map(d => ({ id: d.id, ...d.data() })); view(); }
+async function games() {
+  const c = (await getDoc(doc(db, "config", "site"))).data() || {}, off = new Set(c.disabled || []);
+  $("t_g").innerHTML = `<div class="bar"><select id="gotd"><option value="">Game of the Day: automatic</option>${GAMES.map(g => `<option value="${esc(g[0])}"${c.gotd === g[0] ? " selected" : ""}>${esc(g[1])}</option>`).join("")}</select><input id="note" maxlength="140" placeholder="Announcement shown on the hub (optional)" value="${esc(c.note || "")}"><button class="btn" id="gsave">Save</button></div>
+  <div class="panel"><div class="gl">${GAMES.map(g => `<label><input type="checkbox" data-g="${esc(g[0])}"${off.has(g[0]) ? "" : " checked"}>${esc(g[1])}</label>`).join("")}</div></div><p style="color:var(--muted);font-size:13px">Unchecked games are hidden from the hub. Game files are never deleted.</p>`;
+  $("gsave").onclick = async () => {
+    const disabled = [...document.querySelectorAll("[data-g]")].filter(i => !i.checked).map(i => i.dataset.g);
+    try { await setDoc(doc(db, "config", "site"), { disabled, gotd: $("gotd").value, note: $("note").value.trim(), updated: serverTimestamp() }); alert("Saved"); } catch (e) { console.error(e); alert("Couldn't save."); }
+  };
+}
+function vu() {
+  const q = $("uq").value.toLowerCase();
+  $("ul").innerHTML = `<div class="row h" style="grid-template-columns:2fr 1fr 1fr 1fr"><span>User</span><span>Level</span><span>Total XP</span><span>Available</span></div>` + (U.filter(u => ((u.name || "") + (u.email || "")).toLowerCase().includes(q)).map(u => { const x = XP[u.id] || {}; return `<div class="row ur" data-u="${u.id}" style="grid-template-columns:2fr 1fr 1fr 1fr"><span>${esc(u.name)}<small>${esc(u.email)}</small></span><span>${lvl(x.lifetime || 0)}</span><span>${x.lifetime || 0}</span><span>${(x.lifetime || 0) - (x.spent || 0)}</span></div>`; }).join("") || `<p class="msg">No users found.</p>`);
+}
+async function users() {
+  const [p, x] = await Promise.all([getDocs(query(collection(db, "profiles"), limit(300))), getDocs(query(collection(db, "xp"), limit(300)))]);
+  U = p.docs.map(d => ({ id: d.id, ...d.data() })); XP = Object.fromEntries(x.docs.map(d => [d.id, d.data()]));
+  $("t_u").innerHTML = `<div class="bar"><input id="uq" placeholder="Search by username or email..."></div><div class="panel" id="ul"></div><div class="panel pad" id="ud" style="display:none;margin-top:16px"></div>`;
+  $("uq").oninput = vu; vu();
+}
+async function detail(id) {
+  const u = U.find(a => a.id === id), x = XP[id] || { lifetime: 0, spent: 0 }; let tiers = "n/a";
+  try { const d = await getDoc(doc(db, "users", id)); if (d.exists()) tiers = Object.values((JSON.parse(JSON.parse(d.data().data).riftAch2 || "{}").seen) || {}).reduce((a, b) => a + b, 0); } catch (e) {}
+  const el = $("ud"); el.style.display = "block";
+  el.innerHTML = `<b>${esc(u.name)}</b> · ${esc(u.email)}<p style="color:var(--muted);font-size:13px">Joined ${esc(u.joined || "unknown")} · Level ${lvl(x.lifetime)} · Total XP ${x.lifetime} · Spent ${x.spent} · Available ${x.lifetime - x.spent} · Achievement tiers ${tiers}</p>
+  <div class="bar"><input id="amt" type="number" placeholder="XP change, e.g. 100 or -50" style="max-width:220px"><input id="why" maxlength="40" placeholder="Reason (recorded in history)"><button class="btn" id="adj">Apply</button></div>`;
+  $("adj").onclick = async () => {
+    const amt = parseInt($("amt").value), why = $("why").value.trim(), nl = x.lifetime + amt;
+    if (!amt || !why) { alert("Enter an amount and a reason."); return; }
+    if (nl < Math.max(x.spent, x.synced || 0)) { alert("That would drop XP below what the user has spent or synced."); return; }
+    try {
+      const b = writeBatch(db); b.update(doc(db, "xp", id), { lifetime: nl });
+      b.set(doc(db, "xp", id, "ledger", "adm_" + x.lifetime + "_" + nl), { type: "admin", amount: amt, reason: "Admin: " + why, by: auth.currentUser.uid, at: serverTimestamp() });
+      await b.commit(); x.lifetime = nl; XP[id] = x; vu(); detail(id);
+    } catch (e) { console.error(e); alert("Couldn't apply. Check your rules."); }
+  };
 }
 document.addEventListener("change", async e => {
   const t = e.target.closest("[data-s]"); if (!t) return;
   try { await updateDoc(doc(db, "gameRequests", t.dataset.s), { status: t.value }); R.find(r => r.id === t.dataset.s).status = t.value; }
-  catch (er) { console.error(er); alert("Couldn't update. Check your admin access."); load(); }
+  catch (er) { console.error(er); alert("Couldn't update."); loadR(); }
 });
 document.addEventListener("click", async e => {
-  const b = e.target.closest("[data-d]"); if (!b || !confirm("Delete this request?")) return;
-  try { await deleteDoc(doc(db, "gameRequests", b.dataset.d)); R = R.filter(r => r.id !== b.dataset.d); view(); }
-  catch (er) { console.error(er); alert("Couldn't delete."); }
+  const d = e.target.closest("[data-d]");
+  if (d && confirm("Delete this request?")) { try { await deleteDoc(doc(db, "gameRequests", d.dataset.d)); R = R.filter(r => r.id !== d.dataset.d); view(); } catch (er) { alert("Couldn't delete."); } return; }
+  const u = e.target.closest("[data-u]"); if (u) { detail(u.dataset.u); return; }
+  const t = e.target.closest("[data-t]"); if (!t) return;
+  document.querySelectorAll(".tab").forEach(b => b.classList.toggle("on", b === t));
+  ["o", "r", "g", "u"].forEach(k => $("t_" + k).style.display = k === t.dataset.t ? "" : "none");
+  try { if (t.dataset.t === "o") await ovw(); if (t.dataset.t === "r") await loadR(); if (t.dataset.t === "g") await games(); if (t.dataset.t === "u") await users(); } catch (er) { console.error(er); }
 });
 onAuthStateChanged(auth, async u => {
   if (!u) { $("app").innerHTML = `<p class="msg">Log in on the hub first, then reopen this page.</p>`; return; }
@@ -71,9 +114,10 @@ onAuthStateChanged(auth, async u => {
   try { ok = (await getDoc(doc(db, "admins", u.uid))).exists(); } catch (e) {}
   if (!ok) { $("app").innerHTML = `<p class="msg">Access denied.</p>`; return; }
   $("who").textContent = u.email;
-  $("app").innerHTML = `<div class="bar"><input id="q" placeholder="Search requests..."><select id="f"><option value="all">All statuses</option>${Object.entries(ST).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select><select id="s"><option value="votes">Most votes</option><option value="date">Newest</option></select></div><div class="panel" id="list"></div>`;
+  $("app").innerHTML = `<div class="tabs">${[["o", "Overview"], ["r", "Requests"], ["g", "Games"], ["u", "Users"]].map(t => `<button class="tab${t[0] === "o" ? " on" : ""}" data-t="${t[0]}">${t[1]}</button>`).join("")}</div>
+  <div id="t_o"></div><div id="t_r" style="display:none"><div class="bar"><input id="q" placeholder="Search requests..."><select id="f"><option value="all">All statuses</option>${Object.entries(ST).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select><select id="s"><option value="votes">Most votes</option><option value="date">Newest</option></select></div><div class="panel" id="list"></div></div><div id="t_g" style="display:none"></div><div id="t_u" style="display:none"></div>`;
   ["q", "f", "s"].forEach(i => $(i).addEventListener("input", view));
-  try { await load(); } catch (e) { console.error(e); $("list").innerHTML = `<p class="msg">Couldn't load. Check your rules.</p>`; }
+  try { await ovw(); } catch (e) { console.error(e); $("t_o").innerHTML = `<p class="msg">Couldn't load. Check your rules.</p>`; }
 });
 </script>
 </body>
