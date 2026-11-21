@@ -1795,7 +1795,7 @@ async function cloudPull(user) {
 /* ===== END CLOUD SYNC ===== */
 
 let isGuest = false;
-let currentGameOfDay = {};
+let currentGameOfDay = {}, CFG = {};
 
 const categoryMap = {
   snake: "arcade", tetris: "puzzle", pong: "arcade", flappyblock: "arcade",
@@ -2223,7 +2223,7 @@ function setGameOfDay() {
   const today = new Date();
   const dayId = today.getFullYear() * 1000 + (today.getMonth() + 1) * 100 + today.getDate();
   const index = dayId % gamePool.length;
-  currentGameOfDay = gamePool[index];
+  currentGameOfDay = gamePool.find(g => g.id === CFG.gotd) || gamePool[index % gamePool.length];
   const titleEl = document.getElementById("gotwTitle");
   if (titleEl) titleEl.textContent = isGuest ? "🔒 Locked Content" : currentGameOfDay.name;
 }
@@ -2344,7 +2344,8 @@ function loadUser(email, guestModeStatus) {
 }
 
 onAuthStateChanged(auth, (user) => {
-  if (user) { loadUser(user.email, false); cloudPull(user); getDoc(doc(db, "admins", user.uid)).then(a => { if (a.exists()) document.getElementById("adminBtn").style.display = ""; }).catch(() => {}); }
+  if (user) { loadUser(user.email, false); cloudPull(user); setDoc(doc(db, "profiles", user.uid), { name: profInfo().name.slice(0, 30), email: user.email, joined: String(user.metadata.creationTime || "") }, { merge: true }).catch(() => {});
+    getDoc(doc(db, "admins", user.uid)).then(a => { if (a.exists()) document.getElementById("adminBtn").style.display = ""; }).catch(() => {}); }
   else { syncReady = false; }
 });
 
@@ -2399,6 +2400,16 @@ function trackQuest(page) {
   if (["puzzle", "word"].includes(categoryMap[(gamePool.find(g => g.page === page) || {}).id])) q.dg = 1;
   localStorage.setItem("riftQ", JSON.stringify(q));
 }
+function applyConfig(s) {
+  if (!s.exists()) return; CFG = s.data();
+  (CFG.disabled || []).forEach(id => {
+    const i = gamePool.findIndex(g => g.id === id); if (i >= 0) gamePool.splice(i, 1);
+    const c = document.querySelector(`#mainGameGrid .game-card[data-name="${CSS.escape(id)}"]`); if (c) c.remove();
+  });
+  setGameOfDay();
+  if (CFG.note) document.querySelector("header").insertAdjacentHTML("afterend", `<div class="stats-bar" style="margin-top:0">📢 ${esc(CFG.note)}</div>`);
+}
+getDoc(doc(db, "config", "site")).then(applyConfig).catch(() => {});
 window.openGame = function (page, name) {
   if (!isGuest) {
     let history = JSON.parse(localStorage.getItem("riftHistory")) || [];
