@@ -464,14 +464,34 @@ let playerGridX = 6;
 let playerGridZ = 0;
 let maxGridZ = 0;
 
+// Fix 1: Strict localStorage validation using Number() and Number.isSafeInteger()
 let bestClassic = 0;
 let bestChallengeScore = 0;
+try {
+  const savedClassic = localStorage.getItem('rift_crosser_best_classic');
+  if (savedClassic !== null) {
+    const valC = Number(savedClassic);
+    if (Number.isSafeInteger(valC) && valC >= 0) {
+      bestClassic = valC;
+    }
+  }
+  const savedChallenge = localStorage.getItem('rift_crosser_best_challenge');
+  if (savedChallenge !== null) {
+    const valCh = Number(savedChallenge);
+    if (Number.isSafeInteger(valCh) && valCh >= 0) {
+      bestChallengeScore = valCh;
+    }
+  }
+} catch (e) {
+  console.warn("localStorage access failed, defaulting records to 0:", e);
+}
 
 let gameRunning = false;
 let gameMode = 'classic';
 let animId = null;
 let lastTime = 0;
 let bannerTimeout = null;
+let pendingGameOverTimeout = null; // Fix 4: Store timeout ID for game-over callback
 
 // Challenge Mode Stages Definition
 const CHALLENGE_STAGES = [
@@ -539,7 +559,8 @@ let challengeState = {
   stagesCompleted: 0,
   visitedRows: new Set(),
   lastCountedRiverRow: -99,
-  lastCountedRailRow: -99
+  lastCountedRailRow: -99,
+  crossedCheckpoints: new Set()
 };
 
 // Player Animation / Movement state
@@ -725,10 +746,22 @@ function updateScoreDisplay() {
   if (gameMode === 'classic') {
     document.getElementById("scoreVal").textContent = maxGridZ;
     document.getElementById("bestVal").textContent = bestClassic;
+    if (maxGridZ > bestClassic) {
+      bestClassic = maxGridZ;
+      try {
+        localStorage.setItem('rift_crosser_best_classic', bestClassic.toString());
+      } catch (e) {}
+    }
   } else {
     const totalScore = (maxGridZ * 10) + challengeState.bonusScore;
     document.getElementById("scoreVal").textContent = totalScore;
     document.getElementById("bestVal").textContent = bestChallengeScore;
+    if (totalScore > bestChallengeScore) {
+      bestChallengeScore = totalScore;
+      try {
+        localStorage.setItem('rift_crosser_best_challenge', bestChallengeScore.toString());
+      } catch (e) {}
+    }
   }
 }
 
@@ -757,7 +790,7 @@ function getOrCreateTerrainRow(z) {
   if (terrainPool.has(z)) return terrainPool.get(z);
 
   if (z <= 2) {
-    const row = { type: 'grass', mesh: null, obstacles: [], collectibles: [], tiles: null };
+    const row = { type: 'grass', mesh: null, obstacles: [], collectibles: [], tiles: null, checkpointGate: null };
     createRowMesh(z, row);
     terrainPool.set(z, row);
     return row;
@@ -766,8 +799,9 @@ function getOrCreateTerrainRow(z) {
   let type = 'grass';
   const rand = Math.random();
 
-  if (gameMode === 'classic') {
-    // Progressive difficulty scaling for Classic: introduce more variety as z increases
+  if (z > 0 && z % 20 === 0) {
+    type = 'grass';
+  } else if (gameMode === 'classic') {
     let roadProb = Math.min(0.32, 0.22 + (z * 0.002));
     let riverProb = roadProb + Math.min(0.28, 0.18 + (z * 0.002));
     let forestProb = riverProb + 0.18;
@@ -785,10 +819,10 @@ function getOrCreateTerrainRow(z) {
     else if (rand < (acc += w.river)) type = 'river';
     else if (rand < (acc += w.forest)) type = 'forest';
     else if (rand < (acc += w.rail)) type = 'rail';
-    else if (rand < (acc += w.fragile)) type = 'fragile';
+    else type = 'fragile';
   }
 
-  const row = { type, mesh: null, obstacles: [], collectibles: [], tiles: null };
+  const row = { type, mesh: null, obstacles: [], collectibles: [], tiles: null, checkpointGate: null };
   createRowMesh(z, row);
   terrainPool.set(z, row);
   return row;
@@ -802,7 +836,6 @@ function createRowMesh(z, row) {
     row.mesh = baseStrip;
 
     row.tiles = new Map();
-    // Guarantee 7 solid tiles so every row has a fully reachable path
     const solidCols = [];
     while (solidCols.length < 7) {
       let rc = Math.floor(Math.random() * COLS);
@@ -817,7 +850,7 @@ function createRowMesh(z, row) {
       scene.add(tileMesh);
       row.tiles.set(x, {
         mesh: tileMesh,
-        state: 'intact', // intact, cracking, collapsed
+        state: 'intact',
         timer: 0,
         maxTime: 1.35
       });
@@ -837,8 +870,7 @@ function createRowMesh(z, row) {
   scene.add(strip);
   row.mesh = strip;
 
-  // Checkpoint Gate every 20 rows
-  if (z > 0 && z % 20 === 0 && row.type === 'grass') {
+  if (z > 0 && z % 20 === 0) {
     const gateGroup = new THREE.Group();
     const leftPillar = new THREE.Mesh(geomCache.archPillar, matCache.checkpoint);
     leftPillar.position.set(-(COLS / 2) * TILE_SIZE + 0.4, 1.1, 0);
@@ -943,7 +975,6 @@ function createRowMesh(z, row) {
     };
   }
 
-  // Collectible Rift Shards in Challenge Mode
   if (gameMode === 'challenge' && z > 2 && row.type !== 'river' && Math.random() < 0.45) {
     const validCols = [];
     for (let x = 1; x < COLS - 1; x++) {
@@ -1050,6 +1081,12 @@ function cleanupRow(z, row) {
 }
 
 function startGame(mode) {
+  // Fix 4: Clear any pending game-over timeout when starting a new game
+  if (pendingGameOverTimeout !== null) {
+    clearTimeout(pendingGameOverTimeout);
+    pendingGameOverTimeout = null;
+  }
+
   gameMode = mode;
   gameRunning = true;
   document.getElementById("menuOverlay").classList.add("hidden");
@@ -1085,7 +1122,8 @@ function startGame(mode) {
       stagesCompleted: 0,
       visitedRows: new Set(),
       lastCountedRiverRow: -99,
-      lastCountedRailRow: -99
+      lastCountedRailRow: -99,
+      crossedCheckpoints: new Set()
     };
     updateEnvironmentTheme();
     updateChallengeHUD();
@@ -1113,6 +1151,10 @@ function startGame(mode) {
 }
 
 function openMenu() {
+  if (pendingGameOverTimeout !== null) {
+    clearTimeout(pendingGameOverTimeout);
+    pendingGameOverTimeout = null;
+  }
   gameRunning = false;
   if (animId) cancelAnimationFrame(animId);
 
@@ -1134,15 +1176,27 @@ function gameOver(reason) {
 
   let statsHtml = "";
   if (gameMode === 'classic') {
-    if (maxGridZ > bestClassic) bestClassic = maxGridZ;
+    if (maxGridZ > bestClassic) {
+      bestClassic = maxGridZ;
+      try {
+        localStorage.setItem('rift_crosser_best_classic', bestClassic.toString());
+      } catch (e) {}
+    }
     statsHtml = `Final Distance: <b>${maxGridZ}</b><br>Best Distance: <b>${bestClassic}</b>`;
   } else {
     const totalScore = (maxGridZ * 10) + challengeState.bonusScore;
-    if (totalScore > bestChallengeScore) bestChallengeScore = totalScore;
+    if (totalScore > bestChallengeScore) {
+      bestChallengeScore = totalScore;
+      try {
+        localStorage.setItem('rift_crosser_best_challenge', bestChallengeScore.toString());
+      } catch (e) {}
+    }
     statsHtml = `Final Score: <b>${totalScore}</b> (Bonus: +${challengeState.bonusScore})<br>Stages Cleared: <b>${challengeState.stagesCompleted}</b> | Distance: <b>${maxGridZ}</b><br>Best Challenge Score: <b>${bestChallengeScore}</b>`;
   }
 
-  setTimeout(() => {
+  // Fix 4: Store timeout ID so it can be cleared if restartGame() is triggered immediately
+  pendingGameOverTimeout = setTimeout(() => {
+    pendingGameOverTimeout = null;
     document.getElementById("modalTitle").textContent = "EXPEDITION TERMINATED";
     document.getElementById("modalSubtitle").textContent = reason;
     document.getElementById("modeDescGrid").style.display = "none";
@@ -1153,7 +1207,7 @@ function gameOver(reason) {
   }, 300);
 }
 
-// Input Handlers
+// Input Handlers (Preserving EXACT required control mapping: A/Left = targetX++, D/Right = targetX--, W/Up = targetZ++, S/Down = targetZ--)
 document.addEventListener("keydown", e => {
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "w", "a", "s", "d", "W", "A", "S", "D", " "].includes(e.key)) {
     e.preventDefault();
@@ -1190,36 +1244,6 @@ document.addEventListener("keydown", e => {
   if (playerGridZ > maxGridZ) {
     maxGridZ = playerGridZ;
     updateScoreDisplay();
-
-    // Checkpoint Gate Bonus every 20 rows
-    if (gameMode === 'challenge' && maxGridZ % 20 === 0) {
-      challengeState.bonusScore += 150;
-      updateScoreDisplay();
-      showStageBanner(`CHECKPOINT ${maxGridZ}m REACHED!`, `+150 Warp Bonus Points`);
-    }
-  }
-
-  // Challenge Mode Objectives & Fragile Tiles
-  if (gameMode === 'challenge') {
-    const cfg = getCurrentStageConfig();
-    if (targetZ !== challengeState.lastCountedRiverRow && cfg.type === 'river_rows' && row.type === 'river') {
-      challengeState.lastCountedRiverRow = targetZ;
-      advanceChallengeProgress(1);
-    } else if (targetZ !== challengeState.lastCountedRailRow && cfg.type === 'rail_rows' && row.type === 'rail') {
-      challengeState.lastCountedRailRow = targetZ;
-      advanceChallengeProgress(1);
-    }
-
-    if (row.type === 'fragile' && row.tiles && row.tiles.has(targetX)) {
-      const tile = row.tiles.get(targetX);
-      if (tile.state === 'intact') {
-        tile.state = 'cracking';
-        tile.mesh.material = matCache.fragileTileCracked;
-        if (cfg.type === 'fragile_steps') {
-          advanceChallengeProgress(1);
-        }
-      }
-    }
   }
 
   for (let z = playerGridZ; z <= playerGridZ + 15; z++) {
@@ -1250,7 +1274,18 @@ function update(dt) {
   // 1. Smooth Hop Interpolation
   if (pState.progress < 1) {
     pState.progress += dt * 8.0;
-    if (pState.progress >= 1) pState.progress = 1;
+    if (pState.progress >= 1) {
+      pState.progress = 1;
+      
+      // Fix 2: Challenge-only checkpoint bonuses awarded on completed hop with real gate
+      let landedRow = terrainPool.get(playerGridZ);
+      if (gameMode === 'challenge' && landedRow && landedRow.checkpointGate && !challengeState.crossedCheckpoints.has(playerGridZ)) {
+        challengeState.crossedCheckpoints.add(playerGridZ);
+        challengeState.bonusScore += 150;
+        updateScoreDisplay();
+        showStageBanner(`CHECKPOINT ${playerGridZ}m REACHED!`, `+150 Warp Bonus Points`);
+      }
+    }
     pState.x = THREE.MathUtils.lerp(pState.startX, pState.targetX, pState.progress);
     pState.z = THREE.MathUtils.lerp(pState.startZ, pState.targetZ, pState.progress);
     pState.height = Math.sin(pState.progress * Math.PI) * 0.9;
@@ -1329,7 +1364,6 @@ function update(dt) {
         if (car.x < -8) car.x = 8;
         car.mesh.position.x = car.x;
 
-        // Robust Car Collision: check full width bounding box (car width = 2.0, player width ≈ 0.5)
         if (z === playerGridZ) {
           let carLeft = car.x - 1.0;
           let carRight = car.x + 1.0;
@@ -1347,13 +1381,14 @@ function update(dt) {
         log.mesh.position.x = log.x + 1.1;
 
         if (z === playerGridZ && pState.progress >= 1) {
-          // Log platform carry with safe boundary padding so player doesn't slip off edges prematurely
           if (pState.x >= log.x - 0.15 && pState.x <= log.x + log.width + 0.15) {
             onLog = true;
-            pState.x += log.speed * dt;
+            let carryDelta = log.speed * dt;
+            pState.x += carryDelta;
             pState.targetX = pState.x;
+            // Fix 3: Update pState.startX consistently so subsequent hops start from the carried position
+            pState.startX += carryDelta;
             
-            // Keep player clamped within valid grid bounds
             let computedGridX = Math.round((pState.x / TILE_SIZE) + (COLS / 2));
             if (computedGridX < 0 || computedGridX >= COLS) {
               gameOver("Carried off the river bounds!");
@@ -1389,7 +1424,6 @@ function update(dt) {
         t.x += t.speed * dt;
         if (t.mesh) t.mesh.position.x = t.x;
 
-        // Full Train Collision (Locomotive + Carriages span from t.x - 6.2 to t.x + 1.2)
         if (z === playerGridZ) {
           let trainFront = t.x + 1.2;
           let trainBack = t.x - 6.2;
@@ -1409,6 +1443,21 @@ function update(dt) {
       }
     }
   });
+
+  // Challenge Mode Stage Objective Tracking during movement
+  if (gameMode === 'challenge' && gameRunning) {
+    const cfg = getCurrentStageConfig();
+    let currRow = terrainPool.get(playerGridZ);
+    if (currRow) {
+      if (playerGridZ !== challengeState.lastCountedRiverRow && cfg.type === 'river_rows' && currRow.type === 'river') {
+        challengeState.lastCountedRiverRow = playerGridZ;
+        advanceChallengeProgress(1);
+      } else if (playerGridZ !== challengeState.lastCountedRailRow && cfg.type === 'rail_rows' && currRow.type === 'rail') {
+        challengeState.lastCountedRailRow = playerGridZ;
+        advanceChallengeProgress(1);
+      }
+    }
+  }
 
   // Cleanup old distant terrain rows
   terrainPool.forEach((row, z) => {
