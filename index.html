@@ -386,6 +386,8 @@ body.low-power .glass-layer{background:var(--bg-solid)}
 [data-pt="theme_nebula"]{background:radial-gradient(60% 60% at 20% 10%,#7c3aed,transparent),radial-gradient(60% 60% at 90% 90%,#db2777,transparent),#150b2e!important}
 [data-pt="theme_rift"]{background:linear-gradient(135deg,#4c6fff,#9b5cff)!important}
 [data-off]{display:none!important}
+[data-f="frame_pumpkin"]{outline:3px solid #f97316;outline-offset:3px;box-shadow:0 0 18px 4px rgba(249,115,22,.55)}
+[data-f="frame_frost"]{outline:3px solid #bae6fd;outline-offset:3px;box-shadow:0 0 16px 3px rgba(186,230,253,.6)}
 .pf-title{margin-top:-6px;font-size:12.5px;font-weight:600;color:var(--text-muted)}
   </style>
 </head>
@@ -1717,7 +1719,7 @@ window.RIFT_CAT = { get: id => ({
   col_mint:{v:"#34d399"}, col_lilac:{v:"#c4b5fd"}, col_ruby:{v:"#be123c"}, col_cobalt:{v:"#1d4ed8"},
   nc_sky:{v:"#7dd3fc"}, nc_lime:{v:"#bef264"}, nc_rose:{v:"#fda4af"}, nc_gold:{v:"#fcd34d"},
   title_walker:{n:"Rift Walker"}, title_grinder:{n:"Grinder"}, title_strategist:{n:"Strategist"},
-  title_champion:{n:"Champion"}, title_legend:{n:"Rift Legend"}, title_founder:{n:"Founder"}
+  title_champion:{n:"Champion"}, title_legend:{n:"Rift Legend"}, title_founder:{n:"Founder"}, title_trickster:{n:"Trickster"}, title_frostborn:{n:"Frostborn"}
 })[id] };
 </script>
 <script type="module">
@@ -1787,7 +1789,7 @@ async function cloudPull(user) {
     syncApplying = false;
     syncReady = true;
     if (!exists) cloudPush();                   // first time: upload what this device already has
-    if (changed) location.reload(); else xpSync();   // reload once so achievements/streak/etc. read the new data
+    if (changed) location.reload(); else { xpSync(); flushStats(); markActive(); }   // reload once so achievements/streak/etc. read the new data
   } catch (e) {
     syncApplying = false;
     console.error("Cloud pull failed", e);
@@ -2070,7 +2072,7 @@ async function xpSync() {
   } catch (e) { console.error("XP sync", e); }
   finally { xpBusy = false; }
 }
-setInterval(xpSync, 20000);
+setInterval(() => { xpSync(); flushStats(); }, 20000);
 
 /* PROFILE (per-account, stored under riftProfile:<email>) */
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -2356,7 +2358,7 @@ onAuthStateChanged(auth, (user) => {
 });
 
 const QS = [["dp3", "d", "Play 3 games", 3, 30], ["ddiff3", "d", "Play 3 different games", 3, 40], ["dgenre", "d", "Play a puzzle or word game", 1, 25],
-  ["wp15", "w", "Play 15 games", 15, 100], ["wdiff7", "w", "Try 7 different games", 7, 100], ["wdq5", "w", "Claim 5 daily quests", 5, 80]];
+  ["wp15", "w", "Play 15 games", 15, 100], ["wdiff7", "w", "Try 7 different games", 7, 100], ["wdq5", "w", "Claim 5 daily quests", 5, 80], ["wseason", "w", "Seasonal: play 10 games", 10, 120]];
 const qDay = () => Math.floor(Date.now() / 864e5), qWk = () => Math.floor((qDay() + 3) / 7);
 const qCid = id => (id[0] === "d" ? "d" + qDay() : "w" + qWk()) + "_" + id;
 let CL = new Set();
@@ -2365,12 +2367,12 @@ const qOv = document.getElementById("questOverlay"), qBody = document.getElement
 function qProg(id) {
   let q = {}; try { q = JSON.parse(localStorage.getItem("riftQ")) || {}; } catch (e) {}
   const d = q.d === qDay(), w = q.w === qWk();
-  return { dp3: d ? q.dn || 0 : 0, ddiff3: d ? (q.dp || []).length : 0, dgenre: d ? q.dg || 0 : 0, wp15: w ? q.wn || 0 : 0, wdiff7: w ? (q.wp || []).length : 0,
+  return { dp3: d ? q.dn || 0 : 0, ddiff3: d ? (q.dp || []).length : 0, dgenre: d ? q.dg || 0 : 0, wp15: w ? q.wn || 0 : 0, wseason: w ? q.wn || 0 : 0, wdiff7: w ? (q.wp || []).length : 0,
     wdq5: [...CL].filter(c => c[0] === "d" && Math.floor((+c.slice(1).split("_")[0] + 3) / 7) === qWk()).length }[id];
 }
 function qRender() {
   qBody.innerHTML = `<div class="pf-top"><h3>📜 Quests</h3><button class="pf-x" data-close aria-label="Close">✕</button></div>` + ["d", "w"].map(t =>
-    `<h4 class="pf-lbl" style="margin:14px 0 8px">${t === "d" ? "Daily · resets 00:00 UTC" : "Weekly · resets Monday 00:00 UTC"}</h4><div class="pf-list">` + QS.filter(a => a[1] === t).map(a => {
+    `<h4 class="pf-lbl" style="margin:14px 0 8px">${t === "d" ? "Daily · resets 00:00 UTC" : "Weekly · resets Monday 00:00 UTC"}</h4><div class="pf-list">` + QS.filter(a => a[1] === t && (a[0] !== "wseason" || CFG.season)).map(a => {
       const p = Math.min(qProg(a[0]), a[3]), done = p >= a[3], got = CL.has(qCid(a[0]));
       return `<div class="pf-row" style="flex-wrap:wrap"><span style="flex:1 1 60%">${a[2]}<br><small style="color:var(--text-muted)">${p} / ${a[3]} · +${a[4]} XP</small></span><button class="pf-play" data-q="${a[0]}"${done && !got ? "" : " disabled"}>${got ? "Claimed" : done ? "Claim" : "In progress"}</button><div class="pf-xp" style="flex:1 1 100%;margin:0"><i style="width:${p / a[3] * 100}%"></i></div></div>`;
     }).join("") + "</div>").join("");
@@ -2395,6 +2397,24 @@ qOv.addEventListener("click", async e => {
   } catch (er) { console.error(er); showGlassModal("Couldn't claim. Try again.", { title: "Error", icon: "⚠️" }); }
   qRender();
 });
+async function flushStats() {
+  const u = auth.currentUser; let q;
+  try { q = JSON.parse(localStorage.getItem("riftPQ")) || {}; } catch (e) { q = {}; }
+  if (!u || isGuest || !Object.keys(q).length) return;
+  for (const k of Object.keys(q)) {
+    const [day, g] = k.split("|"), n = Math.min(q[k], 50), ref = doc(db, "stats", "d" + day + "_" + g);
+    try {
+      try { await updateDoc(ref, { n: increment(n) }); } catch (e) { if (e.code === "not-found") await setDoc(ref, { day: +day, g, n }); else throw e; }
+      delete q[k];
+    } catch (e) { console.error("stats", e); }
+  }
+  localStorage.setItem("riftPQ", JSON.stringify(q));
+}
+function markActive() {
+  const u = auth.currentUser, day = Math.floor(Date.now() / 864e5);
+  if (!u || isGuest || localStorage.getItem("riftActive") === u.uid + day) return;
+  setDoc(doc(db, "active", "d" + day + "_" + u.uid), { day, uid: u.uid }).then(() => localStorage.setItem("riftActive", u.uid + day)).catch(() => {});
+}
 function trackQuest(page) {
   const day = Math.floor(Date.now() / 864e5), wk = Math.floor((day + 3) / 7); let q;
   try { q = JSON.parse(localStorage.getItem("riftQ")) || {}; } catch (e) { q = {}; }
@@ -2404,6 +2424,7 @@ function trackQuest(page) {
   if (!q.dp.includes(page)) q.dp.push(page);
   if (!q.wp.includes(page)) q.wp.push(page);
   if (["puzzle", "word"].includes(categoryMap[(gamePool.find(g => g.page === page) || {}).id])) q.dg = 1;
+  try { const pq = JSON.parse(localStorage.getItem("riftPQ")) || {}, e = gamePool.find(g => g.page === page), k = day + "|" + (e ? e.id : page.replace(".html", "")); pq[k] = (pq[k] || 0) + 1; localStorage.setItem("riftPQ", JSON.stringify(pq)); } catch (e2) {}
   localStorage.setItem("riftQ", JSON.stringify(q));
 }
 function hideOff() {
