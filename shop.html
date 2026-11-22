@@ -11,6 +11,8 @@
 [data-f="frame_violet"]{outline:3px solid #a78bfa;outline-offset:3px;box-shadow:0 0 18px 3px rgba(167,139,250,.55)}
 [data-f="frame_pulse"]{outline:3px solid #22d3ee;outline-offset:3px;animation:cosPulse 1.8s ease-in-out infinite}
 [data-f="frame_royal"]{outline:3px solid #fbbf24;outline-offset:3px;box-shadow:0 0 0 8px rgba(251,191,36,.22),0 0 22px 4px rgba(251,191,36,.45)}
+[data-f="frame_pumpkin"]{outline:3px solid #f97316;outline-offset:3px;box-shadow:0 0 18px 4px rgba(249,115,22,.55)}
+[data-f="frame_frost"]{outline:3px solid #bae6fd;outline-offset:3px;box-shadow:0 0 16px 3px rgba(186,230,253,.6)}
 [data-f="frame_prism"]{outline:3px solid #f0abfc;outline-offset:3px;animation:cosHue 5s linear infinite}
 @keyframes cosPulse{0%,100%{box-shadow:0 0 6px 1px rgba(34,211,238,.35)}50%{box-shadow:0 0 22px 6px rgba(34,211,238,.75)}}
 @keyframes cosHue{0%,100%{outline-color:#f0abfc}33%{outline-color:#67e8f9}66%{outline-color:#fde047}}
@@ -124,8 +126,12 @@ window.RIFT_CAT = (() => {
     ["title_strategist", "title", "Strategist", "For the thinkers.", 400, "r"],
     ["title_champion", "title", "Champion", "For those at the top.", 900, "e"],
     ["title_legend", "title", "Rift Legend", "The rarest title in the hub.", 2000, "l"],
-    ["title_founder", "title", "Founder", "Exclusive. Shows you were here early.", 1000, "e", null, 1]
-  ].map(([id, slot, n, d, p, r, v, sp]) => ({ id, slot, n, d, p, r, v: v || "", sp: !!sp }));
+    ["title_founder", "title", "Founder", "Exclusive. Shows you were here early.", 1000, "e", null, 1],
+    ["frame_pumpkin", "frame", "Jack-o'-Lantern", "Limited. Only sold during the Halloween event.", 800, "e", null, 1, "halloween"],
+    ["title_trickster", "title", "Trickster", "Limited. Only sold during the Halloween event.", 400, "r", null, 1, "halloween"],
+    ["frame_frost", "frame", "Frostbite", "Limited. Only sold during the Winter event.", 800, "e", null, 1, "winter"],
+    ["title_frostborn", "title", "Frostborn", "Limited. Only sold during the Winter event.", 400, "r", null, 1, "winter"]
+  ].map(([id, slot, n, d, p, r, v, sp, season]) => ({ id, slot, n, d, p, r, v: v || "", sp: !!sp, season: season || "" }));
   return {
     items,
     get: id => items.find(i => i.id === id),
@@ -150,7 +156,7 @@ const catOf = it => it.sp ? "special" : it.slot === "ncolor" ? "color" : it.slot
 const SLOT_NAME = { frame: "frame", theme: "theme", color: "avatar colour", ncolor: "username colour", title: "title" };
 
 let uid = null, X = null, OWN = new Set(), EQ = { frame: "", theme: "", color: "", ncolor: "", title: "" }, PV = {};
-let CL = new Set(), LOG = null, tab = "frame", name = "Player", base = "#3b82f6", busy = false, tt;
+let CFG = {}, CL = new Set(), LOG = null, tab = "frame", name = "Player", base = "#3b82f6", busy = false, tt;
 
 const avail = () => X ? X.lifetime - X.spent : 0;
 function toast(t) { const e = $("toast"); e.textContent = t; e.classList.add("on"); clearTimeout(tt); tt = setTimeout(() => e.classList.remove("on"), 2600); }
@@ -180,9 +186,10 @@ async function loadLog() {
   try { const s = await getDocs(query(collection(db, "xp", uid, "ledger"), orderBy("at", "desc"), limit(50))); LOG = s.docs.map(d => d.data()); } catch (e) { console.error(e); LOG = []; }
 }
 async function load() {
-  const [x, iv, items] = await Promise.all([
-    getDoc(doc(db, "xp", uid)), getDoc(doc(db, "inventory", uid)), getDocs(collection(db, "inventory", uid, "items"))
+  const [x, iv, items, cf] = await Promise.all([
+    getDoc(doc(db, "xp", uid)), getDoc(doc(db, "inventory", uid)), getDocs(collection(db, "inventory", uid, "items")), getDoc(doc(db, "config", "site"))
   ]);
+  CFG = cf.data() || {};
   X = x.exists() ? x.data() : null;
   OWN = new Set(items.docs.map(d => d.id));
   EQ = { frame: "", theme: "", color: "", ncolor: "", title: "", ...((iv.exists() && iv.data().equipped) || {}) };
@@ -198,6 +205,7 @@ function thumb(it) {
 }
 
 function action(it) {
+  if (it.season && it.season !== CFG.season && !OWN.has(it.id)) return `<button class="btn" disabled>Only during the ${it.season} event</button>`;
   if (EQ[it.slot] === it.id) return `<button class="btn alt" data-a="un" data-id="${it.id}">Unequip</button>`;
   if (OWN.has(it.id)) return `<button class="btn" data-a="eq" data-id="${it.id}">Equip</button>`;
   if (avail() < it.p) return `<button class="btn" disabled>Need ${it.p - avail()} more XP</button>`;
