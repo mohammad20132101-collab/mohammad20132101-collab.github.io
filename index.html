@@ -386,6 +386,17 @@ body.low-power .glass-layer{background:var(--bg-solid)}
 [data-pt="theme_nebula"]{background:radial-gradient(60% 60% at 20% 10%,#7c3aed,transparent),radial-gradient(60% 60% at 90% 90%,#db2777,transparent),#150b2e!important}
 [data-pt="theme_rift"]{background:linear-gradient(135deg,#4c6fff,#9b5cff)!important}
 [data-off]{display:none!important}
+[data-f="frame_neon"]{outline:3px solid #4ade80;outline-offset:3px;box-shadow:0 0 18px 3px #4ade8099}
+[data-f="frame_ember"]{outline:3px solid #f97316;outline-offset:3px;box-shadow:0 0 18px 3px #f9731699}
+[data-f="frame_holly"]{outline:3px solid #16a34a;outline-offset:3px;box-shadow:0 0 18px 3px #16a34a99}
+[data-f="frame_fireworks"]{outline:3px solid #fbbf24;outline-offset:3px;box-shadow:0 0 18px 3px #fbbf2499}
+[data-f="frame_heart"]{outline:3px solid #f43f5e;outline-offset:3px;box-shadow:0 0 18px 3px #f43f5e99}
+[data-f="frame_bloom"]{outline:3px solid #f9a8d4;outline-offset:3px;box-shadow:0 0 18px 3px #f9a8d499}
+[data-f="frame_sun"]{outline:3px solid #facc15;outline-offset:3px;animation:cosSun 3s linear infinite}
+@keyframes cosSun{0%,100%{outline-color:#facc15;box-shadow:0 0 16px 3px #facc1566}33%{outline-color:#fb923c;box-shadow:0 0 16px 3px #fb923c66}66%{outline-color:#f472b6;box-shadow:0 0 16px 3px #f472b666}}
+[data-pt="theme_sakura"]{background:linear-gradient(160deg,#4a1d3a,#be5a8a 60%,#f9a8d4)!important}
+[data-pt="theme_slate"]{background:linear-gradient(160deg,#0f172a,#334155 60%,#64748b)!important}
+[data-pt="theme_aurora"]{background:linear-gradient(160deg,#064e3b,#4c1d95 60%,#0e7490)!important}
 [data-f="frame_pumpkin"]{outline:3px solid #f97316;outline-offset:3px;box-shadow:0 0 18px 4px rgba(249,115,22,.55)}
 [data-f="frame_frost"]{outline:3px solid #bae6fd;outline-offset:3px;box-shadow:0 0 16px 3px rgba(186,230,253,.6)}
 .pf-title{margin-top:-6px;font-size:12.5px;font-weight:600;color:var(--text-muted)}
@@ -1719,7 +1730,7 @@ window.RIFT_CAT = { get: id => ({
   col_mint:{v:"#34d399"}, col_lilac:{v:"#c4b5fd"}, col_ruby:{v:"#be123c"}, col_cobalt:{v:"#1d4ed8"},
   nc_sky:{v:"#7dd3fc"}, nc_lime:{v:"#bef264"}, nc_rose:{v:"#fda4af"}, nc_gold:{v:"#fcd34d"},
   title_walker:{n:"Rift Walker"}, title_grinder:{n:"Grinder"}, title_strategist:{n:"Strategist"},
-  title_champion:{n:"Champion"}, title_legend:{n:"Rift Legend"}, title_founder:{n:"Founder"}, title_trickster:{n:"Trickster"}, title_frostborn:{n:"Frostborn"}
+  title_champion:{n:"Champion"}, title_legend:{n:"Rift Legend"}, title_founder:{n:"Founder"}, col_peach:{v:"#fdba74"}, col_indigo:{v:"#6366f1"}, col_rose:{v:"#e11d48"}, nc_mint:{v:"#6ee7b7"}, nc_violet:{v:"#c4b5fd"}, nc_orange:{v:"#fb923c"}, title_rookie:{n:"Rookie"}, title_speedster:{n:"Speedster"}, title_mastermind:{n:"Mastermind"}, title_santa:{n:"Santa's Helper"}, title_reveler:{n:"Reveler"}, title_cupid:{n:"Cupid"}, title_gardener:{n:"Gardener"}, title_beachcomber:{n:"Beachcomber"}, title_trickster:{n:"Trickster"}, title_frostborn:{n:"Frostborn"}
 })[id] };
 </script>
 <script type="module">
