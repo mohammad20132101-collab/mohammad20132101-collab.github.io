@@ -60,12 +60,28 @@ function view() {
 async function loadR() { const s = await getDocs(query(collection(db, "gameRequests"), orderBy("at", "desc"), limit(300))); R = s.docs.map(d => ({ id: d.id, ...d.data() })); view(); }
 async function games() {
   const c = (await getDoc(doc(db, "config", "site"))).data() || {}, off = new Set(c.disabled || []);
-  $("t_g").innerHTML = `<div class="bar"><select id="gotd"><option value="">Game of the Day: automatic</option>${GAMES.map(g => `<option value="${esc(g[0])}"${c.gotd === g[0] ? " selected" : ""}>${esc(g[1])}</option>`).join("")}</select><input id="note" maxlength="140" placeholder="Announcement shown on the hub (optional)" value="${esc(c.note || "")}"><button class="btn" id="gsave">Save</button></div>
+  $("t_g").innerHTML = `<div class="bar"><select id="gotd"><option value="">Game of the Day: automatic</option>${GAMES.map(g => `<option value="${esc(g[0])}"${c.gotd === g[0] ? " selected" : ""}>${esc(g[1])}</option>`).join("")}</select><select id="season"><option value="">Season: none</option><option value="halloween"${c.season === "halloween" ? " selected" : ""}>Halloween event</option><option value="winter"${c.season === "winter" ? " selected" : ""}>Winter event</option></select><input id="note" maxlength="140" placeholder="Announcement shown on the hub (optional)" value="${esc(c.note || "")}"><button class="btn" id="gsave">Save</button></div>
   <div class="panel"><div class="gl">${GAMES.map(g => `<label><input type="checkbox" data-g="${esc(g[0])}"${off.has(g[0]) ? "" : " checked"}>${esc(g[1])}</label>`).join("")}</div></div><p style="color:var(--muted);font-size:13px">Unchecked games are hidden from the hub. Game files are never deleted.</p>`;
   $("gsave").onclick = async () => {
     const disabled = [...document.querySelectorAll("[data-g]")].filter(i => !i.checked).map(i => i.dataset.g);
-    try { await setDoc(doc(db, "config", "site"), { disabled, gotd: $("gotd").value, note: $("note").value.trim(), updated: serverTimestamp() }); alert("Saved"); } catch (e) { console.error(e); alert("Couldn't save."); }
+    try { await setDoc(doc(db, "config", "site"), { disabled, gotd: $("gotd").value, season: $("season").value, note: $("note").value.trim(), updated: serverTimestamp() }); alert("Saved"); } catch (e) { console.error(e); alert("Couldn't save."); }
   };
+}
+const bars = (arr, h = 70) => { const m = Math.max(1, ...arr), w = 100 / arr.length; return `<svg viewBox="0 0 100 ${h}" preserveAspectRatio="none" style="width:100%;height:${h}px;display:block">${arr.map((v, i) => `<rect x="${i * w + w * .1}" y="${h - v / m * h}" width="${w * .8}" height="${Math.max(v / m * h, v ? 1 : 0)}" fill="#4c6fff"/>`).join("")}</svg>`; };
+async function ana() {
+  const day = Math.floor(Date.now() / 864e5), d0 = day - 29, days = Array.from({ length: 30 }, (_, i) => d0 + i);
+  const [s, a, p] = await Promise.all([getDocs(query(collection(db, "stats"), where("day", ">=", d0))), getDocs(query(collection(db, "active"), where("day", ">=", d0))), getDocs(query(collection(db, "profiles"), limit(300)))]);
+  const perDay = Object.fromEntries(days.map(d => [d, 0])), perGame = {}, gd = {}, dau = Object.fromEntries(days.map(d => [d, new Set()]));
+  s.docs.forEach(x => { const r = x.data(); if (r.day in perDay) perDay[r.day] += r.n; perGame[r.g] = (perGame[r.g] || 0) + r.n; (gd[r.g] = gd[r.g] || {})[r.day] = r.n; });
+  a.docs.forEach(x => { const r = x.data(); if (dau[r.day]) dau[r.day].add(r.uid); });
+  const wau = new Set(); days.slice(-7).forEach(d => dau[d].forEach(u => wau.add(u)));
+  const nm = Object.fromEntries(GAMES), top = Object.entries(perGame).sort((x, y) => y[1] - x[1]).slice(0, 5);
+  const jd = p.docs.map(d => Math.floor(new Date(d.data().joined).getTime() / 864e5)).filter(n => n > 0), plays = Object.values(perDay).reduce((x, y) => x + y, 0);
+  const box = (t, inner) => `<div class="card" style="margin-bottom:12px"><span>${t}</span>${inner}</div>`;
+  $("t_a").innerHTML = `<div class="cards">${[["Plays (30 days)", plays], ["Active today", dau[day].size], ["Active last 7 days", wau.size]].map(c => `<div class="card"><span>${c[0]}</span><b>${c[1]}</b></div>`).join("")}</div>
+  ${box("Plays per day (30 days)", bars(days.map(d => perDay[d])))}${box("Daily active users", bars(days.map(d => dau[d].size)))}${box("User growth (profiles created)", bars(days.map(d => jd.filter(j => j <= d).length)))}
+  ${box("Top games, 30-day trend", top.map(([g, n]) => `<div style="display:grid;grid-template-columns:1fr 3fr 50px;gap:12px;align-items:center;margin-top:10px;font-size:13px"><span>${esc(nm[g] || g)}</span>${bars(days.map(d => (gd[g] || {})[d] || 0), 28)}<b>${n}</b></div>`).join("") || `<p class="msg">No plays recorded yet.</p>`)}
+  <p style="color:var(--muted);font-size:13px">Only recorded data is shown. Tracking starts when this version goes live, so earlier days stay empty.</p>`;
 }
 function vu() {
   const q = $("uq").value.toLowerCase();
@@ -105,8 +121,8 @@ document.addEventListener("click", async e => {
   const u = e.target.closest("[data-u]"); if (u) { detail(u.dataset.u); return; }
   const t = e.target.closest("[data-t]"); if (!t) return;
   document.querySelectorAll(".tab").forEach(b => b.classList.toggle("on", b === t));
-  ["o", "r", "g", "u"].forEach(k => $("t_" + k).style.display = k === t.dataset.t ? "" : "none");
-  try { if (t.dataset.t === "o") await ovw(); if (t.dataset.t === "r") await loadR(); if (t.dataset.t === "g") await games(); if (t.dataset.t === "u") await users(); } catch (er) { console.error(er); }
+  ["o", "a", "r", "g", "u"].forEach(k => $("t_" + k).style.display = k === t.dataset.t ? "" : "none");
+  try { if (t.dataset.t === "o") await ovw(); if (t.dataset.t === "r") await loadR(); if (t.dataset.t === "a") await ana(); if (t.dataset.t === "g") await games(); if (t.dataset.t === "u") await users(); } catch (er) { console.error(er); }
 });
 onAuthStateChanged(auth, async u => {
   if (!u) { $("app").innerHTML = `<p class="msg">Log in on the hub first, then reopen this page.</p>`; return; }
@@ -114,8 +130,8 @@ onAuthStateChanged(auth, async u => {
   try { ok = (await getDoc(doc(db, "admins", u.uid))).exists(); } catch (e) {}
   if (!ok) { $("app").innerHTML = `<p class="msg">Access denied.</p>`; return; }
   $("who").textContent = u.email;
-  $("app").innerHTML = `<div class="tabs">${[["o", "Overview"], ["r", "Requests"], ["g", "Games"], ["u", "Users"]].map(t => `<button class="tab${t[0] === "o" ? " on" : ""}" data-t="${t[0]}">${t[1]}</button>`).join("")}</div>
-  <div id="t_o"></div><div id="t_r" style="display:none"><div class="bar"><input id="q" placeholder="Search requests..."><select id="f"><option value="all">All statuses</option>${Object.entries(ST).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select><select id="s"><option value="votes">Most votes</option><option value="date">Newest</option></select></div><div class="panel" id="list"></div></div><div id="t_g" style="display:none"></div><div id="t_u" style="display:none"></div>`;
+  $("app").innerHTML = `<div class="tabs">${[["o", "Overview"], ["a", "Analytics"], ["r", "Requests"], ["g", "Games"], ["u", "Users"]].map(t => `<button class="tab${t[0] === "o" ? " on" : ""}" data-t="${t[0]}">${t[1]}</button>`).join("")}</div>
+  <div id="t_o"></div><div id="t_r" style="display:none"><div class="bar"><input id="q" placeholder="Search requests..."><select id="f"><option value="all">All statuses</option>${Object.entries(ST).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select><select id="s"><option value="votes">Most votes</option><option value="date">Newest</option></select></div><div class="panel" id="list"></div></div><div id="t_a" style="display:none"></div><div id="t_g" style="display:none"></div><div id="t_u" style="display:none"></div>`;
   ["q", "f", "s"].forEach(i => $(i).addEventListener("input", view));
   try { await ovw(); } catch (e) { console.error(e); $("t_o").innerHTML = `<p class="msg">Couldn't load. Check your rules.</p>`; }
 });
