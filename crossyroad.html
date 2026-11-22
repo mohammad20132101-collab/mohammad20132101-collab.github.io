@@ -1,462 +1,1433 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rift Crosser</title>
-
+<title>Rift Crosser: Pastel Horizons</title>
 <style>
-@import url("https://fonts.googleapis.com/css?family=Lato:400,700");
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap");
 
-body{
-  margin:0;
-  font-family: 'Lato', Arial, sans-serif;
-  background:#0f0f1a;
-  color:white;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
+:root {
+  --bg-dark: #121222;
+  --panel-bg: #1a1a38;
+  --rift-blue: #5b7cff;
+  --rift-purple: #a66cff;
+  --cyan: #4ce6ff;
+  --gold: #ffda47;
+  --success: #52b788;
+}
+
+body {
+  margin: 0;
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg-dark);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  overflow: hidden;
   user-select: none;
   -webkit-user-select: none;
 }
 
-header{
-  width:100%;
-  text-align:center;
-  padding:15px;
-  background:#1a1a2e;
+.ambient-bg {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at 50% 25%, rgba(91, 124, 255, 0.15) 0%, rgba(18, 18, 34, 0.98) 80%);
+  z-index: -1;
+  pointer-events: none;
+  transition: background 0.8s ease;
 }
 
-/* MENU OVERLAY */
-#menu {
-    position: fixed;
-    inset: 0;
-    background: rgba(15, 15, 26, 0.85);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 999;
-}
-.menuBox {
-    background: #141428;
-    padding: 40px;
-    border-radius: 15px;
-    border: 3px solid #4c6fff;
-    box-shadow: 0 0 25px rgba(76, 108, 255, 0.35);
-    text-align: center;
-    transition: border-color 0.3s, box-shadow 0.3s;
-}
-.menuBox h1 {
-    color: #4c6fff;
-    margin-bottom: 5px;
-    transition: color 0.3s;
-}
-.menuBox p {
-    color: rgba(255, 255, 255, 0.6);
-    margin-bottom: 25px;
-}
-
-canvas {
-  background: #050814;
-  border: 3px solid #4c6fff;
-  border-radius: 12px;
-  margin-top: 15px;
-  box-shadow: 0 0 20px rgba(76, 108, 255, 0.2);
-  transition: border-color 0.3s, box-shadow 0.3s;
-  display: block;
-  max-width: 100%;
-  height: auto;
-}
-
-.score-container {
+.cabinet {
+  position: relative;
   display: flex;
-  gap: 30px;
-  font-size:22px;
-  margin:10px;
-}
-.mode-tag {
-  color: #4c6fff;
-  font-weight: bold;
-  transition: color 0.3s;
-}
-
-/* BUTTONS */
-button {
-    background: linear-gradient(135deg, #141428, #222244);
-    color: white;
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    padding: 12px 24px;
-    border-radius: 10px;
-    cursor: pointer;
-    font-weight: bold;
-    font-size: 16px;
-    transition: 0.2s;
-    margin: 5px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  flex-direction: column;
+  align-items: center;
+  background: var(--panel-bg);
+  padding: 24px;
+  border-radius: 28px;
+  border: 2px solid rgba(91, 124, 255, 0.4);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8), 0 0 50px rgba(91, 124, 255, 0.25);
+  transition: border-color 0.4s ease, box-shadow 0.4s ease;
 }
 
-button:hover {
-    transform: scale(1.05);
-    border-color: white;
+.cabinet.challenge-theme {
+  border-color: rgba(166, 108, 255, 0.55);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8), 0 0 55px rgba(166, 108, 255, 0.25);
 }
 
-.btn-row {
-    display: flex;
-    justify-content: center;
-    gap: 12px;
-    margin: 15px 0;
+.hud {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 760px;
+  margin-bottom: 14px;
+  gap: 12px;
+}
+
+.hud-panel {
+  flex: 1;
+  background: rgba(14, 14, 28, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 10px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.5);
+}
+
+.hud-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 3px;
+}
+
+.hud-value {
+  font-size: 22px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(91, 124, 255, 0.5);
+}
+
+/* CHALLENGE HUD BAR */
+.challenge-hud {
+  display: none;
+  width: 100%;
+  max-width: 760px;
+  margin-bottom: 14px;
+  background: linear-gradient(90deg, rgba(166, 108, 255, 0.18), rgba(91, 124, 255, 0.18));
+  border: 1px solid rgba(166, 108, 255, 0.4);
+  border-radius: 14px;
+  padding: 10px 18px;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.challenge-hud.active {
+  display: flex;
+}
+
+.stage-badge {
+  background: var(--rift-purple);
+  color: #fff;
+  font-weight: 900;
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.objective-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.objective-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 700;
+  color: #f3e8ff;
+}
+
+.progress-track {
+  width: 100%;
+  height: 8px;
+  background: rgba(10, 10, 22, 0.8);
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--rift-purple), var(--cyan));
+  border-radius: 4px;
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#gameContainer {
+  width: 760px;
+  height: 460px;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: inset 0 0 50px rgba(0,0,0,0.9), 0 0 25px rgba(0,0,0,0.5);
+  position: relative;
+}
+
+#gameContainer canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* FLOATING STAGE BANNER */
+.stage-banner {
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-20px);
+  background: rgba(22, 22, 48, 0.92);
+  border: 2px solid var(--rift-purple);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 25px rgba(166, 108, 255, 0.4);
+  padding: 12px 26px;
+  border-radius: 16px;
+  text-align: center;
+  z-index: 50;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.stage-banner.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.stage-banner-title {
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--gold);
+  letter-spacing: 0.5px;
+}
+
+.stage-banner-sub {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.85);
+  margin-top: 2px;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(18, 18, 34, 0.95);
+  backdrop-filter: blur(12px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+  border-radius: 28px;
+  transition: opacity 0.3s ease;
+}
+
+.overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.modal-box {
+  background: linear-gradient(135deg, #222248, #161630);
+  padding: 40px;
+  border-radius: 32px;
+  border: 2px solid var(--rift-blue);
+  box-shadow: 0 0 60px rgba(91, 124, 255, 0.45);
+  text-align: center;
+  max-width: 460px;
+  width: 90%;
+  animation: modalPulse 4s ease-in-out infinite;
+}
+
+@keyframes modalPulse {
+  0%, 100% { transform: translateY(0); box-shadow: 0 0 50px rgba(91, 124, 255, 0.35); }
+  50% { transform: translateY(-6px); box-shadow: 0 0 70px rgba(166, 108, 255, 0.55); }
+}
+
+.modal-box h1 {
+  font-size: 38px;
+  font-weight: 900;
+  margin: 0 0 10px 0;
+  background: linear-gradient(135deg, #fff, var(--cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.5px;
+}
+
+.modal-box p {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 14px;
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+
+.mode-desc-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 22px;
+  text-align: left;
+}
+
+.mode-card {
+  background: rgba(12, 12, 26, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 12px;
+  border-radius: 14px;
+}
+
+.mode-card h3 {
+  margin: 0 0 4px 0;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.mode-card p {
+  margin: 0;
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.4;
+}
+
+.btn-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.arcade-btn {
+  background: linear-gradient(135deg, var(--rift-blue), #455fe6);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  padding: 15px 26px;
+  border-radius: 16px;
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 15px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 6px 20px rgba(91, 124, 255, 0.4);
+  letter-spacing: 0.5px;
+}
+
+.arcade-btn:hover {
+  transform: translateY(-3px) scale(1.02);
+  border-color: #fff;
+  box-shadow: 0 10px 30px rgba(91, 124, 255, 0.6);
+}
+
+.arcade-btn:active {
+  transform: translateY(1px);
+}
+
+.arcade-btn.purple {
+  background: linear-gradient(135deg, var(--rift-purple), #8c4ce6);
+  box-shadow: 0 6px 20px rgba(166, 108, 255, 0.4);
+}
+
+.arcade-btn.purple:hover {
+  box-shadow: 0 10px 30px rgba(166, 108, 255, 0.6);
+}
+
+.nav-row {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 760px;
+  margin-top: 16px;
+}
+
+.nav-btn {
+  background: rgba(22, 22, 44, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 10px 22px;
+  border-radius: 12px;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.nav-btn:hover {
+  background: rgba(91, 124, 255, 0.25);
+  border-color: var(--rift-blue);
+}
+
+.controls-hint {
+  margin-top: 14px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.45);
+  letter-spacing: 0.5px;
+  text-align: center;
 }
 </style>
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7292845069394911"
-     crossorigin="anonymous"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 
 <body>
 
-<div id="menu">
-  <div class="menuBox" id="menuBox">
-    <h1 id="menuTitle">🌀 Rift Crosser</h1>
-    <p>Navigate the infinite scaling dimensions!</p>
-    <button onclick="selectMode('classic')" style="border-color: #4c6fff;">Normal Mode</button>
-    <button onclick="selectMode('expanded')" style="border-color: #9b5cff;">Expanded Mode</button>
+<div class="ambient-bg" id="ambientBg"></div>
+
+<div class="cabinet" id="cabinet">
+  <!-- MENU OVERLAY -->
+  <div id="menuOverlay" class="overlay">
+    <div class="modal-box" id="modalBox">
+      <h1 id="modalTitle">RIFT CROSSER</h1>
+      <p id="modalSubtitle">Choose your expedition across the pastel voxel realms.</p>
+      
+      <div class="mode-desc-grid" id="modeDescGrid">
+        <div class="mode-card">
+          <h3 style="color: var(--rift-blue);">⚡ Classic Expedition</h3>
+          <p>Endless exploration with progressive terrain variety and fair scaling difficulty.</p>
+        </div>
+        <div class="mode-card">
+          <h3 style="color: var(--rift-purple);">🌀 Rift Challenge</h3>
+          <p>5 thematic stages with unique objectives, shard collecting, checkpoints, and environmental themes.</p>
+        </div>
+      </div>
+
+      <div class="btn-stack" id="mainMenuButtons">
+        <button class="arcade-btn" onclick="startGame('classic')">⚡ CLASSIC EXPEDITION</button>
+        <button class="arcade-btn purple" onclick="startGame('challenge')">🌀 RIFT CHALLENGE</button>
+      </div>
+
+      <div class="btn-stack" id="gameOverButtons" style="display:none;">
+        <div id="gameOverStats" style="margin-bottom: 20px; font-size: 15px; color: rgba(255,255,255,0.88); line-height: 1.6;"></div>
+        <button class="arcade-btn" onclick="restartGame()">🔄 TRY AGAIN</button>
+        <button class="arcade-btn purple" onclick="openMenu()">🏠 MAIN MENU</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN HUD -->
+  <div class="hud">
+    <div class="hud-panel">
+      <span class="hud-label" id="scoreLabel">Distance</span>
+      <span class="hud-value" id="scoreVal">0</span>
+    </div>
+    <div class="hud-panel">
+      <span class="hud-label" id="bestLabel">Best Distance</span>
+      <span class="hud-value" id="bestVal" style="color: var(--gold);">0</span>
+    </div>
+    <div class="hud-panel">
+      <span class="hud-label">Mode</span>
+      <span class="hud-value" id="modeVal">Classic</span>
+    </div>
+  </div>
+
+  <!-- CHALLENGE STAGE & OBJECTIVE HUD -->
+  <div class="challenge-hud" id="challengeHud">
+    <div class="stage-badge" id="stageBadge">STAGE 1</div>
+    <div class="objective-info">
+      <div class="objective-header">
+        <span id="objectiveText">Collect 4 Rift Shards</span>
+        <span id="objectiveProgressText" style="color: var(--cyan);">0 / 4</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="objectiveProgressBar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3D WEBGL CONTAINER -->
+  <div id="gameContainer">
+    <div class="stage-banner" id="stageBanner">
+      <div class="stage-banner-title" id="bannerTitle">STAGE 1: SHARD HARVEST</div>
+      <div class="stage-banner-sub" id="bannerSub">Collect 4 glowing Rift Shards to open the Warp Gate!</div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAVBAR -->
+  <div class="nav-row">
+    <button class="nav-btn" onclick="window.location.href='index.html'">🏠 Hub</button>
+    <button class="nav-btn" onclick="openMenu()">⚙️ Menu</button>
+    <button class="nav-btn" onclick="restartGame()">🔄 Restart</button>
   </div>
 </div>
 
-<header>
-  <h1>🌀 Rift Crosser</h1>
-</header>
-
-<div class="score-container">
-  <div>Score: <span id="score">0</span></div>
-  <div>Level: <span id="levelDisplay">1</span></div>
-  <div>Mode: <span id="modeDisplay" class="mode-tag">Normal Mode</span></div>
-</div>
-
-<canvas id="game" width="640" height="480"></canvas>
-
-<div class="btn-row">
-  <button onclick="window.location.href='index.html'" id="backBtn">🏠 Back</button>
-  <button onclick="showMenu()" id="menuBtn">Menu</button>
-  <button onclick="startGame()" id="restartBtn">Restart</button>
-</div>
+<div class="controls-hint">Controls: <b>W / A / S / D</b> or <b>Arrow Keys</b> to Hop Tile-by-Tile</div>
 
 <script>
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+// --- FULLY POLISHED PASTEL 3D CROSSY-ROAD ENGINE ---
+const container = document.getElementById("gameContainer");
 
-const COLS = 20; 
-const VISIBLE_ROWS = 15; 
-const SIZE = 32; 
+let scene, camera, renderer;
+let characterGroup;
+let terrainPool = new Map(); // z -> row object
 
-let player, lanes, score, level, gameLoop, cameraY, highestScoreReached;
-let currentMode = 'classic'; 
+const COLS = 13;
+const TILE_SIZE = 1.2;
 
-function showMenu() {
-    clearInterval(gameLoop);
-    document.getElementById("menu").style.display = "flex";
-}
+let playerGridX = 6;
+let playerGridZ = 0;
+let maxGridZ = 0;
 
-function selectMode(mode) {
-    currentMode = mode;
-    document.getElementById("menu").style.display = "none";
-    
-    const displayTag = document.getElementById("modeDisplay");
-    const menuBox = document.getElementById("menuBox");
-    const menuTitle = document.getElementById("menuTitle");
-    
-    const blueColor = "#4c6fff";
-    const purpleColor = "#9b5cff";
-    
-    if(mode === 'expanded') {
-        displayTag.textContent = "Expanded Mode";
-        displayTag.style.color = purpleColor;
-        canvas.style.borderColor = purpleColor;
-        canvas.style.boxShadow = "0 0 20px rgba(155, 92, 255, 0.2)";
-        menuBox.style.borderColor = purpleColor;
-        menuBox.style.boxShadow = "0 0 25px rgba(155, 92, 255, 0.35)";
-        menuTitle.style.color = purpleColor;
-    } else {
-        displayTag.textContent = "Normal Mode";
-        displayTag.style.color = blueColor;
-        canvas.style.borderColor = blueColor;
-        canvas.style.boxShadow = "0 0 20px rgba(76, 108, 255, 0.2)";
-        menuBox.style.borderColor = blueColor;
-        menuBox.style.boxShadow = "0 0 25px rgba(76, 108, 255, 0.35)";
-        menuTitle.style.color = blueColor;
-    }
-    
-    startGame();
-}
+let bestClassic = 0;
+let bestChallengeScore = 0;
 
-function createLane(y) {
-  if (y === 0) return { type: 'safe', color: 'rgba(255,255,255,0.05)' };
+let gameRunning = false;
+let gameMode = 'classic';
+let animId = null;
+let lastTime = 0;
+let bannerTimeout = null;
 
-  if (y % 8 === 0) {
-    return { type: 'safe', color: currentMode === 'expanded' ? 'rgba(155, 92, 255, 0.15)' : 'rgba(76, 108, 255, 0.15)' };
+// Challenge Mode Stages Definition
+const CHALLENGE_STAGES = [
+  {
+    stage: 1,
+    name: "SHARD HARVEST",
+    type: "shards",
+    target: 4,
+    desc: "Collect 4 Rift Shards",
+    bonus: 250,
+    bgColor: "#1a1a2e",
+    fogColor: "#1a1a2e",
+    weights: { road: 0.22, river: 0.18, forest: 0.22, rail: 0.10, fragile: 0.08 }
+  },
+  {
+    stage: 2,
+    name: "RIVER NAVIGATOR",
+    type: "river_rows",
+    target: 6,
+    desc: "Cross 6 River Streams",
+    bonus: 400,
+    bgColor: "#0f2027",
+    fogColor: "#0f2027",
+    weights: { road: 0.10, river: 0.48, forest: 0.14, rail: 0.08, fragile: 0.10 }
+  },
+  {
+    stage: 3,
+    name: "UNSTABLE FRACTURE",
+    type: "fragile_steps",
+    target: 8,
+    desc: "Traverse 8 Crumbling Rift Tiles",
+    bonus: 600,
+    bgColor: "#201a30",
+    fogColor: "#201a30",
+    weights: { road: 0.15, river: 0.15, forest: 0.15, rail: 0.10, fragile: 0.35 }
+  },
+  {
+    stage: 4,
+    name: "EXPRESS GAUNTLET",
+    type: "rail_rows",
+    target: 5,
+    desc: "Cross 5 Railway Tracks",
+    bonus: 800,
+    bgColor: "#2c161c",
+    fogColor: "#2c161c",
+    weights: { road: 0.18, river: 0.12, forest: 0.12, rail: 0.42, fragile: 0.08 }
+  },
+  {
+    stage: 5,
+    name: "RIFT MASTER ODYSSEY",
+    type: "shards",
+    target: 7,
+    desc: "Collect 7 Rift Shards",
+    bonus: 1200,
+    bgColor: "#1f1a3a",
+    fogColor: "#1f1a3a",
+    weights: { road: 0.22, river: 0.20, forest: 0.15, rail: 0.18, fragile: 0.15 }
   }
+];
 
-  let laneLevel = Math.floor(y / 8) + 1;
-  let direction = Math.random() < 0.5 ? 1 : -1;
-  let baseSpeed = (Math.random() * 0.04 + 0.03) + (laneLevel * 0.012);
-  let speed = baseSpeed * direction;
+let challengeState = {
+  stageIndex: 0,
+  progress: 0,
+  bonusScore: 0,
+  stagesCompleted: 0,
+  visitedRows: new Set(),
+  lastCountedRiverRow: -99,
+  lastCountedRailRow: -99
+};
 
-  // Evenly spaced distribution to guarantee things NEVER bunch up or clip
-  let pos1 = Math.random() * 4;           // Section 1: 0 to 4
-  let pos2 = 10 + (Math.random() * 4);    // Section 2: 10 to 14
+// Player Animation / Movement state
+let pState = {
+  x: 0, z: 0,
+  targetX: 0, targetZ: 0,
+  startX: 0, startZ: 0,
+  progress: 1,
+  height: 0,
+  squash: 1
+};
 
-  if (currentMode === 'expanded' && Math.random() < 0.4) {
-    return {
-      type: 'river',
-      speed: speed * 0.7, 
-      obstacles: [pos1, pos2] 
-    };
+// Pastel Geometries & Materials Cache
+let geomCache = {
+  strip: new THREE.BoxGeometry(COLS * TILE_SIZE, 0.3, TILE_SIZE - 0.04),
+  fragileTile: new THREE.BoxGeometry(TILE_SIZE - 0.08, 0.28, TILE_SIZE - 0.08),
+  trunk: new THREE.BoxGeometry(0.4, 0.8, 0.4),
+  leaves: new THREE.BoxGeometry(1.0, 1.2, 1.0),
+  car: new THREE.BoxGeometry(2.0, 0.7, 1.0),
+  log: new THREE.BoxGeometry(2.2, 0.35, 1.1),
+  sleeper: new THREE.BoxGeometry(1.2, 0.05, 0.3),
+  rail: new THREE.BoxGeometry(COLS * TILE_SIZE, 0.08, 0.12),
+  signPost: new THREE.BoxGeometry(0.1, 0.8, 0.1),
+  signBoard: new THREE.BoxGeometry(0.5, 0.3, 0.1),
+  shard: new THREE.OctahedronGeometry(0.32, 0),
+  shardRing: new THREE.TorusGeometry(0.42, 0.04, 8, 24),
+  archPillar: new THREE.BoxGeometry(0.35, 2.2, 0.35),
+  archTop: new THREE.BoxGeometry(COLS * TILE_SIZE, 0.3, 0.35)
+};
+
+let matCache = {
+  grass: new THREE.MeshStandardMaterial({ color: 0x76c893, roughness: 0.8 }),
+  road: new THREE.MeshStandardMaterial({ color: 0x3d3a50, roughness: 0.7 }),
+  river: new THREE.MeshStandardMaterial({ color: 0x48bfe3, roughness: 0.3, metalness: 0.2 }),
+  forest: new THREE.MeshStandardMaterial({ color: 0x52b788, roughness: 0.8 }),
+  rail: new THREE.MeshStandardMaterial({ color: 0x495057, roughness: 0.6 }),
+  fragileBase: new THREE.MeshStandardMaterial({ color: 0x241e38, roughness: 0.9 }),
+  fragileTileSafe: new THREE.MeshStandardMaterial({ color: 0xa66cff, roughness: 0.35, metalness: 0.2 }),
+  fragileTileCracked: new THREE.MeshStandardMaterial({ color: 0xff758f, emissive: 0xff4d6d, emissiveIntensity: 0.45, roughness: 0.3 }),
+  trunk: new THREE.MeshStandardMaterial({ color: 0xb5838d }),
+  leaves: new THREE.MeshStandardMaterial({ color: 0x52b788, roughness: 0.5 }),
+  carPink: new THREE.MeshStandardMaterial({ color: 0xffb5a7, metalness: 0.4, roughness: 0.3 }),
+  carYellow: new THREE.MeshStandardMaterial({ color: 0xfcd5ce, metalness: 0.4, roughness: 0.3 }),
+  carBlue: new THREE.MeshStandardMaterial({ color: 0x8ecae6, metalness: 0.4, roughness: 0.3 }),
+  log: new THREE.MeshStandardMaterial({ color: 0xd4a373, roughness: 0.9 }),
+  sleeper: new THREE.MeshStandardMaterial({ color: 0x99582a }),
+  railBar: new THREE.MeshStandardMaterial({ color: 0xadb5bd, metalness: 0.8 }),
+  locoBody: new THREE.MeshStandardMaterial({ color: 0xff595e, metalness: 0.5, roughness: 0.3 }),
+  locoCabin: new THREE.MeshStandardMaterial({ color: 0xffca3a, metalness: 0.4, roughness: 0.3 }),
+  carriage: new THREE.MeshStandardMaterial({ color: 0x8ac926, metalness: 0.4, roughness: 0.3 }),
+  wheel: new THREE.MeshStandardMaterial({ color: 0x212529, roughness: 0.8 }),
+  headlight: new THREE.MeshStandardMaterial({ color: 0xfff3b0, emissive: 0xffb703, emissiveIntensity: 0.9 }),
+  window: new THREE.MeshStandardMaterial({ color: 0x4cc9f0, roughness: 0.1 }),
+  warningSignOff: new THREE.MeshStandardMaterial({ color: 0x6c757d, roughness: 0.5 }),
+  warningSignOn: new THREE.MeshStandardMaterial({ color: 0xffb703, emissive: 0xffb703, emissiveIntensity: 1.0 }),
+  shard: new THREE.MeshStandardMaterial({ color: 0xffda47, emissive: 0xffb703, emissiveIntensity: 0.45, metalness: 0.6, roughness: 0.2 }),
+  shardRing: new THREE.MeshStandardMaterial({ color: 0x4ce6ff, emissive: 0x4ce6ff, emissiveIntensity: 0.5 }),
+  checkpoint: new THREE.MeshStandardMaterial({ color: 0x5b7cff, emissive: 0x5b7cff, emissiveIntensity: 0.35 })
+};
+
+function initThree() {
+  try {
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x1a1a2e);
+    scene.fog = new THREE.FogExp2(0x1a1a2e, 0.022);
+
+    camera = new THREE.PerspectiveCamera(42, container.clientWidth / container.clientHeight, 0.1, 1000);
+    camera.position.set(0, 13, -11);
+    camera.lookAt(0, 0, 0);
+
+    renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
+
+    const ambient = new THREE.AmbientLight(0xffffff, 0.75);
+    scene.add(ambient);
+
+    const sun = new THREE.DirectionalLight(0xfff8e8, 1.3);
+    sun.position.set(15, 25, -15);
+    sun.castShadow = true;
+    sun.shadow.mapSize.width = 2048;
+    sun.shadow.mapSize.height = 2048;
+    sun.shadow.camera.near = 0.5;
+    sun.shadow.camera.far = 60;
+    sun.shadow.camera.left = -15;
+    sun.shadow.camera.right = 15;
+    sun.shadow.camera.top = 15;
+    sun.shadow.camera.bottom = -15;
+    scene.add(sun);
+
+    buildCharacter();
+  } catch (e) {
+    console.error("WebGL Initialization failed:", e);
+    container.innerHTML = '<div style="color:white;text-align:center;padding:50px;">WebGL is required to run this game. Please check your browser settings.</div>';
+  }
+}
+
+function buildCharacter() {
+  characterGroup = new THREE.Group();
+
+  const bodyMat = new THREE.MeshStandardMaterial({ color: 0x7209b7, roughness: 0.3, metalness: 0.3 });
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.7, 0.4), bodyMat);
+  body.position.y = 0.55;
+  body.castShadow = true;
+  characterGroup.add(body);
+
+  const headMat = new THREE.MeshStandardMaterial({ color: 0xf72585, roughness: 0.3 });
+  const head = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.45, 0.45), headMat);
+  head.position.y = 1.15;
+  head.castShadow = true;
+  characterGroup.add(head);
+
+  const visor = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.15, 0.1), new THREE.MeshStandardMaterial({ color: 0x4cc9f0, roughness: 0.1, metalness: 0.9 }));
+  visor.position.set(0, 1.18, 0.22);
+  characterGroup.add(visor);
+
+  const limbMat = new THREE.MeshStandardMaterial({ color: 0x3a0ca3, roughness: 0.5 });
+  const legL = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.35, 0.18), limbMat);
+  legL.position.set(-0.15, 0.18, 0);
+  legL.castShadow = true;
+  characterGroup.add(legL);
+
+  const legR = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.35, 0.18), limbMat);
+  legR.position.set(0.15, 0.18, 0);
+  legR.castShadow = true;
+  characterGroup.add(legR);
+
+  scene.add(characterGroup);
+}
+
+function getCurrentStageConfig() {
+  const idx = challengeState.stageIndex % CHALLENGE_STAGES.length;
+  const loopCount = Math.floor(challengeState.stageIndex / CHALLENGE_STAGES.length);
+  const base = CHALLENGE_STAGES[idx];
+  return {
+    ...base,
+    stageNumber: challengeState.stageIndex + 1,
+    target: base.target + (loopCount * 2),
+    bonus: base.bonus + (loopCount * 250)
+  };
+}
+
+function updateEnvironmentTheme() {
+  if (gameMode !== 'challenge') {
+    scene.background.setHex(0x1a1a2e);
+    scene.fog.color.setHex(0x1a1a2e);
+    document.getElementById("ambientBg").style.background = "radial-gradient(circle at 50% 25%, rgba(91, 124, 255, 0.15) 0%, rgba(18, 18, 34, 0.98) 80%)";
+    return;
+  }
+  const cfg = getCurrentStageConfig();
+  scene.background.set(cfg.bgColor);
+  scene.fog.color.set(cfg.fogColor);
+  document.getElementById("ambientBg").style.background = `radial-gradient(circle at 50% 25%, rgba(166, 108, 255, 0.18) 0%, ${cfg.bgColor} 80%)`;
+}
+
+function showStageBanner(title, sub) {
+  const banner = document.getElementById("stageBanner");
+  document.getElementById("bannerTitle").textContent = title;
+  document.getElementById("bannerSub").textContent = sub;
+  banner.classList.add("show");
+
+  if (bannerTimeout) clearTimeout(bannerTimeout);
+  bannerTimeout = setTimeout(() => {
+    banner.classList.remove("show");
+  }, 3000);
+}
+
+function updateChallengeHUD() {
+  if (gameMode !== 'challenge') return;
+  const cfg = getCurrentStageConfig();
+  document.getElementById("stageBadge").textContent = `STAGE ${cfg.stageNumber}`;
+  document.getElementById("objectiveText").textContent = `${cfg.name}: ${cfg.desc.replace(/\d+/, cfg.target)}`;
+  document.getElementById("objectiveProgressText").textContent = `${challengeState.progress} / ${cfg.target}`;
+  const pct = Math.min(100, (challengeState.progress / cfg.target) * 100);
+  document.getElementById("objectiveProgressBar").style.width = `${pct}%`;
+  updateScoreDisplay();
+}
+
+function updateScoreDisplay() {
+  if (gameMode === 'classic') {
+    document.getElementById("scoreVal").textContent = maxGridZ;
+    document.getElementById("bestVal").textContent = bestClassic;
   } else {
-    return {
-      type: 'road',
-      speed: speed,
-      obstacles: [pos1, pos2] 
+    const totalScore = (maxGridZ * 10) + challengeState.bonusScore;
+    document.getElementById("scoreVal").textContent = totalScore;
+    document.getElementById("bestVal").textContent = bestChallengeScore;
+  }
+}
+
+function advanceChallengeProgress(amount = 1) {
+  if (gameMode !== 'challenge' || !gameRunning) return;
+  const cfg = getCurrentStageConfig();
+  challengeState.progress += amount;
+
+  if (challengeState.progress >= cfg.target) {
+    challengeState.bonusScore += cfg.bonus;
+    challengeState.stagesCompleted++;
+    challengeState.stageIndex++;
+    challengeState.progress = 0;
+
+    updateEnvironmentTheme();
+    const nextCfg = getCurrentStageConfig();
+    showStageBanner(
+      `STAGE ${cfg.stageNumber} COMPLETE! +${cfg.bonus} PTS`,
+      `Next: ${nextCfg.name} — ${nextCfg.desc.replace(/\d+/, nextCfg.target)}`
+    );
+  }
+  updateChallengeHUD();
+}
+
+function getOrCreateTerrainRow(z) {
+  if (terrainPool.has(z)) return terrainPool.get(z);
+
+  if (z <= 2) {
+    const row = { type: 'grass', mesh: null, obstacles: [], collectibles: [], tiles: null };
+    createRowMesh(z, row);
+    terrainPool.set(z, row);
+    return row;
+  }
+
+  let type = 'grass';
+  const rand = Math.random();
+
+  if (gameMode === 'classic') {
+    // Progressive difficulty scaling for Classic: introduce more variety as z increases
+    let roadProb = Math.min(0.32, 0.22 + (z * 0.002));
+    let riverProb = roadProb + Math.min(0.28, 0.18 + (z * 0.002));
+    let forestProb = riverProb + 0.18;
+    let railProb = forestProb + 0.12;
+
+    if (rand < roadProb) type = 'road';
+    else if (rand < riverProb) type = 'river';
+    else if (rand < forestProb) type = 'forest';
+    else if (rand < railProb) type = 'rail';
+    else type = 'grass';
+  } else {
+    const w = getCurrentStageConfig().weights;
+    let acc = w.road;
+    if (rand < acc) type = 'road';
+    else if (rand < (acc += w.river)) type = 'river';
+    else if (rand < (acc += w.forest)) type = 'forest';
+    else if (rand < (acc += w.rail)) type = 'rail';
+    else if (rand < (acc += w.fragile)) type = 'fragile';
+  }
+
+  const row = { type, mesh: null, obstacles: [], collectibles: [], tiles: null };
+  createRowMesh(z, row);
+  terrainPool.set(z, row);
+  return row;
+}
+
+function createRowMesh(z, row) {
+  if (row.type === 'fragile') {
+    const baseStrip = new THREE.Mesh(geomCache.strip, matCache.fragileBase);
+    baseStrip.position.set(0, -0.32, z * TILE_SIZE);
+    scene.add(baseStrip);
+    row.mesh = baseStrip;
+
+    row.tiles = new Map();
+    // Guarantee 7 solid tiles so every row has a fully reachable path
+    const solidCols = [];
+    while (solidCols.length < 7) {
+      let rc = Math.floor(Math.random() * COLS);
+      if (!solidCols.includes(rc)) solidCols.push(rc);
+    }
+
+    solidCols.forEach(x => {
+      const worldX = (x - (COLS / 2)) * TILE_SIZE;
+      const tileMesh = new THREE.Mesh(geomCache.fragileTile, matCache.fragileTileSafe);
+      tileMesh.position.set(worldX, -0.14, z * TILE_SIZE);
+      tileMesh.receiveShadow = true;
+      scene.add(tileMesh);
+      row.tiles.set(x, {
+        mesh: tileMesh,
+        state: 'intact', // intact, cracking, collapsed
+        timer: 0,
+        maxTime: 1.35
+      });
+    });
+    return;
+  }
+
+  let mat = matCache.grass;
+  if (row.type === 'road') mat = matCache.road;
+  else if (row.type === 'river') mat = matCache.river;
+  else if (row.type === 'forest') mat = matCache.forest;
+  else if (row.type === 'rail') mat = matCache.rail;
+
+  const strip = new THREE.Mesh(geomCache.strip, mat);
+  strip.position.set(0, -0.15, z * TILE_SIZE);
+  strip.receiveShadow = true;
+  scene.add(strip);
+  row.mesh = strip;
+
+  // Checkpoint Gate every 20 rows
+  if (z > 0 && z % 20 === 0 && row.type === 'grass') {
+    const gateGroup = new THREE.Group();
+    const leftPillar = new THREE.Mesh(geomCache.archPillar, matCache.checkpoint);
+    leftPillar.position.set(-(COLS / 2) * TILE_SIZE + 0.4, 1.1, 0);
+    const rightPillar = new THREE.Mesh(geomCache.archPillar, matCache.checkpoint);
+    rightPillar.position.set((COLS / 2) * TILE_SIZE - 0.4, 1.1, 0);
+    const topBar = new THREE.Mesh(geomCache.archTop, matCache.checkpoint);
+    topBar.position.set(0, 2.2, 0);
+    gateGroup.add(leftPillar, rightPillar, topBar);
+    gateGroup.position.set(0, 0, z * TILE_SIZE);
+    scene.add(gateGroup);
+    row.checkpointGate = gateGroup;
+  }
+
+  const blockedCols = new Set();
+
+  if (row.type === 'forest') {
+    for (let x = 0; x < COLS; x++) {
+      if (Math.random() < 0.35) {
+        blockedCols.add(x);
+        let tWorldX = (x - (COLS / 2)) * TILE_SIZE;
+        const group = new THREE.Group();
+        const trunk = new THREE.Mesh(geomCache.trunk, matCache.trunk);
+        trunk.position.y = 0.4;
+        trunk.castShadow = true;
+        const leaves = new THREE.Mesh(geomCache.leaves, matCache.leaves);
+        leaves.position.y = 1.3;
+        leaves.castShadow = true;
+        group.add(trunk);
+        group.add(leaves);
+        group.position.set(tWorldX, 0, z * TILE_SIZE);
+        scene.add(group);
+        row.obstacles.push({ type: 'tree', gridX: x, mesh: group });
+      }
+    }
+  } else if (row.type === 'road') {
+    let speedMult = (gameMode === 'challenge') ? 1.3 : (1.0 + Math.min(0.5, z * 0.01));
+    const speed = (Math.random() * 2.5 + 2.0) * speedMult * (Math.random() < 0.5 ? 1 : -1);
+    const count = Math.floor(Math.random() * 2) + 1;
+    const mats = [matCache.carPink, matCache.carYellow, matCache.carBlue];
+    for (let i = 0; i < count; i++) {
+      let carX = (i * 6) - 3;
+      let carMat = mats[Math.floor(Math.random() * mats.length)];
+      let carMesh = new THREE.Mesh(geomCache.car, carMat);
+      carMesh.position.set(carX, 0.35, z * TILE_SIZE);
+      carMesh.castShadow = true;
+      scene.add(carMesh);
+      row.obstacles.push({ type: 'car', mesh: carMesh, x: carX, speed: speed, width: 2.0 });
+    }
+  } else if (row.type === 'river') {
+    let speedMult = (gameMode === 'challenge') ? 1.25 : (1.0 + Math.min(0.4, z * 0.008));
+    const speed = (Math.random() * 2.0 + 1.5) * speedMult * (Math.random() < 0.5 ? 1 : -1);
+    const count = 3;
+    for (let i = 0; i < count; i++) {
+      let logX = (i * 4.5) - 4;
+      let logMesh = new THREE.Mesh(geomCache.log, matCache.log);
+      logMesh.position.set(logX + 1.1, 0.1, z * TILE_SIZE);
+      logMesh.castShadow = true;
+      scene.add(logMesh);
+      row.obstacles.push({ type: 'log', mesh: logMesh, x: logX, speed: speed, width: 2.2 });
+    }
+  } else if (row.type === 'rail') {
+    const railGroup = new THREE.Group();
+    for (let x = -6; x <= 6; x += 1.5) {
+      const sleeper = new THREE.Mesh(geomCache.sleeper, matCache.sleeper);
+      sleeper.position.set(x * 0.5, 0.02, 0);
+      sleeper.receiveShadow = true;
+      railGroup.add(sleeper);
+    }
+    const railBar1 = new THREE.Mesh(geomCache.rail, matCache.railBar);
+    railBar1.position.set(0, 0.06, 0.35);
+    railGroup.add(railBar1);
+    const railBar2 = new THREE.Mesh(geomCache.rail, matCache.railBar);
+    railBar2.position.set(0, 0.06, -0.35);
+    railGroup.add(railBar2);
+
+    const signGroup = new THREE.Group();
+    const post = new THREE.Mesh(geomCache.signPost, matCache.railBar);
+    post.position.y = 0.4;
+    signGroup.add(post);
+    const board = new THREE.Mesh(geomCache.signBoard, matCache.warningSignOff);
+    board.position.set(0, 0.8, 0);
+    signGroup.add(board);
+    signGroup.position.set(-6.5, 0, 0);
+    railGroup.add(signGroup);
+    row.warningSignBoard = board;
+
+    railGroup.position.set(0, 0, z * TILE_SIZE);
+    scene.add(railGroup);
+    row.railDecor = railGroup;
+
+    const warningDuration = (gameMode === 'challenge') ? 1.2 : 2.2;
+    const trainSpeed = (gameMode === 'challenge') ? 15.0 : 13.0;
+
+    row.trainData = {
+      x: -32,
+      speed: trainSpeed,
+      warningDuration: warningDuration,
+      warningTimer: 0,
+      state: 'waiting',
+      mesh: null,
+      totalLength: 7.5
     };
   }
-}
 
-function startGame(){
-  player = { x: 10, y: 0 };
-  score = 0;
-  level = 1;
-  highestScoreReached = 0;
-  cameraY = 0;
-
-  document.getElementById("score").textContent = score;
-  document.getElementById("levelDisplay").textContent = level;
-
-  lanes = {};
-  for (let i = -5; i < 30; i++) {
-    lanes[i] = createLane(i);
-  }
-
-  clearInterval(gameLoop);
-  gameLoop = setInterval(update, 1000 / 30);
-}
-
-function handleDirection(dir) {
-  let targetX = player.x;
-  let targetY = player.y;
-
-  if (dir === "up") targetY++;
-  if (dir === "down" && player.y > 0) targetY--;
-  if (dir === "left" && player.x > 0) targetX--;
-  if (dir === "right" && player.x < COLS - 1) targetX++;
-
-  let nextLane = lanes[targetY];
-  if (nextLane && nextLane.type !== 'river') {
-    targetX = Math.round(targetX);
-  }
-
-  player.x = Math.max(0, Math.min(COLS - 1, targetX));
-  player.y = targetY;
-
-  if (!lanes[player.y + 15]) {
-    for(let i = player.y; i < player.y + 30; i++) {
-      if(!lanes[i]) lanes[i] = createLane(i);
+  // Collectible Rift Shards in Challenge Mode
+  if (gameMode === 'challenge' && z > 2 && row.type !== 'river' && Math.random() < 0.45) {
+    const validCols = [];
+    for (let x = 1; x < COLS - 1; x++) {
+      if (!blockedCols.has(x)) validCols.push(x);
     }
-  }
+    if (validCols.length > 0) {
+      const col = validCols[Math.floor(Math.random() * validCols.length)];
+      const worldX = (col - (COLS / 2)) * TILE_SIZE;
+      const shardGroup = new THREE.Group();
+      const gem = new THREE.Mesh(geomCache.shard, matCache.shard);
+      const ring = new THREE.Mesh(geomCache.shardRing, matCache.shardRing);
+      ring.rotation.x = Math.PI / 2;
+      shardGroup.add(gem, ring);
+      shardGroup.position.set(worldX, 0.55, z * TILE_SIZE);
+      scene.add(shardGroup);
 
-  if (player.y > highestScoreReached) {
-    highestScoreReached = player.y;
-    score = highestScoreReached;
-    document.getElementById("score").textContent = score;
-
-    let currentLevelCheck = Math.floor(player.y / 8) + 1;
-    if (currentLevelCheck > level) {
-      level = currentLevelCheck;
-      document.getElementById("levelDisplay").textContent = level;
+      row.collectibles.push({
+        gridX: col,
+        worldX: worldX,
+        mesh: shardGroup,
+        collected: false
+      });
     }
   }
 }
 
+function buildTrainGroup() {
+  const trainGroup = new THREE.Group();
+
+  const body = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.8, 0.9), matCache.locoBody);
+  body.position.set(0, 0.4, 0);
+  body.castShadow = true;
+  trainGroup.add(body);
+
+  const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.8, 0.9), matCache.locoCabin);
+  cabin.position.set(-0.8, 1.0, 0);
+  cabin.castShadow = true;
+  trainGroup.add(cabin);
+
+  const windowMesh = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.4, 0.95), matCache.window);
+  windowMesh.position.set(-0.8, 1.0, 0);
+  trainGroup.add(windowMesh);
+
+  const headlight = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.3, 0.5), matCache.headlight);
+  headlight.position.set(1.2, 0.4, 0);
+  trainGroup.add(headlight);
+
+  [-0.8, 0, 0.8].forEach(wx => {
+    const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.95, 12), matCache.wheel);
+    wheel.rotation.x = Math.PI / 2;
+    wheel.position.set(wx, 0.1, 0);
+    trainGroup.add(wheel);
+  });
+
+  const carriage1 = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.8, 0.9), matCache.carriage);
+  carriage1.position.set(-2.6, 0.4, 0);
+  carriage1.castShadow = true;
+  trainGroup.add(carriage1);
+
+  [-3.3, -1.9].forEach(wx => {
+    const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.95, 12), matCache.wheel);
+    wheel.rotation.x = Math.PI / 2;
+    wheel.position.set(wx, 0.1, 0);
+    trainGroup.add(wheel);
+  });
+
+  const carriage2 = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.8, 0.9), matCache.carriage);
+  carriage2.position.set(-4.9, 0.4, 0);
+  carriage2.castShadow = true;
+  trainGroup.add(carriage2);
+
+  [-5.6, -4.2].forEach(wx => {
+    const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.95, 12), matCache.wheel);
+    wheel.rotation.x = Math.PI / 2;
+    wheel.position.set(wx, 0.1, 0);
+    trainGroup.add(wheel);
+  });
+
+  return trainGroup;
+}
+
+function cleanupRow(z, row) {
+  if (row.mesh) scene.remove(row.mesh);
+  if (row.railDecor) scene.remove(row.railDecor);
+  if (row.checkpointGate) scene.remove(row.checkpointGate);
+  if (row.obstacles) {
+    row.obstacles.forEach(obs => {
+      if (obs.mesh) scene.remove(obs.mesh);
+    });
+  }
+  if (row.collectibles) {
+    row.collectibles.forEach(c => {
+      if (c.mesh) scene.remove(c.mesh);
+    });
+  }
+  if (row.tiles) {
+    row.tiles.forEach(t => {
+      if (t.mesh) scene.remove(t.mesh);
+    });
+  }
+  if (row.trainData && row.trainData.mesh) {
+    scene.remove(row.trainData.mesh);
+  }
+}
+
+function startGame(mode) {
+  gameMode = mode;
+  gameRunning = true;
+  document.getElementById("menuOverlay").classList.add("hidden");
+
+  terrainPool.forEach((row, z) => cleanupRow(z, row));
+  terrainPool.clear();
+
+  playerGridX = 6;
+  playerGridZ = 0;
+  maxGridZ = 0;
+
+  pState.x = (playerGridX - (COLS / 2)) * TILE_SIZE;
+  pState.z = playerGridZ * TILE_SIZE;
+  pState.targetX = pState.x;
+  pState.targetZ = pState.z;
+  pState.progress = 1;
+
+  const cabinet = document.getElementById("cabinet");
+  const challengeHud = document.getElementById("challengeHud");
+
+  if (mode === 'challenge') {
+    cabinet.classList.add("challenge-theme");
+    challengeHud.classList.add("active");
+    document.getElementById("scoreLabel").textContent = "Challenge Score";
+    document.getElementById("bestLabel").textContent = "Best Score";
+    document.getElementById("modeVal").textContent = "Rift Challenge";
+    document.getElementById("modeVal").style.color = "var(--rift-purple)";
+
+    challengeState = {
+      stageIndex: 0,
+      progress: 0,
+      bonusScore: 0,
+      stagesCompleted: 0,
+      visitedRows: new Set(),
+      lastCountedRiverRow: -99,
+      lastCountedRailRow: -99
+    };
+    updateEnvironmentTheme();
+    updateChallengeHUD();
+    const firstStage = getCurrentStageConfig();
+    showStageBanner(`STAGE 1: ${firstStage.name}`, firstStage.desc);
+  } else {
+    cabinet.classList.remove("challenge-theme");
+    challengeHud.classList.remove("active");
+    document.getElementById("stageBanner").classList.remove("show");
+    document.getElementById("scoreLabel").textContent = "Distance";
+    document.getElementById("bestLabel").textContent = "Best Distance";
+    document.getElementById("modeVal").textContent = "Classic";
+    document.getElementById("modeVal").style.color = "var(--rift-blue)";
+    updateEnvironmentTheme();
+    updateScoreDisplay();
+  }
+
+  for (let z = -3; z <= 25; z++) {
+    getOrCreateTerrainRow(z);
+  }
+
+  lastTime = performance.now();
+  if (animId) cancelAnimationFrame(animId);
+  animId = requestAnimationFrame(gameLoop);
+}
+
+function openMenu() {
+  gameRunning = false;
+  if (animId) cancelAnimationFrame(animId);
+
+  document.getElementById("modalTitle").textContent = "RIFT CROSSER";
+  document.getElementById("modalSubtitle").textContent = "Choose your expedition across the pastel voxel realms.";
+  document.getElementById("modeDescGrid").style.display = "grid";
+  document.getElementById("mainMenuButtons").style.display = "flex";
+  document.getElementById("gameOverButtons").style.display = "none";
+  document.getElementById("menuOverlay").classList.remove("hidden");
+}
+
+function restartGame() {
+  startGame(gameMode);
+}
+
+function gameOver(reason) {
+  if (!gameRunning) return;
+  gameRunning = false;
+
+  let statsHtml = "";
+  if (gameMode === 'classic') {
+    if (maxGridZ > bestClassic) bestClassic = maxGridZ;
+    statsHtml = `Final Distance: <b>${maxGridZ}</b><br>Best Distance: <b>${bestClassic}</b>`;
+  } else {
+    const totalScore = (maxGridZ * 10) + challengeState.bonusScore;
+    if (totalScore > bestChallengeScore) bestChallengeScore = totalScore;
+    statsHtml = `Final Score: <b>${totalScore}</b> (Bonus: +${challengeState.bonusScore})<br>Stages Cleared: <b>${challengeState.stagesCompleted}</b> | Distance: <b>${maxGridZ}</b><br>Best Challenge Score: <b>${bestChallengeScore}</b>`;
+  }
+
+  setTimeout(() => {
+    document.getElementById("modalTitle").textContent = "EXPEDITION TERMINATED";
+    document.getElementById("modalSubtitle").textContent = reason;
+    document.getElementById("modeDescGrid").style.display = "none";
+    document.getElementById("gameOverStats").innerHTML = statsHtml;
+    document.getElementById("mainMenuButtons").style.display = "none";
+    document.getElementById("gameOverButtons").style.display = "flex";
+    document.getElementById("menuOverlay").classList.remove("hidden");
+  }, 300);
+}
+
+// Input Handlers
 document.addEventListener("keydown", e => {
-  if(e.key==="ArrowUp") handleDirection("up");
-  else if(e.key==="ArrowDown") handleDirection("down");
-  else if(e.key==="ArrowLeft") handleDirection("left");
-  else if(e.key==="ArrowRight") handleDirection("right");
+  if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "w", "a", "s", "d", "W", "A", "S", "D", " "].includes(e.key)) {
+    e.preventDefault();
+  }
+  if (!gameRunning || pState.progress < 1) return;
+
+  let targetX = playerGridX;
+  let targetZ = playerGridZ;
+
+  if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") targetZ++;
+  else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") targetZ--;
+  else if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") targetX++;
+  else if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") targetX--;
+
+  if (targetX < 0 || targetX >= COLS) return;
+  if (targetZ < playerGridZ - 3) return;
+
+  let row = getOrCreateTerrainRow(targetZ);
+  if (row.type === 'forest') {
+    let hitTree = row.obstacles.some(obs => obs.type === 'tree' && obs.gridX === targetX);
+    if (hitTree) return;
+  }
+
+  pState.startX = pState.x;
+  pState.startZ = pState.z;
+  pState.targetX = (targetX - (COLS / 2)) * TILE_SIZE;
+  pState.targetZ = targetZ * TILE_SIZE;
+  pState.progress = 0;
+  pState.squash = 1.35;
+
+  playerGridX = targetX;
+  playerGridZ = targetZ;
+
+  if (playerGridZ > maxGridZ) {
+    maxGridZ = playerGridZ;
+    updateScoreDisplay();
+
+    // Checkpoint Gate Bonus every 20 rows
+    if (gameMode === 'challenge' && maxGridZ % 20 === 0) {
+      challengeState.bonusScore += 150;
+      updateScoreDisplay();
+      showStageBanner(`CHECKPOINT ${maxGridZ}m REACHED!`, `+150 Warp Bonus Points`);
+    }
+  }
+
+  // Challenge Mode Objectives & Fragile Tiles
+  if (gameMode === 'challenge') {
+    const cfg = getCurrentStageConfig();
+    if (targetZ !== challengeState.lastCountedRiverRow && cfg.type === 'river_rows' && row.type === 'river') {
+      challengeState.lastCountedRiverRow = targetZ;
+      advanceChallengeProgress(1);
+    } else if (targetZ !== challengeState.lastCountedRailRow && cfg.type === 'rail_rows' && row.type === 'rail') {
+      challengeState.lastCountedRailRow = targetZ;
+      advanceChallengeProgress(1);
+    }
+
+    if (row.type === 'fragile' && row.tiles && row.tiles.has(targetX)) {
+      const tile = row.tiles.get(targetX);
+      if (tile.state === 'intact') {
+        tile.state = 'cracking';
+        tile.mesh.material = matCache.fragileTileCracked;
+        if (cfg.type === 'fragile_steps') {
+          advanceChallengeProgress(1);
+        }
+      }
+    }
+  }
+
+  for (let z = playerGridZ; z <= playerGridZ + 15; z++) {
+    getOrCreateTerrainRow(z);
+  }
 });
 
-function update(){
-  let targetCameraY = player.y - 3; 
-  if (targetCameraY < 0) targetCameraY = 0;
-  cameraY += (targetCameraY - cameraY) * 0.2;
+function gameLoop(currentTime) {
+  if (!gameRunning) return;
 
-  let startRenderRow = Math.floor(cameraY) - 5;
-  let endRenderRow = startRenderRow + 25;
-
-  for (let y = startRenderRow; y <= endRenderRow; y++) {
-    if (lanes[y] && (lanes[y].type === 'road' || lanes[y].type === 'river')) {
-      let lane = lanes[y];
-      for (let i = 0; i < lane.obstacles.length; i++) {
-        lane.obstacles[i] += lane.speed;
-
-        if (lane.obstacles[i] >= COLS) lane.obstacles[i] -= COLS;
-        if (lane.obstacles[i] < 0) lane.obstacles[i] += COLS;
-      }
-    }
+  if (currentTime === undefined) {
+    currentTime = performance.now();
   }
 
-  let currentLane = lanes[player.y];
-  if (currentLane) {
-    let pLeft = player.x + 0.1;
-    let pRight = player.x + 0.9;
+  let dt = (currentTime - lastTime) / 1000;
+  if (isNaN(dt) || dt <= 0 || dt > 0.1) {
+    dt = 0.016;
+  }
+  lastTime = currentTime;
 
-    if (currentLane.type === 'road') {
-      for (let i = 0; i < currentLane.obstacles.length; i++) {
-        let carX = currentLane.obstacles[i];
-        let carLeft = carX + 0.1;
-        let carRight = carX + 0.9;
+  update(dt);
+  renderer.render(scene, camera);
 
-        let hit = false;
-        if (carLeft < carRight) {
-            hit = (pLeft < carRight && pRight > carLeft);
-        } else { 
-            hit = (pLeft < carRight || pRight > carLeft);
+  animId = requestAnimationFrame(gameLoop);
+}
+
+function update(dt) {
+  // 1. Smooth Hop Interpolation
+  if (pState.progress < 1) {
+    pState.progress += dt * 8.0;
+    if (pState.progress >= 1) pState.progress = 1;
+    pState.x = THREE.MathUtils.lerp(pState.startX, pState.targetX, pState.progress);
+    pState.z = THREE.MathUtils.lerp(pState.startZ, pState.targetZ, pState.progress);
+    pState.height = Math.sin(pState.progress * Math.PI) * 0.9;
+    pState.squash += (1 - pState.squash) * (dt * 15);
+  } else {
+    pState.height = 0;
+    pState.x = pState.targetX;
+    pState.z = pState.targetZ;
+  }
+
+  if (isNaN(pState.x) || !isFinite(pState.x)) pState.x = 0;
+  if (isNaN(pState.z) || !isFinite(pState.z)) pState.z = 0;
+
+  characterGroup.position.set(pState.x, pState.height, pState.z);
+  characterGroup.scale.set(1, Math.max(0.2, pState.squash), 1);
+
+  // 2. Camera tracking
+  let targetCamX = pState.x * 0.3;
+  let targetCamZ = pState.z - 11;
+  camera.position.x += (targetCamX - camera.position.x) * Math.min(1, dt * 6);
+  camera.position.z += (targetCamZ - camera.position.z) * Math.min(1, dt * 6);
+  camera.position.y = 13;
+  camera.lookAt(targetCamX, 0, pState.z + 2);
+
+  // 3. Update Dynamic Obstacles, Collectibles, Fragile Tiles & Robust Collisions
+  let activeZMin = playerGridZ - 4;
+  let activeZMax = playerGridZ + 18;
+
+  terrainPool.forEach((row, z) => {
+    if (z < activeZMin || z > activeZMax) return;
+
+    // Collectibles (Rift Shards)
+    if (row.collectibles && row.collectibles.length > 0) {
+      row.collectibles.forEach(c => {
+        if (c.collected) return;
+        c.mesh.rotation.y += dt * 2.5;
+        c.mesh.position.y = 0.55 + Math.sin(performance.now() * 0.005 + z) * 0.12;
+
+        if (z === playerGridZ && Math.abs(pState.x - c.worldX) < 0.7) {
+          c.collected = true;
+          scene.remove(c.mesh);
+          challengeState.bonusScore += 50;
+          updateScoreDisplay();
+          if (gameMode === 'challenge' && getCurrentStageConfig().type === 'shards') {
+            advanceChallengeProgress(1);
+          }
         }
+      });
+    }
 
-        if (hit) {
-          gameOver("💥 Collision! You were vaporized on the cyber-highway.");
-          return;
+    // Fragile Rift Tiles
+    if (row.type === 'fragile' && row.tiles) {
+      row.tiles.forEach((tile, colX) => {
+        if (tile.state === 'cracking') {
+          tile.timer += dt;
+          tile.mesh.position.y = -0.14 - (tile.timer / tile.maxTime) * 0.08;
+          if (tile.timer >= tile.maxTime) {
+            tile.state = 'collapsed';
+            scene.remove(tile.mesh);
+          }
+        }
+      });
+
+      if (z === playerGridZ && pState.progress >= 1) {
+        const tile = row.tiles.get(playerGridX);
+        if (!tile || tile.state === 'collapsed') {
+          gameOver("Fell through a collapsed Rift Void!");
         }
       }
-    } 
-    else if (currentLane.type === 'river') {
+    }
+
+    if (row.type === 'road') {
+      row.obstacles.forEach(car => {
+        car.x += car.speed * dt;
+        if (car.x > 8) car.x = -8;
+        if (car.x < -8) car.x = 8;
+        car.mesh.position.x = car.x;
+
+        // Robust Car Collision: check full width bounding box (car width = 2.0, player width ≈ 0.5)
+        if (z === playerGridZ) {
+          let carLeft = car.x - 1.0;
+          let carRight = car.x + 1.0;
+          if (pState.x + 0.25 >= carLeft && pState.x - 0.25 <= carRight) {
+            gameOver("Struck by oncoming traffic!");
+          }
+        }
+      });
+    } else if (row.type === 'river') {
       let onLog = false;
-      let logWidth = 2.5; 
+      row.obstacles.forEach(log => {
+        log.x += log.speed * dt;
+        if (log.x > 8) log.x = -8;
+        if (log.x < -8) log.x = 8;
+        log.mesh.position.x = log.x + 1.1;
 
-      for (let i = 0; i < currentLane.obstacles.length; i++) {
-        let logX = currentLane.obstacles[i];
-        let logLeft = logX;
-        let logRight = logX + logWidth;
+        if (z === playerGridZ && pState.progress >= 1) {
+          // Log platform carry with safe boundary padding so player doesn't slip off edges prematurely
+          if (pState.x >= log.x - 0.15 && pState.x <= log.x + log.width + 0.15) {
+            onLog = true;
+            pState.x += log.speed * dt;
+            pState.targetX = pState.x;
+            
+            // Keep player clamped within valid grid bounds
+            let computedGridX = Math.round((pState.x / TILE_SIZE) + (COLS / 2));
+            if (computedGridX < 0 || computedGridX >= COLS) {
+              gameOver("Carried off the river bounds!");
+            } else {
+              playerGridX = computedGridX;
+            }
+          }
+        }
+      });
 
-        let standingOnThisLog = false;
-        if (logLeft < COLS) {
-          if (logRight <= COLS) {
-            standingOnThisLog = (player.x >= logLeft - 0.1 && player.x + 1 <= logRight + 0.1);
-          } else { 
-            let wrappedRight = logRight - COLS;
-            standingOnThisLog = (player.x >= logLeft - 0.1) || (player.x + 1 <= wrappedRight + 0.1);
+      if (z === playerGridZ && !onLog && pState.progress >= 1) {
+        gameOver("Drowned in the river!");
+      }
+    } else if (row.type === 'rail' && row.trainData) {
+      let t = row.trainData;
+      if (t.state === 'waiting') {
+        t.warningTimer += dt;
+        if (row.warningSignBoard) {
+          row.warningSignBoard.material = (Math.floor(t.warningTimer * 4) % 2 === 0) ? matCache.warningSignOn : matCache.warningSignOff;
+        }
+
+        if (t.warningTimer > t.warningDuration) {
+          t.state = 'rushing';
+          t.x = -32;
+          if (row.warningSignBoard) row.warningSignBoard.material = matCache.warningSignOff;
+
+          let trainGroup = buildTrainGroup();
+          trainGroup.position.set(t.x, 0, z * TILE_SIZE);
+          scene.add(trainGroup);
+          t.mesh = trainGroup;
+        }
+      } else if (t.state === 'rushing') {
+        t.x += t.speed * dt;
+        if (t.mesh) t.mesh.position.x = t.x;
+
+        // Full Train Collision (Locomotive + Carriages span from t.x - 6.2 to t.x + 1.2)
+        if (z === playerGridZ) {
+          let trainFront = t.x + 1.2;
+          let trainBack = t.x - 6.2;
+          if (pState.x >= trainBack && pState.x <= trainFront) {
+            gameOver("Struck by an incoming train!");
           }
         }
 
-        if (standingOnThisLog) {
-          onLog = true;
-          player.x += currentLane.speed; 
-          break;
+        if (t.x > 28) {
+          if (t.mesh) {
+            scene.remove(t.mesh);
+            t.mesh = null;
+          }
+          t.state = 'waiting';
+          t.warningTimer = 0;
         }
       }
-      
-      if (!onLog || player.x < 0 || player.x >= COLS) {
-        gameOver("🌊 Drowned! Fell off the platform into the Rift Stream.");
-        return;
-      }
     }
-  }
+  });
 
-  draw();
+  // Cleanup old distant terrain rows
+  terrainPool.forEach((row, z) => {
+    if (z < playerGridZ - 8) {
+      cleanupRow(z, row);
+      terrainPool.delete(z);
+    }
+  });
 }
 
-function draw(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle="#050814";
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-
-  ctx.save();
-  ctx.translate(0, canvas.height - (SIZE * 2) + (cameraY * SIZE));
-
-  let startRenderRow = Math.floor(cameraY) - 5;
-  let endRenderRow = startRenderRow + 20;
-
-  for(let y = startRenderRow; y <= endRenderRow; y++) {
-    if (!lanes[y]) continue;
-
-    let canvasY = -y * SIZE;
-
-    if (lanes[y].type === 'safe') {
-      ctx.fillStyle = lanes[y].color;
-      ctx.fillRect(0, canvasY, canvas.width, SIZE);
-    } else if (lanes[y].type === 'river') {
-      ctx.fillStyle = "rgba(155, 92, 255, 0.08)"; 
-      ctx.fillRect(0, canvasY, canvas.width, SIZE);
-    }
-
-    ctx.strokeStyle="rgba(255,255,255,0.02)";
-    ctx.beginPath();
-    ctx.moveTo(0, canvasY);
-    ctx.lineTo(canvas.width, canvasY);
-    ctx.stroke();
-
-    if (lanes[y].type === 'road') {
-      ctx.fillStyle = currentMode === 'expanded' ? "#a877fc" : "#4c6fff"; 
-      lanes[y].obstacles.forEach(obstacleX => {
-        ctx.fillRect(obstacleX * SIZE + 4, canvasY + 4, SIZE - 8, SIZE - 8);
-        
-        if (obstacleX > COLS - 1) {
-           ctx.fillRect((obstacleX - COLS) * SIZE + 4, canvasY + 4, SIZE - 8, SIZE - 8);
-        }
-      });
-    } 
-    else if (lanes[y].type === 'river') {
-      lanes[y].obstacles.forEach(obstacleX => {
-        let logWidth = SIZE * 2.5;
-        let logHeight = SIZE - 6;
-        let logYPos = canvasY + 3;
-
-        const renderPlatform = (xCoord) => {
-            // Main solid base block to avoid stacking transparency artifact mud
-            ctx.fillStyle = "#161033";
-            ctx.beginPath();
-            ctx.roundRect(xCoord, logYPos, logWidth, logHeight, 6);
-            ctx.fill();
-
-            // Neon outer highlight stroke
-            ctx.strokeStyle = "#9b5cff";
-            ctx.lineWidth = 2;
-            ctx.stroke();
-
-            // Internal cyan accent dash line
-            ctx.fillStyle = "#00ffff";
-            ctx.fillRect(xCoord + (logWidth / 2) - 8, logYPos + (logHeight / 2) - 1.5, 16, 3);
-        };
-
-        renderPlatform(obstacleX * SIZE);
-        
-        if ((obstacleX * SIZE) + logWidth > canvas.width) {
-            renderPlatform((obstacleX * SIZE) - canvas.width);
-        }
-      });
-    }
-  }
-
-  ctx.fillStyle = currentMode === 'expanded' ? "#9b5cff" : "#00ffff"; 
-  ctx.strokeStyle = "#ffffff";
-  ctx.lineWidth = 2;
-  
-  let playerCanvasY = -player.y * SIZE;
-  ctx.fillRect(player.x * SIZE + 4, playerCanvasY + 4, SIZE - 8, SIZE - 8);
-  ctx.strokeRect(player.x * SIZE + 4, playerCanvasY + 4, SIZE - 8, SIZE - 8);
-
-  ctx.restore();
-}
-
-function gameOver(message){
-  clearInterval(gameLoop);
-  alert(message + "\nFinal Score: " + score);
-  showMenu();
-}
-
-document.addEventListener("keydown", function(e) {
-  if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(e.key)) {
-    e.preventDefault();
-  }
+window.addEventListener('resize', () => {
+  if (!container || !renderer || !camera) return;
+  camera.aspect = container.clientWidth / container.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(container.clientWidth, container.clientHeight);
 });
 
-showMenu();
+initThree();
+openMenu();
 </script>
 
 </body>
