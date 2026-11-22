@@ -13,6 +13,17 @@
 [data-f="frame_royal"]{outline:3px solid #fbbf24;outline-offset:3px;box-shadow:0 0 0 8px rgba(251,191,36,.22),0 0 22px 4px rgba(251,191,36,.45)}
 [data-f="frame_pumpkin"]{outline:3px solid #f97316;outline-offset:3px;box-shadow:0 0 18px 4px rgba(249,115,22,.55)}
 [data-f="frame_frost"]{outline:3px solid #bae6fd;outline-offset:3px;box-shadow:0 0 16px 3px rgba(186,230,253,.6)}
+[data-f="frame_neon"]{outline:3px solid #4ade80;outline-offset:3px;box-shadow:0 0 18px 3px #4ade8099}
+[data-f="frame_ember"]{outline:3px solid #f97316;outline-offset:3px;box-shadow:0 0 18px 3px #f9731699}
+[data-f="frame_holly"]{outline:3px solid #16a34a;outline-offset:3px;box-shadow:0 0 18px 3px #16a34a99}
+[data-f="frame_fireworks"]{outline:3px solid #fbbf24;outline-offset:3px;box-shadow:0 0 18px 3px #fbbf2499}
+[data-f="frame_heart"]{outline:3px solid #f43f5e;outline-offset:3px;box-shadow:0 0 18px 3px #f43f5e99}
+[data-f="frame_bloom"]{outline:3px solid #f9a8d4;outline-offset:3px;box-shadow:0 0 18px 3px #f9a8d499}
+[data-f="frame_sun"]{outline:3px solid #facc15;outline-offset:3px;animation:cosSun 3s linear infinite}
+@keyframes cosSun{0%,100%{outline-color:#facc15;box-shadow:0 0 16px 3px #facc1566}33%{outline-color:#fb923c;box-shadow:0 0 16px 3px #fb923c66}66%{outline-color:#f472b6;box-shadow:0 0 16px 3px #f472b666}}
+[data-pt="theme_sakura"]{background:linear-gradient(160deg,#4a1d3a,#be5a8a 60%,#f9a8d4)!important}
+[data-pt="theme_slate"]{background:linear-gradient(160deg,#0f172a,#334155 60%,#64748b)!important}
+[data-pt="theme_aurora"]{background:linear-gradient(160deg,#064e3b,#4c1d95 60%,#0e7490)!important}
 [data-f="frame_prism"]{outline:3px solid #f0abfc;outline-offset:3px;animation:cosHue 5s linear infinite}
 @keyframes cosPulse{0%,100%{box-shadow:0 0 6px 1px rgba(34,211,238,.35)}50%{box-shadow:0 0 22px 6px rgba(34,211,238,.75)}}
 @keyframes cosHue{0%,100%{outline-color:#f0abfc}33%{outline-color:#67e8f9}66%{outline-color:#fde047}}
@@ -130,7 +141,31 @@ window.RIFT_CAT = (() => {
     ["frame_pumpkin", "frame", "Jack-o'-Lantern", "Limited. Only sold during the Halloween event.", 800, "e", null, 1, "halloween"],
     ["title_trickster", "title", "Trickster", "Limited. Only sold during the Halloween event.", 400, "r", null, 1, "halloween"],
     ["frame_frost", "frame", "Frostbite", "Limited. Only sold during the Winter event.", 800, "e", null, 1, "winter"],
-    ["title_frostborn", "title", "Frostborn", "Limited. Only sold during the Winter event.", 400, "r", null, 1, "winter"]
+    ["title_frostborn", "title", "Frostborn", "Limited. Only sold during the Winter event.", 400, "r", null, 1, "winter"],
+    ["frame_neon", "frame", "Neon", "A bright neon-green ring.", 400, "r", null, 0, ""],
+    ["frame_ember", "frame", "Ember", "A fiery orange ring with a hot glow.", 900, "e", null, 0, ""],
+    ["theme_sakura", "theme", "Sakura", "Soft pink blossom backdrop.", 150, "c", null, 0, ""],
+    ["theme_slate", "theme", "Slate", "Cool grey-blue backdrop.", 400, "r", null, 0, ""],
+    ["theme_aurora", "theme", "Aurora", "Teal, violet and green lights.", 900, "e", null, 0, ""],
+    ["col_peach", "color", "Peach Avatar", "A warm peach avatar colour.", 150, "c", "#fdba74", 0, ""],
+    ["col_indigo", "color", "Indigo Avatar", "A deep indigo avatar colour.", 400, "r", "#6366f1", 0, ""],
+    ["col_rose", "color", "Rose Avatar", "A bold rose avatar colour.", 900, "e", "#e11d48", 0, ""],
+    ["nc_mint", "ncolor", "Mint Name", "Fresh mint username.", 150, "c", "#6ee7b7", 0, ""],
+    ["nc_violet", "ncolor", "Violet Name", "Soft violet username.", 400, "r", "#c4b5fd", 0, ""],
+    ["nc_orange", "ncolor", "Orange Name", "Bright orange username.", 900, "e", "#fb923c", 0, ""],
+    ["title_rookie", "title", "Rookie", "Everyone starts somewhere.", 150, "c", null, 0, ""],
+    ["title_speedster", "title", "Speedster", "For fast hands.", 400, "r", null, 0, ""],
+    ["title_mastermind", "title", "Mastermind", "For the sharpest players.", 900, "e", null, 0, ""],
+    ["frame_holly", "frame", "Holly", "Limited. Only sold during the Christmas event.", 800, "e", null, 0, "christmas"],
+    ["title_santa", "title", "Santa's Helper", "Limited. Only sold during the Christmas event.", 400, "r", null, 0, "christmas"],
+    ["frame_fireworks", "frame", "Fireworks", "Limited. Only sold during the New Year event.", 800, "e", null, 0, "newyear"],
+    ["title_reveler", "title", "Reveler", "Limited. Only sold during the New Year event.", 400, "r", null, 0, "newyear"],
+    ["frame_heart", "frame", "Heartbeat", "Limited. Only sold during the Valentine's event.", 800, "e", null, 0, "valentine"],
+    ["title_cupid", "title", "Cupid", "Limited. Only sold during the Valentine's event.", 400, "r", null, 0, "valentine"],
+    ["frame_bloom", "frame", "Bloom", "Limited. Only sold during the Spring event.", 800, "e", null, 0, "spring"],
+    ["title_gardener", "title", "Gardener", "Limited. Only sold during the Spring event.", 400, "r", null, 0, "spring"],
+    ["frame_sun", "frame", "Sunburst", "Limited. Only sold during the Summer event.", 800, "e", null, 0, "summer"],
+    ["title_beachcomber", "title", "Beachcomber", "Limited. Only sold during the Summer event.", 400, "r", null, 0, "summer"]
   ].map(([id, slot, n, d, p, r, v, sp, season]) => ({ id, slot, n, d, p, r, v: v || "", sp: !!sp, season: season || "" }));
   return {
     items,
@@ -151,8 +186,9 @@ const app = initializeApp({
 const auth = getAuth(app), db = getFirestore(app), C = window.RIFT_CAT, $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const xpAt = n => 30 * (n - 1) * (n - 1);
-const TABS = [["frame", "Avatar frames"], ["theme", "Profile themes"], ["color", "Colours"], ["title", "Player titles"], ["special", "Special items"], ["history", "XP history"]];
-const catOf = it => it.sp ? "special" : it.slot === "ncolor" ? "color" : it.slot;
+const TABS = [["frame", "Avatar frames"], ["theme", "Profile themes"], ["color", "Colours"], ["title", "Player titles"], ["special", "Special items"], ["seasonal", "Seasonal"], ["history", "XP history"]];
+const catOf = it => it.season ? "seasonal" : it.sp ? "special" : it.slot === "ncolor" ? "color" : it.slot;
+const SN = { halloween: "Halloween", winter: "Winter", christmas: "Christmas", newyear: "New Year", valentine: "Valentine's", spring: "Spring", summer: "Summer" };
 const SLOT_NAME = { frame: "frame", theme: "theme", color: "avatar colour", ncolor: "username colour", title: "title" };
 
 let uid = null, X = null, OWN = new Set(), EQ = { frame: "", theme: "", color: "", ncolor: "", title: "" }, PV = {};
@@ -205,7 +241,7 @@ function thumb(it) {
 }
 
 function action(it) {
-  if (it.season && it.season !== CFG.season && !OWN.has(it.id)) return `<button class="btn" disabled>Only during the ${it.season} event</button>`;
+  if (it.season && it.season !== CFG.season && !OWN.has(it.id)) return `<button class="btn" disabled>Only during the ${SN[it.season]} event</button>`;
   if (EQ[it.slot] === it.id) return `<button class="btn alt" data-a="un" data-id="${it.id}">Unequip</button>`;
   if (OWN.has(it.id)) return `<button class="btn" data-a="eq" data-id="${it.id}">Equip</button>`;
   if (avail() < it.p) return `<button class="btn" disabled>Need ${it.p - avail()} more XP</button>`;
@@ -237,7 +273,7 @@ function render() {
     $("grid").innerHTML = (LOG || []).map(l => `<div class="it" style="grid-column:1/-1;flex-direction:row;justify-content:space-between;align-items:center;--rc:${l.type === "spend" ? "#ef4444" : "#34d399"}"><span>${esc(l.reason)}<br><small style="color:var(--muted)">${l.at ? l.at.toDate().toLocaleString() : ""}</small></span><b>${l.type === "spend" ? "-" : l.amount < 0 ? "" : "+"}${l.amount} XP</b></div>`).join("") || `<p class="note" style="grid-column:1/-1">${LOG ? "No transactions yet." : "Loading..."}</p>`;
     renderPv(); return;
   }
-  $("grid").innerHTML = C.items.filter(i => catOf(i) === tab).map(it => {
+  $("grid").innerHTML = C.items.filter(i => catOf(i) === tab).sort((a, b) => "crel".indexOf(a.r) - "crel".indexOf(b.r) || a.p - b.p).map(it => {
     const eq = EQ[it.slot] === it.id, own = OWN.has(it.id);
     return `<div class="it" data-r="${it.r}">
       <div class="th">${thumb(it)}</div>
@@ -247,6 +283,7 @@ function render() {
       <div class="row">${action(it)}<button class="btn alt" data-a="pv" data-id="${it.id}">Preview</button></div>
     </div>`;
   }).join("");
+  if (tab === "seasonal") $("grid").insertAdjacentHTML("afterbegin", `<p class="note" style="grid-column:1/-1">${CFG.season ? "Current event: " + SN[CFG.season] : "No event is running right now"}. Seasonal items can only be bought during their event.</p>`);
   renderPv();
 }
 
