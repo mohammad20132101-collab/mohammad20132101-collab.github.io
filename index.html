@@ -412,6 +412,7 @@ body.low-power .glass-layer{background:var(--bg-solid)}
       <button id="profBtn" onclick="window.openProfile()">👤 Profile</button>
       <button onclick="location.href='shop.html'">🛒 Shop</button>
       <button onclick="window.openQuests()">📜 Quests</button>
+      <button onclick="window.openFriends()">👥 Friends</button>
       <button onclick="window.openThemePicker()">🎨 Theme</button>
       <button id="achBtn">🏆 Achievements</button>
       <button id="lowBtn" onclick="window.toggleLowPower()">🔋 Low Power: Off</button>
@@ -1736,7 +1737,7 @@ window.RIFT_CAT = { get: id => ({
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, getDocs, query, orderBy, limit, setDoc, updateDoc, writeBatch, increment, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, getDocs, query, orderBy, where, limit, setDoc, updateDoc, writeBatch, increment, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyD2XQWUKM4SQO8azXkm2XwG_e9ZQWpYJi0",
@@ -1752,7 +1753,7 @@ const auth = getAuth(app);
 
 /* ===== CLOUD SYNC (cross-device only) ===== */
 const db = getFirestore(app);
-const SYNC_KEYS = ["riftFavs","riftHistory","riftGamesPlayed","riftPlayCounts","riftStreak","riftLastPlayed","riftAch2","riftTheme","riftExternalPlays","riftFootClicks","riftTypingBest","riftTypingBest15","riftTypingBest60","riftQ"];
+const SYNC_KEYS = ["riftFavs","riftHistory","riftGamesPlayed","riftPlayCounts","riftStreak","riftLastPlayed","riftAch2","riftTheme","riftExternalPlays","riftFootClicks","riftTypingBest","riftTypingBest15","riftTypingBest60","riftQ", "riftFriends", "riftEv"];
 const isSynced = k => SYNC_KEYS.includes(k) || k.startsWith("riftProfile:");
 const rawSet = Storage.prototype.setItem;
 let syncReady = false, syncApplying = false, syncTimer;
@@ -1943,10 +1944,9 @@ const gamePool = [
   { id: "typetest", name: "Typing Test", page: "typetest.html" },
 ];
 
-function dateStr(offsetDays = 0) {
-  const d = new Date();
-  d.setDate(d.getDate() + offsetDays);
-  return d.toISOString().slice(0, 10);
+function dateStr(o = 0) {
+  const d = new Date(); d.setDate(d.getDate() + o);
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
 }
 
 function renderStreakBadge(streak) {
@@ -2363,7 +2363,7 @@ function loadUser(email, guestModeStatus) {
 }
 
 onAuthStateChanged(auth, (user) => {
-  if (user) { loadUser(user.email, false); cloudPull(user); setDoc(doc(db, "profiles", user.uid), { name: profInfo().name.slice(0, 30), email: user.email, joined: String(user.metadata.creationTime || "") }, { merge: true }).catch(() => {});
+  if (user) { loadUser(user.email, false); cloudPull(user).then(() => handleInvite(user)); setDoc(doc(db, "profiles", user.uid), { name: profInfo().name.slice(0, 30), email: user.email, joined: String(user.metadata.creationTime || "") }, { merge: true }).catch(() => {});
     getDoc(doc(db, "admins", user.uid)).then(a => { if (a.exists()) document.getElementById("adminBtn").style.display = ""; }).catch(() => {}); }
   else { syncReady = false; }
 });
@@ -2436,6 +2436,7 @@ function trackQuest(page) {
   if (!q.wp.includes(page)) q.wp.push(page);
   if (["puzzle", "word"].includes(categoryMap[(gamePool.find(g => g.page === page) || {}).id])) q.dg = 1;
   try { const pq = JSON.parse(localStorage.getItem("riftPQ")) || {}, e = gamePool.find(g => g.page === page), k = day + "|" + (e ? e.id : page.replace(".html", "")); pq[k] = (pq[k] || 0) + 1; localStorage.setItem("riftPQ", JSON.stringify(pq)); } catch (e2) {}
+  trackEv(page);
   localStorage.setItem("riftQ", JSON.stringify(q));
 }
 function hideOff() {
@@ -2684,7 +2685,124 @@ window.surpriseMe = function () {
   const g = pool[Math.floor(Math.random() * pool.length)];
   window.openGame(g.page, g.name);
 };
+/* ===== FRIENDS (2-way) ===== */
+const FQ = new URLSearchParams(location.search).get("f");
+if (FQ) sessionStorage.setItem("riftFQ", FQ);
+document.body.insertAdjacentHTML("beforeend", `<div class="glass-modal-overlay" id="frOverlay"><div class="glass-modal" style="max-width:460px"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content" id="frBody" style="text-align:left;max-height:85vh;overflow-y:auto"></div></div></div></div>`);
+const frOv = document.getElementById("frOverlay"), frBody = document.getElementById("frBody");
+async function frRender() {
+  const u = auth.currentUser, link = location.origin + location.pathname + "?f=" + u.uid;
+  let fr = [], rq = [];
+  try {
+    fr = (await getDocs(collection(db, "friends", u.uid, "list"))).docs.map(d => ({ uid: d.id, ...d.data() }));
+    rq = (await getDocs(query(collection(db, "friendReqs"), where("to", "==", u.uid)))).docs.map(d => d.data());
+  } catch (e) { console.error(e); }
+  frBody.innerHTML = `<div class="pf-top"><h3>👥 Friends</h3><button class="pf-x" data-close aria-label="Close">✕</button></div>
+  <div class="input-group"><input id="frLink" readonly value="${esc(link)}"></div>
+  <button data-copy>Copy my friend link</button>
+  ${rq.length ? `<h4 class="pf-lbl" style="margin:18px 0 8px">Requests</h4><div class="pf-list">${rq.map(r => `<div class="pf-row"><span>${esc(r.fromName)}</span><button class="pf-play" data-acc="${esc(r.from)}" data-n="${esc(r.fromName)}">Accept</button><button class="pf-rm" data-dec="${esc(r.from)}" title="Decline">✕</button></div>`).join("")}</div>` : ""}
+  <h4 class="pf-lbl" style="margin:18px 0 8px">Your friends</h4>
+  <div class="pf-list">${fr.length ? fr.map(f => `<div class="pf-row"><span>${esc(f.name)}</span><button class="pf-rm" data-rm="${esc(f.uid)}" title="Remove">✕</button></div>`).join("") : `<p class="pf-empty">No friends yet. Share your link!</p>`}</div>`;
+}
+window.openFriends = () => {
+  if (isGuest || !auth.currentUser) { showGlassModal("Friends need an account.", { title: "Account Required", icon: "👥" }); return; }
+  frOv.classList.add("is-open"); frRender();
+};
+frOv.addEventListener("click", async e => {
+  if (e.target === frOv || e.target.closest("[data-close]")) { frOv.classList.remove("is-open"); return; }
+  if (e.target.closest("[data-copy]")) {
+    const i = document.getElementById("frLink");
+    try { await navigator.clipboard.writeText(i.value); } catch (er) { i.select(); document.execCommand("copy"); }
+    showGlassModal("Friend link copied!", { title: "Copied", icon: "📋" }); return;
+  }
+  const a = e.target.closest("[data-acc]"), d = e.target.closest("[data-dec]"), rm = e.target.closest("[data-rm]"), b = a || d || rm;
+  if (!b) return;
+  b.disabled = true;
+  const u = auth.currentUser, w = writeBatch(db);
+  try {
+    if (a) {
+      const f = a.dataset.acc;
+      w.set(doc(db, "friends", u.uid, "list", f), { name: String(a.dataset.n).slice(0, 30), at: serverTimestamp() });
+      w.set(doc(db, "friends", f, "list", u.uid), { name: profInfo().name.slice(0, 30), at: serverTimestamp() });
+      w.delete(doc(db, "friendReqs", f + "_" + u.uid));
+    } else if (d) w.delete(doc(db, "friendReqs", d.dataset.dec + "_" + u.uid));
+    else { w.delete(doc(db, "friends", u.uid, "list", rm.dataset.rm)); w.delete(doc(db, "friends", rm.dataset.rm, "list", u.uid)); }
+    await w.commit();
+  } catch (er) { console.error(er); showGlassModal("Something went wrong. Try again.", { title: "Error", icon: "⚠️" }); }
+  frRender();
+});
+async function handleInvite(user) {
+  const id = sessionStorage.getItem("riftFQ");
+  if (!id) return;
+  try {
+    if (id === user.uid) return;
+    if ((await getDoc(doc(db, "friends", user.uid, "list", id))).exists()) { showGlassModal("You're already friends!", { title: "Friends", icon: "👥" }); return; }
+    await setDoc(doc(db, "friendReqs", user.uid + "_" + id), { from: user.uid, to: id, fromName: profInfo().name.slice(0, 30), at: serverTimestamp() });
+    showGlassModal("Friend request sent! They'll see it in their Friends panel.", { title: "Request Sent", icon: "📨" });
+  } catch (e) {
+    console.error("invite", e);
+    showGlassModal("Couldn't send. You may have already sent a request.", { title: "Friend Request", icon: "⚠️" });
+  } finally { sessionStorage.removeItem("riftFQ"); history.replaceState(null, "", location.pathname); }
+}
 
+/* ===== LIMITED EVENTS ===== */
+// s/e = [month(0-11), day]; q = [id, text, target, XP, countDifferentGames?]
+const EVS = [
+  { id: "newyear", n: "🎆 New Year Bash", s: [11, 31], e: [0, 2], q: [["ny1", "Play 3 games", 3, 60], ["ny2", "Try 2 different games", 2, 60, 1]] },
+  { id: "valentine", n: "💖 Valentine's Week", s: [1, 10], e: [1, 14], q: [["vl1", "Play 5 games", 5, 70], ["vl2", "Try 3 different games", 3, 80, 1]] },
+  { id: "earth", n: "🌍 Earth Day", s: [3, 20], e: [3, 22], q: [["ea1", "Play 4 games", 4, 60], ["ea2", "Try 3 different games", 3, 70, 1]] },
+  { id: "july4", n: "🎇 Fireworks Week", s: [6, 1], e: [6, 4], q: [["jl1", "Play 4 games", 4, 60], ["jl2", "Try 3 different games", 3, 70, 1]] },
+  { id: "halloween", n: "🎃 Halloween Week", s: [9, 25], e: [9, 31], q: [["hw1", "Play 5 games", 5, 70], ["hw2", "Try 3 different games", 3, 90, 1]] },
+  { id: "thanks", n: "🦃 Thanksgiving Week", s: [10, 20], e: [10, 30], q: [["tg1", "Play 5 games", 5, 70], ["tg2", "Try 3 different games", 3, 90, 1]] },
+  { id: "holiday", n: "🎄 Holiday Event", s: [11, 18], e: [11, 26], q: [["hd1", "Play 6 games", 6, 80], ["hd2", "Try 4 different games", 4, 110, 1]] }
+];
+function curEv() {
+  const d = new Date(), k = d.getMonth() * 100 + d.getDate();
+  return EVS.find(v => { const a = v.s[0] * 100 + v.s[1], b = v.e[0] * 100 + v.e[1]; return a <= b ? k >= a && k <= b : k >= a || k <= b; });
+}
+function evKey(ev) {
+  const d = new Date(); let y = d.getFullYear();
+  if (ev.s[0] > ev.e[0] && d.getMonth() <= ev.e[0]) y--;
+  return ev.id + y;
+}
+function evState(ev) {
+  let s; try { s = JSON.parse(localStorage.getItem("riftEv")) || {}; } catch (e) { s = {}; }
+  return s.k === evKey(ev) ? s : { k: evKey(ev), n: 0, p: [] };
+}
+function trackEv(page) {
+  const ev = curEv(); if (!ev) return;
+  const s = evState(ev); s.n++; if (!s.p.includes(page)) s.p.push(page);
+  localStorage.setItem("riftEv", JSON.stringify(s));
+}
+function evHTML() {
+  const ev = curEv(); if (!ev) return "";
+  const s = evState(ev), ends = new Date(); 
+  return `<h4 class="pf-lbl" style="margin:14px 0 8px">${ev.n} · limited time</h4><div class="pf-list">` + ev.q.map(a => {
+    const p = Math.min(a[4] ? s.p.length : s.n, a[2]), done = p >= a[2], got = CL.has("e_" + a[0] + "_" + evKey(ev).slice(ev.id.length));
+    return `<div class="pf-row" style="flex-wrap:wrap"><span style="flex:1 1 60%">${a[1]}<br><small style="color:var(--text-muted)">${p} / ${a[2]} · +${a[3]} XP</small></span><button class="pf-play" data-ev="${a[0]}"${done && !got ? "" : " disabled"}>${got ? "Claimed" : done ? "Claim" : "In progress"}</button><div class="pf-xp" style="flex:1 1 100%;margin:0"><i style="width:${p / a[2] * 100}%"></i></div></div>`;
+  }).join("") + "</div>";
+}
+const _qr = qRender;
+qRender = function () { _qr(); qBody.insertAdjacentHTML("beforeend", evHTML()); };
+qOv.addEventListener("click", async e => {
+  const b = e.target.closest("[data-ev]"); if (!b || b.disabled) return;
+  const ev = curEv(), u = auth.currentUser; if (!ev || !u) return;
+  const x = ev.q.find(a => a[0] === b.dataset.ev), c = "e_" + x[0] + "_" + evKey(ev).slice(ev.id.length), r = x[3];
+  if (!XPDOC) { await xpSync(); if (!XPDOC) return; }
+  b.disabled = true;
+  try {
+    const w = writeBatch(db);
+    w.update(doc(db, "xp", u.uid), { lifetime: increment(r), claim: c, updated: serverTimestamp() });
+    w.set(doc(db, "quests", u.uid, "claims", c), { q: x[0], reward: r, at: serverTimestamp() });
+    w.set(doc(collection(db, "xp", u.uid, "ledger")), { type: "earn", amount: r, reason: "Event: " + x[1], at: serverTimestamp() });
+    await w.commit(); CL.add(c); XPDOC.lifetime += r;
+  } catch (er) { console.error(er); showGlassModal("Couldn't claim. Try again.", { title: "Error", icon: "⚠️" }); }
+  qRender();
+});
+(() => {
+  const ev = curEv();
+  if (ev) document.querySelector("header").insertAdjacentHTML("afterend", `<div class="stats-bar" style="margin-top:0;gap:16px">${ev.n} is live! <button class="pf-play" onclick="window.openQuests()">View event quests</button></div>`);
+})();
 window.login = login;
 window.signup = signup;
 window.loginAsGuest = loginAsGuest;
