@@ -400,6 +400,7 @@ body.low-power .glass-layer{background:var(--bg-solid)}
 [data-f="frame_pumpkin"]{outline:3px solid #f97316;outline-offset:3px;box-shadow:0 0 18px 4px rgba(249,115,22,.55)}
 [data-f="frame_frost"]{outline:3px solid #bae6fd;outline-offset:3px;box-shadow:0 0 16px 3px rgba(186,230,253,.6)}
 .pf-title{margin-top:-6px;font-size:12.5px;font-weight:600;color:var(--text-muted)}
+    #questBody .pf-row,#frBody .pf-row{background:rgba(128,128,128,.16)}
   </style>
 </head>
 <body>
@@ -2373,7 +2374,7 @@ const QS = [["dp3", "d", "Play 3 games", 3, 30], ["ddiff3", "d", "Play 3 differe
 const qDay = () => Math.floor(Date.now() / 864e5), qWk = () => Math.floor((qDay() + 3) / 7);
 const qCid = id => (id[0] === "d" ? "d" + qDay() : "w" + qWk()) + "_" + id;
 let CL = new Set();
-document.body.insertAdjacentHTML("beforeend", `<div class="glass-modal-overlay" id="questOverlay"><div class="glass-modal" style="max-width:460px"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content" id="questBody" style="text-align:left"></div></div></div></div>`);
+document.body.insertAdjacentHTML("beforeend", `<div class="glass-modal-overlay" id="questOverlay"><div class="glass-modal" style="max-width:460px"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content" id="questBody" style="text-align:left;max-height:85vh;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--bg-solid)"></div></div></div></div>`);
 const qOv = document.getElementById("questOverlay"), qBody = document.getElementById("questBody");
 function qProg(id) {
   let q = {}; try { q = JSON.parse(localStorage.getItem("riftQ")) || {}; } catch (e) {}
@@ -2688,7 +2689,7 @@ window.surpriseMe = function () {
 /* ===== FRIENDS (2-way) ===== */
 const FQ = new URLSearchParams(location.search).get("f");
 if (FQ) sessionStorage.setItem("riftFQ", FQ);
-document.body.insertAdjacentHTML("beforeend", `<div class="glass-modal-overlay" id="frOverlay"><div class="glass-modal" style="max-width:460px"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content" id="frBody" style="text-align:left;max-height:85vh;overflow-y:auto"></div></div></div></div>`);
+document.body.insertAdjacentHTML("beforeend", `<div class="glass-modal-overlay" id="frOverlay"><div class="glass-modal" style="max-width:460px"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content" id="frBody" style="text-align:left;max-height:85vh;overflow-y:auto";background:var(--bg-solid)></div></div></div></div>`);
 const frOv = document.getElementById("frOverlay"), frBody = document.getElementById("frBody");
 async function frRender() {
   const u = auth.currentUser, link = location.origin + location.pathname + "?f=" + u.uid;
