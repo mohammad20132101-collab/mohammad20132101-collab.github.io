@@ -1738,7 +1738,7 @@ window.RIFT_CAT = { get: id => ({
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, getDocs, query, orderBy, where, limit, setDoc, updateDoc, writeBatch, increment, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, getDocs, query, orderBy, where, limit, setDoc, updateDoc, writeBatch, increment, addDoc, collection, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyD2XQWUKM4SQO8azXkm2XwG_e9ZQWpYJi0",
@@ -2186,7 +2186,14 @@ window.openProfile = function () {
     <div class="pf-layout">
       <aside class="pf-side" data-pt="${EQ.theme || ""}">
         <div class="pf-av pf-lg" id="pfAv" data-f="${fr}" style="--av:${col}">${esc((name[0] || "?").toUpperCase())}</div>
-        <input id="pfName" class="pf-name" style="color:${cosV(EQ.ncolor)}" maxlength="20" value="${esc(name)}" placeholder="Username" aria-label="Username"${dis}>
+        <input id="pfName" class="pf-name" style="color:${cosV(EQ.ncolor)}" maxlength="20" value="${esc(name)}" placeholder="Display name" aria-label="Display name"${dis}>
+        <div style="width:100%;margin:8px 0 12px;text-align:center">
+          <div class="pf-lbl" style="text-align:center;width:100%">Friend username</div>
+          ${isGuest ? `<small class="pf-empty">Sign in to set a friend username.</small>` : myFriendUsername
+            ? `<b>@${esc(myFriendUsername)}</b>`
+            : `<div class="input-group"><input id="pfFriendUsername" maxlength="20" placeholder="3–20 letters, numbers, or _" aria-label="Friend username"></div><button class="pf-play" data-save-friend-username>Save username</button>`}
+          <small style="display:block;color:var(--text-muted);margin-top:6px">This syncs with your display name when you finish editing it.</small>
+        </div>
         <span class="pf-mail">${isGuest ? "Guest session" : esc(em)}</span>
         ${EQ.title ? `<span class="pf-title">${esc(cosN(EQ.title))}</span>` : ""}
         <div class="pf-lv"><b>Level ${lv}</b><div class="pf-xp"><i style="width:${pct}%"></i></div><span>Total earned ${X.xp} XP · Available ${X.avail} XP<br>${X.next - X.xp} to level ${lv + 1}</span></div>
@@ -2211,9 +2218,10 @@ window.openProfile = function () {
   profOv.classList.add("is-open");
   profBody.scrollTop = st;
 };
-profOv.addEventListener("click", e => {
+profOv.addEventListener("click", async e => {
   if (e.target === profOv || e.target.closest("[data-close]")) { profOv.classList.remove("is-open"); return; }
   if (e.target.closest("[data-share]")) { window.shareProfile(); return; }
+  if (e.target.closest("[data-save-friend-username]")) { await saveFriendUsername(); return; }
   const sw = e.target.closest(".pf-sw[data-c]");
   if (sw) { setCol(sw.dataset.c); return; }
   const fb = e.target.closest(".pf-fr[data-f]");
@@ -2230,6 +2238,9 @@ profBody.addEventListener("input", e => {
     document.getElementById("pfAv").textContent = ((p.name || profInfo().name)[0] || "?").toUpperCase();
     syncAvatar();
   }
+});
+profBody.addEventListener("change", e => {
+  if (e.target.id === "pfName") syncFriendUsernameFromDisplayName();
 });
 document.addEventListener("keydown", e => {
   if (e.key === "Escape") {
@@ -2257,6 +2268,7 @@ window.playGameOfDay = function () {
 };
 
 window.logout = function () {
+  stopFriendSync();
   isGuest = false;
   XPDOC = null;
   EQ = {};
@@ -2364,7 +2376,7 @@ function loadUser(email, guestModeStatus) {
 }
 
 onAuthStateChanged(auth, (user) => {
-  if (user) { loadUser(user.email, false); cloudPull(user).then(() => handleInvite(user)); setDoc(doc(db, "profiles", user.uid), { name: profInfo().name.slice(0, 30), email: user.email, joined: String(user.metadata.creationTime || "") }, { merge: true }).catch(() => {});
+  if (user) { loadUser(user.email, false); cloudPull(user); loadFriendUsername(user);
     getDoc(doc(db, "admins", user.uid)).then(a => { if (a.exists()) document.getElementById("adminBtn").style.display = ""; }).catch(() => {}); }
   else { syncReady = false; }
 });
@@ -2686,65 +2698,180 @@ window.surpriseMe = function () {
   const g = pool[Math.floor(Math.random() * pool.length)];
   window.openGame(g.page, g.name);
 };
-/* ===== FRIENDS (2-way) ===== */
-const FQ = new URLSearchParams(location.search).get("f");
-if (FQ) sessionStorage.setItem("riftFQ", FQ);
-document.body.insertAdjacentHTML("beforeend", `<div class="glass-modal-overlay" id="frOverlay"><div class="glass-modal" style="max-width:460px"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content" id="frBody" style="text-align:left;max-height:85vh;overflow-y:auto";background:var(--bg-solid)></div></div></div></div>`);
+/* ===== FRIENDS: USERNAME SEARCH AND ACCEPTED REQUESTS ===== */
+let myFriendUsername = "", frSearchResult = null, frSearchMessage = "", frUnsubs = [];
+function stopFriendSync() { frUnsubs.forEach(unsub => unsub()); frUnsubs = []; }
+function startFriendSync() {
+  stopFriendSync();
+  const u = auth.currentUser; if (!u) return;
+  const refs = [
+    collection(db, "friends", u.uid, "list"),
+    query(collection(db, "friendReqs"), where("to", "==", u.uid)),
+    query(collection(db, "friendReqs"), where("from", "==", u.uid))
+  ];
+  frUnsubs = refs.map(ref => onSnapshot(ref, () => { if (frOv.classList.contains("is-open")) frRender(); }, e => console.error("friend sync", e)));
+}
+document.body.insertAdjacentHTML("beforeend", `<div class="glass-modal-overlay" id="frOverlay"><div class="glass-modal" style="max-width:460px"><div class="glass-card-inner"><div class="glass-layer"></div><div class="glass-content" id="frBody" style="text-align:left;max-height:85vh;overflow-y:auto;background:var(--bg-solid)"></div></div></div></div>`);
 const frOv = document.getElementById("frOverlay"), frBody = document.getElementById("frBody");
-async function frRender() {
-  const u = auth.currentUser, link = location.origin + location.pathname + "?f=" + u.uid;
-  let fr = [], rq = [];
+async function loadFriendUsername(user) {
   try {
-    fr = (await getDocs(collection(db, "friends", u.uid, "list"))).docs.map(d => ({ uid: d.id, ...d.data() }));
-    rq = (await getDocs(query(collection(db, "friendReqs"), where("to", "==", u.uid)))).docs.map(d => d.data());
-  } catch (e) { console.error(e); }
+    const profileRef = doc(db, "profiles", user.uid);
+    let snap = await getDoc(profileRef);
+    if (!snap.exists()) {
+      await setDoc(profileRef, { name: profInfo().name.slice(0, 30), email: user.email || "", joined: String(user.metadata.creationTime || "") });
+      snap = await getDoc(profileRef);
+    }
+    const data = snap.exists() ? snap.data() : {}, cloudName = String(data.name || "").trim();
+    if (cloudName) {
+      const p = getProfile();
+      if (p.name !== cloudName) { p.name = cloudName; saveProfile(p); syncAvatar(); }
+    }
+    myFriendUsername = data.username || "";
+    if (myFriendUsername && cloudName) {
+      const derived = cloudName.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 20);
+      if (/^[a-z0-9_]{3,20}$/.test(derived)) await syncFriendUsernameValue(user, cloudName);
+    }
+    if (frOv.classList.contains("is-open")) frRender();
+    if (profOv.classList.contains("is-open")) window.openProfile();
+  } catch (e) { console.error("load username", e); }
+}
+async function syncFriendUsernameValue(user, displayName, quiet = false) {
+  const next = displayName.trim().toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 20);
+  if (!/^[a-z0-9_]{3,20}$/.test(next)) return false;
+  try {
+    const nextRef = doc(db, "usernames", next), oldRef = myFriendUsername ? doc(db, "usernames", myFriendUsername) : null;
+    const [nextSnap, oldSnap] = await Promise.all([getDoc(nextRef), oldRef ? getDoc(oldRef) : Promise.resolve(null)]);
+    if (nextSnap.exists() && nextSnap.data().uid !== user.uid) {
+      if (!quiet) showGlassModal(`@${next} is already taken, so your friend username stayed @${myFriendUsername}.`, { title: "Username already taken", icon: "⚠️" });
+      return false;
+    }
+    const batch = writeBatch(db);
+    if (!nextSnap.exists()) batch.set(nextRef, { uid: user.uid, username: next, at: serverTimestamp() });
+    if (oldRef && myFriendUsername !== next && oldSnap && oldSnap.exists() && oldSnap.data().uid === user.uid) batch.delete(oldRef);
+    batch.set(doc(db, "profiles", user.uid), { name: displayName.slice(0, 30), email: user.email || "", joined: String(user.metadata.creationTime || ""), username: next }, { merge: true });
+    await batch.commit();
+    myFriendUsername = next;
+    const p = getProfile(); p.name = displayName.slice(0, 30); saveProfile(p); syncAvatar();
+    if (profOv.classList.contains("is-open")) window.openProfile();
+    if (frOv.classList.contains("is-open")) frRender();
+    return true;
+  } catch (e) {
+    console.error("sync friend username", e);
+    if (!quiet) showGlassModal("Couldn't sync your friend username. Try again.", { title: "Sync error", icon: "⚠️" });
+    return false;
+  }
+}
+async function syncFriendUsernameFromDisplayName() {
+  const u = auth.currentUser, field = document.getElementById("pfName");
+  if (!u || isGuest || !field) return;
+  await syncFriendUsernameValue(u, field.value.trim());
+}
+async function saveFriendUsername() {
+  const u = auth.currentUser, input = document.getElementById("pfFriendUsername");
+  if (!u || !input) return;
+  const next = (input.value || "").trim().toLowerCase();
+  if (!/^[a-z0-9_]{3,20}$/.test(next)) {
+    showGlassModal("Use 3–20 lowercase letters, numbers, or underscores.", { title: "Invalid username", icon: "⚠️" });
+    return;
+  }
+  if (await syncFriendUsernameValue(u, next)) {
+    window.openProfile();
+    showGlassModal("Your display name and friend username are now @" + next + ".", { title: "Username saved", icon: "✅" });
+  }
+}
+async function frRender() {
+  const u = auth.currentUser;
+  if (!u) return;
+  let friends = [], incoming = [], outgoing = [];
+  try {
+    const [fs, ins, outs] = await Promise.all([
+      getDocs(collection(db, "friends", u.uid, "list")),
+      getDocs(query(collection(db, "friendReqs"), where("to", "==", u.uid))),
+      getDocs(query(collection(db, "friendReqs"), where("from", "==", u.uid)))
+    ]);
+    friends = fs.docs.map(d => ({ uid: d.id, ...d.data() }));
+    incoming = ins.docs.map(d => ({ id: d.id, ...d.data() }));
+    outgoing = outs.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch (e) { console.error("friends", e); }
+  const usernamePrompt = myFriendUsername ? "" : `<div class="pf-empty" style="margin:12px 0">Make a username first in your <b>Profile</b> so friends can search for you.<br><button class="pf-play" data-open-profile style="margin-top:8px">Open Profile</button></div>`;
+  const searchCard = frSearchResult ? `<div class="pf-row" style="margin-top:8px"><span>@${esc(frSearchResult.username)}</span><button class="pf-play" data-send="1">Send request</button></div>` : "";
   frBody.innerHTML = `<div class="pf-top"><h3>👥 Friends</h3><button class="pf-x" data-close aria-label="Close">✕</button></div>
-  <div class="input-group"><input id="frLink" readonly value="${esc(link)}"></div>
-  <button data-copy>Copy my friend link</button>
-  ${rq.length ? `<h4 class="pf-lbl" style="margin:18px 0 8px">Requests</h4><div class="pf-list">${rq.map(r => `<div class="pf-row"><span>${esc(r.fromName)}</span><button class="pf-play" data-acc="${esc(r.from)}" data-n="${esc(r.fromName)}">Accept</button><button class="pf-rm" data-dec="${esc(r.from)}" title="Decline">✕</button></div>`).join("")}</div>` : ""}
-  <h4 class="pf-lbl" style="margin:18px 0 8px">Your friends</h4>
-  <div class="pf-list">${fr.length ? fr.map(f => `<div class="pf-row"><span>${esc(f.name)}</span><button class="pf-rm" data-rm="${esc(f.uid)}" title="Remove">✕</button></div>`).join("") : `<p class="pf-empty">No friends yet. Share your link!</p>`}</div>`;
+  ${usernamePrompt}
+  ${myFriendUsername ? `<h4 class="pf-lbl" style="margin:18px 0 8px">Find a friend</h4><div class="input-group"><input id="frSearch" maxlength="20" value="${esc(frSearchResult ? frSearchResult.username : "")}" placeholder="Search by username"></div><button data-search>Search</button>${frSearchMessage ? `<small style="display:block;color:var(--text-muted);margin-top:8px">${esc(frSearchMessage)}</small>` : ""}${searchCard}` : ""}
+  ${incoming.length ? `<h4 class="pf-lbl" style="margin:18px 0 8px">Requests · ${incoming.length}</h4><div class="pf-list">${incoming.map(r => `<div class="pf-row"><span>@${esc(r.fromName || "player")}</span><button class="pf-play" data-acc="${esc(r.from)}" data-n="${esc(r.fromName || "player")}">Accept</button><button class="pf-rm" data-dec="${esc(r.from)}" title="Decline">✕</button></div>`).join("")}</div>` : ""}
+  ${outgoing.length ? `<h4 class="pf-lbl" style="margin:18px 0 8px">Sent · ${outgoing.length}</h4><div class="pf-list">${outgoing.map(r => `<div class="pf-row"><span>@${esc(r.toName || "player")}<br><small style="color:var(--text-muted)">Waiting for acceptance</small></span><button class="pf-rm" data-cancel="${esc(r.to)}">Cancel</button></div>`).join("")}</div>` : ""}
+  <h4 class="pf-lbl" style="margin:18px 0 8px">Your friends</h4><div class="pf-list">${friends.length ? friends.map(f => `<div class="pf-row"><span>@${esc(f.name || "player")}</span><button class="pf-rm" data-rm="${esc(f.uid)}" title="Remove friend">✕</button></div>`).join("") : `<p class="pf-empty">No friends yet. Search for a username to send a request.</p>`}</div>`;
 }
 window.openFriends = () => {
   if (isGuest || !auth.currentUser) { showGlassModal("Friends need an account.", { title: "Account Required", icon: "👥" }); return; }
-  frOv.classList.add("is-open"); frRender();
+  frOv.classList.add("is-open"); startFriendSync(); frRender();
 };
 frOv.addEventListener("click", async e => {
-  if (e.target === frOv || e.target.closest("[data-close]")) { frOv.classList.remove("is-open"); return; }
-  if (e.target.closest("[data-copy]")) {
-    const i = document.getElementById("frLink");
-    try { await navigator.clipboard.writeText(i.value); } catch (er) { i.select(); document.execCommand("copy"); }
-    showGlassModal("Friend link copied!", { title: "Copied", icon: "📋" }); return;
+  if (e.target === frOv || e.target.closest("[data-close]")) { frOv.classList.remove("is-open"); stopFriendSync(); return; }
+  const u = auth.currentUser;
+  if (!u) return;
+  if (e.target.closest("[data-open-profile]")) {
+    frOv.classList.remove("is-open"); stopFriendSync(); window.openProfile(); return;
   }
-  const a = e.target.closest("[data-acc]"), d = e.target.closest("[data-dec]"), rm = e.target.closest("[data-rm]"), b = a || d || rm;
-  if (!b) return;
-  b.disabled = true;
-  const u = auth.currentUser, w = writeBatch(db);
+  if (e.target.closest("[data-search]")) {
+    const term = (document.getElementById("frSearch").value || "").trim().toLowerCase();
+    frSearchResult = null; frSearchMessage = "";
+    if (!/^[a-z0-9_]{3,20}$/.test(term)) frSearchMessage = "Enter a username with 3–20 letters, numbers, or underscores.";
+    else {
+      try {
+        const snap = await getDoc(doc(db, "usernames", term));
+        if (!snap.exists()) frSearchMessage = "No player found with that username.";
+        else if (snap.data().uid === u.uid) frSearchMessage = "That's your username.";
+        else {
+          const target = snap.data(), friend = await getDoc(doc(db, "friends", u.uid, "list", target.uid));
+          const incoming = await getDoc(doc(db, "friendReqs", target.uid + "_" + u.uid));
+          const outgoing = await getDoc(doc(db, "friendReqs", u.uid + "_" + target.uid));
+          if (friend.exists()) frSearchMessage = `@${term} is already your friend.`;
+          else if (incoming.exists()) frSearchMessage = `@${term} already sent you a request. Accept it in Requests below.`;
+          else if (outgoing.exists()) frSearchMessage = `Your request to @${term} is waiting for acceptance.`;
+          else frSearchResult = { uid: target.uid, username: term };
+        }
+      } catch (er) { console.error("username search", er); frSearchMessage = "Couldn't search right now. Try again."; }
+    }
+    await frRender(); return;
+  }
+  if (e.target.closest("[data-send]")) {
+    if (!myFriendUsername || !frSearchResult) return;
+    const btn = e.target.closest("[data-send]"); btn.disabled = true;
+    try {
+      const t = frSearchResult, reqRef = doc(db, "friendReqs", u.uid + "_" + t.uid);
+      await setDoc(reqRef, { from: u.uid, to: t.uid, fromName: myFriendUsername, toName: t.username, at: serverTimestamp() });
+      frSearchMessage = `Request sent to @${t.username}.`;
+      frSearchResult = null;
+    } catch (er) { console.error("send friend request", er); frSearchMessage = "Couldn't send the request. Refresh and try again."; }
+    await frRender(); return;
+  }
+  const accept = e.target.closest("[data-acc]"), decline = e.target.closest("[data-dec]"), cancel = e.target.closest("[data-cancel]"), remove = e.target.closest("[data-rm]"), btn = accept || decline || cancel || remove;
+  if (!btn) return;
+  btn.disabled = true;
   try {
-    if (a) {
-      const f = a.dataset.acc;
-      w.set(doc(db, "friends", u.uid, "list", f), { name: String(a.dataset.n).slice(0, 30), at: serverTimestamp() });
-      w.set(doc(db, "friends", f, "list", u.uid), { name: profInfo().name.slice(0, 30), at: serverTimestamp() });
-      w.delete(doc(db, "friendReqs", f + "_" + u.uid));
-    } else if (d) w.delete(doc(db, "friendReqs", d.dataset.dec + "_" + u.uid));
-    else { w.delete(doc(db, "friends", u.uid, "list", rm.dataset.rm)); w.delete(doc(db, "friends", rm.dataset.rm, "list", u.uid)); }
-    await w.commit();
-  } catch (er) { console.error(er); showGlassModal("Something went wrong. Try again.", { title: "Error", icon: "⚠️" }); }
-  frRender();
+    if (accept) {
+      const f = accept.dataset.acc, reqRef = doc(db, "friendReqs", f + "_" + u.uid), reverseRef = doc(db, "friendReqs", u.uid + "_" + f);
+      const [friendHere, friendThere, reverse] = await Promise.all([
+        getDoc(doc(db, "friends", u.uid, "list", f)), getDoc(doc(db, "friends", f, "list", u.uid)), getDoc(reverseRef)
+      ]);
+      const batch = writeBatch(db);
+      if (!friendHere.exists()) batch.set(doc(db, "friends", u.uid, "list", f), { name: String(accept.dataset.n).slice(0, 30), at: serverTimestamp() });
+      if (!friendThere.exists()) batch.set(doc(db, "friends", f, "list", u.uid), { name: myFriendUsername || profInfo().name.slice(0, 30), at: serverTimestamp() });
+      batch.delete(reqRef); if (reverse.exists()) batch.delete(reverseRef);
+      await batch.commit();
+      showGlassModal("You are now friends. You both have each other in your friends lists.", { title: "Friend added", icon: "👥" });
+    } else if (decline) {
+      const batch = writeBatch(db); batch.delete(doc(db, "friendReqs", decline.dataset.dec + "_" + u.uid)); await batch.commit();
+    } else if (cancel) {
+      const batch = writeBatch(db); batch.delete(doc(db, "friendReqs", u.uid + "_" + cancel.dataset.cancel)); await batch.commit();
+    } else {
+      const f = remove.dataset.rm, batch = writeBatch(db);
+      batch.delete(doc(db, "friends", u.uid, "list", f)); batch.delete(doc(db, "friends", f, "list", u.uid)); await batch.commit();
+    }
+  } catch (er) { console.error("friend action", er); showGlassModal("That friend action didn't go through. Refresh and try again.", { title: "Error", icon: "⚠️" }); }
+  await frRender();
 });
-async function handleInvite(user) {
-  const id = sessionStorage.getItem("riftFQ");
-  if (!id) return;
-  try {
-    if (id === user.uid) return;
-    if ((await getDoc(doc(db, "friends", user.uid, "list", id))).exists()) { showGlassModal("You're already friends!", { title: "Friends", icon: "👥" }); return; }
-    await setDoc(doc(db, "friendReqs", user.uid + "_" + id), { from: user.uid, to: id, fromName: profInfo().name.slice(0, 30), at: serverTimestamp() });
-    showGlassModal("Friend request sent! They'll see it in their Friends panel.", { title: "Request Sent", icon: "📨" });
-  } catch (e) {
-    console.error("invite", e);
-    showGlassModal("Couldn't send. You may have already sent a request.", { title: "Friend Request", icon: "⚠️" });
-  } finally { sessionStorage.removeItem("riftFQ"); history.replaceState(null, "", location.pathname); }
-}
 
 /* ===== LIMITED EVENTS ===== */
 // s/e = [month(0-11), day]; q = [id, text, target, XP, countDifferentGames?]
